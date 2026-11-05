@@ -206,6 +206,23 @@ try{
       }));
       insist(first.scale==="125%"&&first.width<data.original.width,
         "Zoom + did not magnify SVG",first);
+      const clickable=await page.locator("#diagram svg").evaluate(svg=>{
+        const bounds=svg.getBoundingClientRect();
+        const safe=[...svg.querySelectorAll(".side-chip.unknown:not(.overhang)")];
+        const one=safe.find(e=>{
+          const b=e.getBoundingClientRect();
+          return b.left>bounds.left+1&&b.right<bounds.right-1&&
+            b.top>bounds.top+1&&b.bottom<bounds.bottom-1;
+        });
+        return one?.getAttribute("data-side-key")||"";
+      });
+      insist(clickable,"No reachable mathematical length at 125%",{name});
+      await page.locator('#diagram svg .side-chip[data-side-key="'+clickable+'"]').click();
+      const clicked=await page.locator("#side-select").inputValue();
+      insist(clicked===clickable,"Clicking a magnified label did not select its side",
+        {clicked,clickable});
+      insist(await page.locator("#diagram-zoom-level").innerText()==="125%",
+        "Clicking a length reset diagram zoom");
       await controls.locator("#diagram-zoom-in").click();
       await controls.locator("#diagram-zoom-in").click();
       const before=await page.evaluate(()=>{
@@ -252,6 +269,12 @@ try{
       const wheelLevel=await page.locator("#diagram-zoom-level").innerText();
       insist(wheelLevel!==keyLevel,"Control-wheel did not magnify the SVG",
         {keyLevel,wheelLevel});
+      await page.locator("#replay").click();
+      insist((await page.locator("#diagram-zoom-level").innerText())!=="100%",
+        "Replay changed zoom unexpectedly");
+      if(await page.locator("#skip").isVisible())await page.locator("#skip").click();
+      insist(await page.locator(".side-labels.waiting").count()===0,
+        "Replay/Skip did not restore labels after zoom");
       await controls.locator("#diagram-zoom-out").click();
       await controls.locator("#diagram-zoom-fit").click();
       const reset=await page.evaluate(()=>{
