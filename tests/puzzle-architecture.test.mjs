@@ -75,7 +75,8 @@ test("puzzles intentionally vary their supported ground footprint",()=>{
   const expected=new Map([
     ["first-fall",1],["projecting-edge",1],["twin-paths",1],
     ["split-project",2],["labyrinth",2],["great-pile",2],
-    ["nine-muses",3],["marble-terrace",3],["acropolis",4]
+    ["nine-muses",3],["marble-terrace",3],["acropolis",4],
+    ["great-interlock",2]
   ]);
   for(const puzzle of puzzles)assert.equal(groundShapes(puzzle).length,
     expected.get(puzzle.id),puzzle.id+" ground footprint changed");
