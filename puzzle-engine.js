@@ -119,8 +119,8 @@ export function readySteps(puzzle, sides, solved) {
       "s = " + parts.map(s => exactLength(s.length)).join(" + ") :
       "s = " + exactLength(whole.length) + " − " + exactLength(otherPart.length);
     candidates.push({
-      kind: "overhang",
-      triangleId: "OVERHANG",
+      kind: relation.label==="TWO SHARED SECTIONS"?"split":"overhang",
+      triangleId: relation.label==="TWO SHARED SECTIONS"?"STRAIGHT EDGE":"OVERHANG",
       sideKey: answer.key,
       isTarget: answer.isTarget,
       isHypotenuse: false,
