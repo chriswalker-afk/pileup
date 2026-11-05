@@ -15,9 +15,9 @@ const expected=[
   ["great-pile",5,["17","5","12","13","√205","√230"]]
 ];
 
-test("Six different authored challenges are available",()=>{
-  assert.equal(puzzles.length,expected.length);
-  assert.deepEqual(puzzles.map(p=>p.id),expected.map(p=>p[0]));
+test("The original six authored challenges remain unchanged",()=>{
+  assert.equal(puzzles.length,9);
+  assert.deepEqual(puzzles.slice(0,expected.length).map(p=>p.id),expected.map(p=>p[0]));
   assert.ok(puzzles.every(p=>Array.isArray(p.tags)&&p.tags.length>0));
   assert.equal(new Set(puzzles.map(p=>p.id)).size,puzzles.length);
 });
