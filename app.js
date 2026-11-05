@@ -1,4 +1,4 @@
-import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTriangle, readySteps, solutionSteps } from "./puzzle-engine.js";
+import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTriangle, readySteps, solutionSteps, propagateRectangleSides } from "./puzzle-engine.js";
 import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
@@ -28,7 +28,8 @@ function setWorkingFocused(wide){
 const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav><a href="#home">THE AGORA</a><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
 function miniPreview(puzzle){
-  const points=puzzle.triangles.flatMap(t=>t.pts);
+  const shapes=[...puzzle.triangles,...(puzzle.rectangles||[])];
+  const points=shapes.flatMap(t=>t.pts);
   const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x));
   const height=Math.max(...points.map(p=>p.y));
   const factor=Math.min(123/(right-left),72/height);
@@ -36,7 +37,7 @@ function miniPreview(puzzle){
     x:80+(p.x-(left+right)/2)*factor,
     y:86-p.y*factor
   });
-  const figures=puzzle.triangles.map(t=>
+  const figures=shapes.map(t=>
     '<polygon fill="'+t.color+'" points="'+t.pts.map(point=>{
       const v=px(point);return v.x.toFixed(1)+','+v.y.toFixed(1);
     }).join(' ')+'"/>').join('');
@@ -146,6 +147,7 @@ function loadProgress(){
       }
     }
     hintsUsed=Math.max(0,Number(saved.hintsUsed)||0);
+    propagateRectangleSides(current,sideMap,solved);
     if(saved.extensionGrades && typeof saved.extensionGrades==="object"){
       for(const item of current.extensions||[])if(saved.extensionGrades[item.id]===true)extensionGrades[item.id]=true;
     }
@@ -155,14 +157,14 @@ function loadProgress(){
 }
 
 function stepsRemaining(){
-  return [...sideMap.values()].filter(s=>!s.given&&!solved.has(s.key));
+  return [...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel&&!solved.has(s.key));
 }
 function progress(){
-  const all=[...sideMap.values()].filter(s=>!s.given);
+  const all=[...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel);
   return {total:all.length,done:all.length-stepsRemaining().length};
 }
 function activeHintStep(){
-  const available=readySteps(current,sideMap,solved);
+  const available=readySteps(current,sideMap,solved).filter(s=>!sideMap.get(s.sideKey)?.suppressLabel);
   if(selectedSide){
     const forSelected=available.find(step=>step.sideKey===selectedSide);
     if(forSelected)return forSelected;
@@ -176,12 +178,14 @@ function sideDescription(side){
 }
 function chooseTriangle(id){
   if(animating)return;
-  const triangle=current.triangles.find(t=>t.id===id);
-  if(!triangle)return;
-  const edges=sidesOfTriangle(triangle,sideMap);
-  const options=edges.filter(s=>!s.given&&!solved.has(s.key));
+  const shape=[...current.triangles,...(current.rectangles||[])].find(t=>t.id===id);
+  if(!shape)return;
+  const edges=shape.pts.length===3?sidesOfTriangle(shape,sideMap):
+    [...shape.pts.map((a,i)=>sideMap.get(sideKey(a,shape.pts[(i+1)%4]))),
+     ...(shape.diagonals||[]).map(s=>sideMap.get(sideKey(s.a,s.b)))];
+  const options=edges.filter(s=>s&&!s.given&&!s.suppressLabel&&!solved.has(s.key));
   const choices=readySteps(current,sideMap,solved);
-  const side=options.find(s=>choices.some(step=>step.sideKey===s.key))||options[0]||edges.find(s=>!s.given)||edges[0];
+  const side=options.find(s=>choices.some(step=>step.sideKey===s.key))||options[0]||edges.find(s=>s&&!s.given&&!s.suppressLabel)||edges.find(Boolean);
   if(side)chooseSide(side.key);
 }
 function chooseSide(key){
@@ -229,7 +233,7 @@ function renderDiagram(animate=false,forceMotion=false){
   svg.append(floor);
   current.triangles.forEach((triangle,i)=>{
     const group=el("g",{class:"piece","data-id":triangle.id,tabindex:0,role:"button",
-      style:"--delay:"+(i*850)+"ms;--twist:"+(i%2?-13:12)+"deg",
+      style:"--delay:"+(i*stepMs)+"ms;--twist:"+(i%2?-13:12)+"deg",
       "aria-label":"Select triangle "+triangle.id});
     const tpts=triangle.pts.map(xy);
     if(selectedSide&&!sideMap.get(selectedSide).triangleIds.includes(triangle.id))group.classList.add("dimmed");
@@ -264,7 +268,7 @@ function renderDiagram(animate=false,forceMotion=false){
   }
   // Collinear full/part edges overlap. Hit targets are ordered with short,
   // currently unknown edges above long or given edges for reliable selection.
-  const orderedSides=[...sideMap.values()].sort((a,b)=>
+  const orderedSides=[...sideMap.values()].filter(s=>!s.suppressLabel).sort((a,b)=>
     Number(a.given)-Number(b.given) || b.length-a.length);
   for(const side of orderedSides){
     if(side.isOverhang)continue;
@@ -307,10 +311,12 @@ function renderDiagram(animate=false,forceMotion=false){
   }
 
   const occupied=[];
+  const dense=pieces.length>=8;
   const actualW=canvas.getBoundingClientRect().width||780;
   const actualH=Math.min(490,Math.max(340,actualW*590/960));
   const ratio=Math.max(.32,Math.min(actualW/W,actualH/H));
-  const fontSize=Math.min(31,Math.max(15,12/ratio));
+  const fontSize=dense?Math.min(31,Math.max(12,11/ratio)):
+    Math.min(31,Math.max(15,12/ratio));
   const boxHeight=fontSize+11;
   const clash=(pos,width,height)=>occupied.reduce((total,box)=>{
     const dx=Math.abs(box.x-pos.x),dy=Math.abs(box.y-pos.y);
@@ -318,7 +324,7 @@ function renderDiagram(animate=false,forceMotion=false){
     const oy=Math.max(0,(box.h+height)/2+5-dy);
     return total+ox*oy;
   },0);
-  const centroids=current.triangles.map(t=>({
+  const centroids=pieces.map(t=>({
     id:t.id,
     point:xy({x:t.pts.reduce((sum,z)=>sum+z.x,0)/3,y:t.pts.reduce((sum,z)=>sum+z.y,0)/3})
   }));
@@ -363,7 +369,7 @@ function renderDiagram(animate=false,forceMotion=false){
     }
     return best;
   }
-  const sides=[...sideMap.values()];
+  const sides=[...sideMap.values()].filter(side=>!side.suppressLabel);
   // Given lengths before unknown tags; annotate the overhang clearly.
   sides.sort((a,b)=>Number(b.given)-Number(a.given)||
     Number(b.isOverhang)-Number(a.isOverhang)||
@@ -441,13 +447,13 @@ function renderDiagram(animate=false,forceMotion=false){
             {opacity:1,transform:"translate(0px, 24px) rotate(-3deg)",offset:.68},
             {opacity:1,transform:"translate(0px, -12px) rotate(1.4deg)",offset:.84},
             {opacity:1,transform:"translate(0px, 0px) rotate(0deg)",offset:1}
-          ],{delay:i*850,duration:1340,easing:"cubic-bezier(.22,.68,.32,1)",fill:"both"}));
+          ],{delay:i*stepMs,duration:1340,easing:"cubic-bezier(.22,.68,.32,1)",fill:"both"}));
         });
       }else{
         svg.classList.add("falling");
       }
     });
-    finishTimer=setTimeout(stopAnimation,(current.triangles.length-1)*850+1400);
+    finishTimer=setTimeout(stopAnimation,(pieces.length-1)*stepMs+1400);
   }else{
     animating=false;
     document.getElementById("skip").hidden=true;
@@ -573,7 +579,7 @@ function renderInspector(){
     renderExtensions(panel);
     return;
   }
-  const unprovided=[...sideMap.values()].filter(s=>!s.given);
+  const unprovided=[...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel);
   const side=selectedSide?sideMap.get(selectedSide):null;
   const choices=`<div class="inspect-field">
     <label for="side-select">CHOOSE A SIDE TO INVESTIGATE</label>
@@ -719,7 +725,9 @@ function submitAnswer(raw){
     return;
   }
   if(correctAnswer(raw,side.length)){
-    solved.add(side.key);saveProgress();renderDiagram(false);
+    solved.add(side.key);
+    propagateRectangleSides(current,sideMap,solved);
+    saveProgress();renderDiagram(false);
     if(side.isTarget)showCompletion();
   }else{
     const box=document.getElementById("answer-feedback");
