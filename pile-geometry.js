@@ -1,3 +1,5 @@
+import { makeSplitPile, makeCrownPile } from "./pile-variants.js";
+
 /**
  * Mathematically exact, deliberately stacked triangle piles.
  *
@@ -82,15 +84,61 @@ export const puzzles=[
   makeOverhangPile({
     id:"first-fall",title:"The First Fall",epithet:"THE APPRENTICE",
     difficulty:"INTRODUCTORY",
-    description:"Three stacked triangles, a labelled overhang and a hidden final length. Find the starting point and follow the chain.",
+    description:"Three stacked triangles. Find the hypotenuse, subtract an inset overhang and discover the final length.",
     base:[16,12],overhang:5,upperHypotenuse:17,legs:[6],
-    colors:["#d6b06c","#7da7a9","#c48670"]
+    colors:["#d6b06c","#7da7a9","#c48670"],
+  }),
+  makeOverhangPile({
+    id:"projecting-edge",title:"The Projecting Edge",epithet:"THE MASON",
+    difficulty:"DEVELOPING",
+    description:"Four triangles. An upper side projects beyond its support, and the final answer is an exact surd.",
+    base:[16,12],overhang:4,overhangMode:"extension",upperHypotenuse:26,legs:[24,7],
+    colors:["#d6b06c","#79a9a0","#b77d6b","#9e9ab9"],
+  }),
+  makeSplitPile({
+    id:"twin-paths",title:"Twin Paths",epithet:"THE SURVEYORS",
+    difficulty:"INTERMEDIATE",
+    description:"One long side is shared by two shorter sides. Follow two independent calculations, then combine their results.",
+    base:[15,8],sectionLengths:[12,5],legLengths:[5,12],
+    hypotenuseGivens:[13,13],equalHypotenuses:true,
+    colors:["#d6b06c","#89a8ad","#b78a70"],
+    extensions:true,
+    tags:["Two starting points","Matching side marks","Perimeter & area"]
+  }),
+  makeSplitPile({
+    id:"split-project",title:"Split & Project",epithet:"THE BUILDERS",
+    difficulty:"ADVANCED",
+    description:"Two smaller sides cover one long diagonal—but one projects beyond the end. Can you reconstruct the hidden length?",
+    base:[20,15],sectionLengths:[12,15],legLengths:[5,8],
+    hypotenuseGivens:[13,17],finalExtension:2,
+    colors:["#d6b06c","#8caeaa","#bb8573"],
+    extensions:true,
+    tags:["Two-side overlap","Projecting overhang","Perimeter & area"]
   }),
   makeOverhangPile({
     id:"labyrinth",title:"The Geometer’s Labyrinth",epithet:"THE ARCHITECT",
-    difficulty:"CHALLENGE",
-    description:"Five stacked triangles, including a projecting overhang. Combine straight-line lengths and linked Pythagoras calculations.",
+    difficulty:"EXPERT",
+    description:"Five stacked triangles. Trace a projecting overhang through several linked applications of Pythagoras.",
     base:[16,12],overhang:4,overhangMode:"extension",upperHypotenuse:26,legs:[8,6,9],
     colors:["#d6b06c","#7aa9a2","#bb8373","#979fc1","#aa9983"]
+  }),
+  makeCrownPile({
+    id:"great-pile",title:"The Great Pile Up",epithet:"THE MASTER GEOMETER",
+    difficulty:"MASTER CHALLENGE",
+    description:"A long side bridges two smaller triangle sides, before an upper chain leads to one final surd.",
+    colors:["#d6b06c","#7aa9a2","#c18a78","#979fc1","#b1a07c"],
+    tags:["Two-side bridge","Branches converge","Exact surds"]
   })
 ];
+
+// Lightweight metadata shared by the home page and individual challenges.
+for(const puzzle of puzzles){
+  if(!puzzle.tags){
+    puzzle.tags=puzzle.id==="first-fall"?["Overhang","Missing shorter side"] :
+      puzzle.id==="projecting-edge"?["Projecting overhang","Exact value"] :
+      ["Long chain","Exact surds"];
+  }
+  puzzle.topology=puzzle.lengthRelations?.length>1?"split-and-overhang":
+    puzzle.equalSideGroups?.length?"equal-sides":
+    puzzle.spanHighlight?"shared-split-side":"overhang-chain";
+}

@@ -62,6 +62,15 @@ export function buildSides(puzzle) {
       }
     }
   }
+  for(const group of puzzle.equalSideGroups || []){
+    if(group.length<2)throw Error("An equal-side group needs at least two edges.");
+    const members=group.map(s=>sides.get(sideKey(s.a,s.b)));
+    if(members.some(s=>!s))throw Error("An equal-side mark references an unknown edge.");
+    if(members.some(s=>Math.abs(s.length-members[0].length)>EPSILON)){
+      throw Error("Equal marks must identify genuinely equal lengths.");
+    }
+    members.forEach(s=>s.equalMark=true);
+  }
   const targetKey = sideKey(puzzle.target.a, puzzle.target.b);
   if (!sides.has(targetKey)) throw Error("The target must be an edge of a triangle.");
   sides.get(targetKey).isTarget = true;
@@ -110,8 +119,8 @@ export function readySteps(puzzle, sides, solved) {
       "s = " + parts.map(s => exactLength(s.length)).join(" + ") :
       "s = " + exactLength(whole.length) + " − " + exactLength(otherPart.length);
     candidates.push({
-      kind: "overhang",
-      triangleId: "OVERHANG",
+      kind: relation.label==="TWO SHARED SECTIONS"?"split":"overhang",
+      triangleId: relation.label==="TWO SHARED SECTIONS"?"STRAIGHT EDGE":"OVERHANG",
       sideKey: answer.key,
       isTarget: answer.isTarget,
       isHypotenuse: false,
@@ -120,6 +129,23 @@ export function readySteps(puzzle, sides, solved) {
       answer: exactLength(answer.length),
       length: answer.length
     });
+  }
+  // Equal tick marks: use one discovered side to deduce its match,
+  // without requiring a new Pythagoras calculation.
+  for(const group of puzzle.equalSideGroups || []){
+    const members=group.map(item=>sides.get(sideKey(item.a,item.b)));
+    const known=members.filter(side=>isKnown(side,solved));
+    const unknown=members.filter(side=>!isKnown(side,solved));
+    if(!known.length)continue;
+    for(const side of unknown){
+      candidates.push({
+        kind:"equal",triangleId:"MATCHING MARKS",
+        sideKey:side.key,isTarget:side.isTarget,isHypotenuse:false,
+        known:[known[0].key],
+        equation:"s = "+exactLength(known[0].length)+" (matching tick marks)",
+        answer:exactLength(side.length),length:side.length
+      });
+    }
   }
   return candidates;
 }

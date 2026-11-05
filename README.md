@@ -10,9 +10,9 @@ A mathematics puzzle website with an Ancient Greek aesthetic: watch right-angled
 
 1. Pick a challenge. Watch the falling triangles, or skip/replay the animation.
 2. Select a marked side or click a triangle to investigate it. A side shared by two triangles has one mathematical length.
-3. Enter an exact length (`√205` or `sqrt(205)`) or a suitably rounded decimal.
+3. Enter an exact length (`√281` or `sqrt(281)`) or a suitably rounded decimal.
 4. Explore independently or request progressively revealing hints.
-5. Find `x` to finish, then review the full worked solution.
+5. Find `x` to finish, then review the full worked solution. Two puzzles also unlock perimeter and area extensions.
 
 Any correct length can be entered, in any order; students may solve the puzzle on paper and enter the final answer directly.
 
@@ -37,12 +37,15 @@ npm run check
 - `index.html` — base Ancient Greek interface
 - `pass-b.css` — student-solving UI styles
 - `app.js` — frontend geometry, interactions, progress and animations
-- `puzzle-engine.js` — dependency graph, valid answer evaluation and worked steps
-- `PASS_A.md` and `PASS_B.md` — development/review notes
+- `puzzle-engine.js` — dependency graph, equal-length marks, valid answer evaluation and worked steps
+- `pile-geometry.js` — curated puzzle catalogue with overhang layouts
+- `pile-variants.js` — precise split-edge and bridging arrangements
+- `pass-c.css` — collection preview and extension styling
+- `PASS_A.md`, `PASS_B.md`, `PASS_B2.md` and `PASS_C.md` — development/review notes
 - `tests/` — automated checks
 - `.github/workflows/` — GitHub Pages and validation workflows
 
-The starter library contains two original, mathematically exact puzzles. The planned Pass C adds more challenging problem types.
+The library contains **six** original, mathematically exact puzzles including inset and projecting overhangs, one long side covering two shorter sides, independent branches, matching equal-length ticks, exact surds and compound-shape extensions. See [`PASS_C.md`](PASS_C.md) for mathematical answers and QA requirements.
 
 ## Credits
 

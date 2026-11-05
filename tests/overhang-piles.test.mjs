@@ -61,11 +61,11 @@ test("Overhang is necessary in the dependency chain",()=>{
 });
 test("Either exact or appropriately rounded final answer is accepted",()=>{
   assert.equal(correctAnswer("10",puzzles[0].solution),true);
-  assert.equal(correctAnswer("√281",puzzles[1].solution),true);
-  assert.equal(correctAnswer("sqrt(281)",puzzles[1].solution),true);
-  assert.equal(correctAnswer("16.8",puzzles[1].solution),true);
-  assert.equal(correctAnswer("16.76",puzzles[1].solution),true);
-  assert.equal(correctAnswer("16.7",puzzles[1].solution),false);
+  assert.equal(correctAnswer("√281",puzzles.find(p=>p.id==="labyrinth").solution),true);
+  assert.equal(correctAnswer("sqrt(281)",puzzles.find(p=>p.id==="labyrinth").solution),true);
+  assert.equal(correctAnswer("16.8",puzzles.find(p=>p.id==="labyrinth").solution),true);
+  assert.equal(correctAnswer("16.76",puzzles.find(p=>p.id==="labyrinth").solution),true);
+  assert.equal(correctAnswer("16.7",puzzles.find(p=>p.id==="labyrinth").solution),false);
 });
 test("Invalid straight-line segment measurement is rejected",()=>{
   const puzzle=makeOverhangPile({

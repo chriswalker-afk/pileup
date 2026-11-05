@@ -7,11 +7,29 @@ const p=(x,y)=>({x,y}),d=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y),mid=(a,b)=>p((a.x+b.
 const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.x+a.y*b.y;
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
 let sideMap=buildSides(current),solved=new Set(),notes={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
+let extensionMode=false,extensionGrades={};
 const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav><a href="#home">THE AGORA</a><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
+function miniPreview(puzzle){
+  const points=puzzle.triangles.flatMap(t=>t.pts);
+  const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x));
+  const height=Math.max(...points.map(p=>p.y));
+  const factor=Math.min(123/(right-left),72/height);
+  const px=p=>({
+    x:80+(p.x-(left+right)/2)*factor,
+    y:86-p.y*factor
+  });
+  const figures=puzzle.triangles.map(t=>
+    '<polygon fill="'+t.color+'" points="'+t.pts.map(point=>{
+      const v=px(point);return v.x.toFixed(1)+','+v.y.toFixed(1);
+    }).join(' ')+'"/>').join('');
+  return '<svg class="mini-pile" aria-hidden="true" viewBox="0 0 160 105" focusable="false">'+
+    '<line class="mini-floor" x1="12" y1="88" x2="148" y2="88"/>'+
+    figures+'</svg>';
+}
 function home(gallery=false){
  screen='home';clearTimeout(finishTimer);
- root.innerHTML=header()+`<main><section class="hero"><div><div class="eyebrow">— AN ANCIENT PUZZLE · A MODERN CHALLENGE</div><h1>When triangles<br><em>fall into place.</em></h1><p class="lead">In the footsteps of Pythagoras, follow a trail of hidden lengths. Each answer unlocks the next. Can you uncover the final side?</p><div class="actions"><button class="btn primary" data-puzzle="first-fall">BEGIN THE TRIAL &nbsp; →</button><button class="btn plain" data-gallery>EXPLORE THE CHALLENGES ↗</button></div><p class="footnote">✦ &nbsp; RIGHT-ANGLED TRIANGLES. ONE HIDDEN ANSWER.</p></div><div class="illustration"><svg viewBox="0 0 470 430" role="img" aria-label="Decorative arrangement of coloured geometric triangles"><polygon points="75,260 285,260 285,116" fill="#d7ae69" stroke="#433c31" stroke-width="3"/><polygon points="285,116 285,260 402,190" fill="#7fa7a1" stroke="#433c31" stroke-width="3"/><polygon points="75,260 285,260 184,370" fill="#b77f70" stroke="#433c31" stroke-width="3"/><polygon points="134,73 285,116 75,260" fill="#a7a0bb" stroke="#433c31" stroke-width="3"/><g fill="#433c31" font-size="21" font-family="Georgia,serif"><text x="170" y="249">a</text><text x="308" y="222">b</text><text x="194" y="311">c</text><text x="194" y="102">?</text></g><path d="M47 367H425M47 375H425" stroke="#ae9e80"/></svg><span class="illustration-caption">FIG. I — THE BEAUTY OF CONNECTION</span></div></section><div class="meander"></div><section class="section"><div class="section-title"><div class="eyebrow">THE METHOD</div><h2>Three steps to discovery</h2><p>Simple in principle. Surprisingly deep in practice.</p></div><div class="steps"><article><span class="number">I.</span><h3>Watch the fall</h3><p>Right-angled triangles tumble onto a carefully constructed geometric tablet.</p></article><article><span class="number">II.</span><h3>Follow the clues</h3><p>Known lengths lead to unknown lengths. Discover where the chain begins.</p></article><article><span class="number">III.</span><h3>Find the final side</h3><p>Use Pythagoras' theorem to connect the pieces and reach the target.</p></article></div></section><section class="section" id="challenges"><div class="section-title"><div class="eyebrow">CHOOSE YOUR PATH</div><h2>The challenges</h2><p>Two mathematically exact piles. Choose your own route to the answer.</p></div><div class="cards">${puzzles.map((x,i)=>`<button class="challenge-card" data-puzzle="${x.id}"><span class="card-index">0${i+1} / ${x.epithet}</span><span class="card-mark" aria-hidden="true">${i?'⌁':'△'}</span><span class="card-title">${x.title}</span><span class="card-description">${x.description}</span><span class="card-footer"><span>${x.triangles.length} TRIANGLES</span><span>${x.difficulty} ↗</span></span></button>`).join('')}</div></section></main>`+footer();
+ root.innerHTML=header()+`<main><section class="hero"><div><div class="eyebrow">— AN ANCIENT PUZZLE · A MODERN CHALLENGE</div><h1>When triangles<br><em>fall into place.</em></h1><p class="lead">In the footsteps of Pythagoras, follow a trail of hidden lengths. Each answer unlocks the next. Can you uncover the final side?</p><div class="actions"><button class="btn primary" data-puzzle="first-fall">BEGIN THE TRIAL &nbsp; →</button><button class="btn plain" data-gallery>EXPLORE THE CHALLENGES ↗</button></div><p class="footnote">✦ &nbsp; RIGHT-ANGLED TRIANGLES. ONE HIDDEN ANSWER.</p></div><div class="illustration"><svg viewBox="0 0 470 430" role="img" aria-label="Decorative arrangement of coloured geometric triangles"><polygon points="75,260 285,260 285,116" fill="#d7ae69" stroke="#433c31" stroke-width="3"/><polygon points="285,116 285,260 402,190" fill="#7fa7a1" stroke="#433c31" stroke-width="3"/><polygon points="75,260 285,260 184,370" fill="#b77f70" stroke="#433c31" stroke-width="3"/><polygon points="134,73 285,116 75,260" fill="#a7a0bb" stroke="#433c31" stroke-width="3"/><g fill="#433c31" font-size="21" font-family="Georgia,serif"><text x="170" y="249">a</text><text x="308" y="222">b</text><text x="194" y="311">c</text><text x="194" y="102">?</text></g><path d="M47 367H425M47 375H425" stroke="#ae9e80"/></svg><span class="illustration-caption">FIG. I — THE BEAUTY OF CONNECTION</span></div></section><div class="meander"></div><section class="section"><div class="section-title"><div class="eyebrow">THE METHOD</div><h2>Three steps to discovery</h2><p>Simple in principle. Surprisingly deep in practice.</p></div><div class="steps"><article><span class="number">I.</span><h3>Watch the fall</h3><p>Right-angled triangles tumble onto a carefully constructed geometric tablet.</p></article><article><span class="number">II.</span><h3>Follow the clues</h3><p>Known lengths lead to unknown lengths. Discover where the chain begins.</p></article><article><span class="number">III.</span><h3>Find the final side</h3><p>Use Pythagoras' theorem to connect the pieces and reach the target.</p></article></div></section><section class="section" id="challenges"><div class="section-title"><div class="eyebrow">CHOOSE YOUR PATH</div><h2>The challenges</h2><p>Six original piles, each with a different way to connect the mathematics.</p></div><div class="cards">${puzzles.map((x,i)=>`<button class="challenge-card" data-puzzle="${x.id}"><span class="card-index">${String(i+1).padStart(2,"0")} / ${x.epithet}</span>${miniPreview(x)}<span class="card-title">${x.title}</span><span class="card-description">${x.description}</span><span class="card-tags">${(x.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</span><span class="card-footer"><span>${x.triangles.length} TRIANGLES</span><span>${x.difficulty} ↗</span></span></button>`).join('')}</div></section></main>`+footer();
  bind();if(gallery)requestAnimationFrame(()=>document.getElementById('challenges')?.scrollIntoView({behavior:reduced.matches?'instant':'smooth'}));
 }
 function el(name,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,String(v)));if(text)x.textContent=text;return x;}
@@ -21,11 +39,11 @@ function escapeHtml(text){
 }
 function saveProgress(){
   try{localStorage.setItem("pileup-pass-b-v2-"+current.id,JSON.stringify({
-    solved:[...solved],notes,hintLevels,hintsUsed
+    solved:[...solved],notes,hintLevels,hintsUsed,extensionGrades
   }));}catch(_){}
 }
 function loadProgress(){
-  solved=new Set();notes={};hintLevels={};hintsUsed=0;
+  solved=new Set();notes={};hintLevels={};hintsUsed=0;extensionGrades={};
   try{
     const saved=JSON.parse(localStorage.getItem("pileup-pass-b-v2-"+current.id)||"null");
     if(!saved || typeof saved!=="object")return;
@@ -43,6 +61,9 @@ function loadProgress(){
       }
     }
     hintsUsed=Math.max(0,Number(saved.hintsUsed)||0);
+    if(saved.extensionGrades && typeof saved.extensionGrades==="object"){
+      for(const item of current.extensions||[])if(saved.extensionGrades[item.id]===true)extensionGrades[item.id]=true;
+    }
   }catch(_){}
 }
 function stepsRemaining(){
@@ -157,6 +178,27 @@ function renderDiagram(animate=false,forceMotion=false){
     });
     svg.append(group);
   });
+  // Matching tick marks indicate equal lengths, not extra given values.
+  // Their geometry is drawn on the actual side (above the hit targets
+  // and below the labels), so students see the mathematical convention.
+  for(const [groupIndex,group] of (current.equalSideGroups||[]).entries()){
+    for(const descriptor of group){
+      const side=sideMap.get(sideKey(descriptor.a,descriptor.b));
+      if(!side)continue;
+      const endpoints=toSide(side),dx=endpoints.b.x-endpoints.a.x,dy=endpoints.b.y-endpoints.a.y;
+      const L=Math.hypot(dx,dy),nx=-dy/L,ny=dx/L,tx=dx/L,ty=dy/L;
+      const ticks=Math.min(3,groupIndex+2);
+      for(let j=0;j<ticks;j++){
+        const shift=(j-(ticks-1)/2)*8;
+        const cx=(endpoints.a.x+endpoints.b.x)/2+tx*shift;
+        const cy=(endpoints.a.y+endpoints.b.y)/2+ty*shift;
+        svg.append(el("line",{
+          x1:cx-nx*8,y1:cy-ny*8,x2:cx+nx*8,y2:cy+ny*8,
+          class:"equal-side-tick"
+        }));
+      }
+    }
+  }
   if(selectedSide){
     const side=sideMap.get(selectedSide),ends=toSide(side);
     svg.append(el("line",{x1:ends.a.x,y1:ends.a.y,x2:ends.b.x,y2:ends.b.y,class:"active-side"}));
@@ -199,9 +241,13 @@ function renderDiagram(animate=false,forceMotion=false){
     point:xy({x:t.pts.reduce((sum,z)=>sum+z.x,0)/3,y:t.pts.reduce((sum,z)=>sum+z.y,0)/3})
   }));
   const first=current.triangles[0];
-  const fullLineKey=sideKey(current.lengthRelations[0].whole.a,current.lengthRelations[0].whole.b);
-  const partialLineKey=sideKey(current.lengthRelations[0].parts[0].a,current.lengthRelations[0].parts[0].b);
-  const overlapKeys=new Set([fullLineKey,partialLineKey]);
+  // A long edge may align with two or more independently owned edges.
+  // Track every piece of each straight-line relation, not just the first.
+  const overlapKeys=new Set();
+  for(const rel of current.lengthRelations||[]){
+    overlapKeys.add(sideKey(rel.whole.a,rel.whole.b));
+    for(const part of rel.parts)overlapKeys.add(sideKey(part.a,part.b));
+  }
   function positioning(side,labelWidth){
     const ends=toSide(side),dx=ends.b.x-ends.a.x,dy=ends.b.y-ends.a.y;
     const length=Math.hypot(dx,dy),mx=(ends.a.x+ends.b.x)/2,my=(ends.a.y+ends.b.y)/2;
@@ -258,9 +304,7 @@ function renderDiagram(animate=false,forceMotion=false){
       const nx=chosen.nx,ny=chosen.ny,dx=nx*13,dy=ny*13;
       const start={x:ends.a.x+dx,y:ends.a.y+dy},stop={x:ends.b.x+dx,y:ends.b.y+dy};
       group.append(el("line",{x1:start.x,y1:start.y,x2:stop.x,y2:stop.y,class:"overhang-bracket"}));
-      const ex=(stop.x-start.x)/Math.hypot(stop.x-start.x,stop.y-start.y);
-      const ey=(stop.y-start.y)/Math.hypot(stop.x-start.x,stop.y-start.y);
-      for(const pt of [start,stop]){
+            for(const pt of [start,stop]){
         group.append(el("line",{x1:pt.x-nx*5,y1:pt.y-ny*5,x2:pt.x+nx*5,y2:pt.y+ny*5,class:"overhang-bracket"}));
       }
     }
@@ -348,17 +392,35 @@ function hintText(side,level){
   if(!step)return "Every missing side has been discovered.";
   const isSelected=step.sideKey===side.key;
   const known=step.known.map(key=>exactLength(sideMap.get(key).length)+" cm");
-  if(step.kind==="overhang"){
+  if(step.kind==="equal"){
     if(!isSelected){
-      if(level===1)return "Find the complete straight side, then look carefully at the small labelled overhang.";
-      if(level===2)return "The complete side and the extra overhang measure "+known.join(" and ")+".";
-      if(level===3)return "Use lengths along a straight line: "+step.equation+".";
-      return "Subtract the overhang to find the shorter shared side: "+step.answer+" cm.";
+      if(level===1)return "Look for the identical tick marks on two different sides.";
+      if(level===2)return "Both marked sides have the same length. One of them is already known.";
+      if(level===3)return step.equation+".";
+      return "The side with matching tick marks is "+step.answer+" cm.";
     }
-    if(level===1)return "The shorter side and labelled overhang lie along one straight line.";
-    if(level===2)return "The two known lengths are "+known.join(" and ")+". Think about which one is the whole.";
-    if(level===3)return step.equation+". No Pythagoras is needed in this step.";
-    return "The missing straight-line part is "+step.answer+" cm. Enter it to continue.";
+    if(level===1)return "The small matching strokes on two edges tell you something about their lengths.";
+    if(level===2)return "Find the other side with identical tick marks. Its value is "+known[0]+".";
+    if(level===3)return step.equation+".";
+    return "This side is "+step.answer+" cm. Enter it above.";
+  }
+  if(step.kind==="split"||step.kind==="overhang"){
+    const split=step.kind==="split";
+    const action=step.equation.includes("−")?"subtract":"add";
+    if(!isSelected){
+      if(level===1)return split ?
+        "One long side lies along two smaller triangle sides. Both smaller lengths matter." :
+        "Look for the short labelled overhang at the end of a straight side.";
+      if(level===2)return "The available straight-line lengths are "+known.join(" and ")+".";
+      if(level===3)return step.equation+".";
+      return "Use the lengths on the same straight line to find "+step.answer+" cm.";
+    }
+    if(level===1)return split ?
+      "The shared side is made from two consecutive shorter edges." :
+      "The projecting or inset section and the other edge lie on one straight line.";
+    if(level===2)return "The known sections measure "+known.join(" and ")+". Decide which side is the whole.";
+    if(level===3)return "Use straight-line lengths: "+step.equation+". You must "+action+".";
+    return "This section measures "+step.answer+" cm. Enter it to continue.";
   }
   if(!isSelected){
     if(level===1)return "Begin with triangle "+step.triangleId+". It currently has two known side lengths.";
@@ -374,9 +436,10 @@ function hintText(side,level){
 
 function incorrectFeedback(side,value){
   const step=readySteps(current,sideMap,solved).find(st=>st.sideKey===side.key);
-  if(step?.kind==="overhang"){
-    return "Check the straight line: complete length = shorter part + labelled overhang. You may need to subtract.";
+  if(step?.kind==="overhang"||step?.kind==="split"){
+    return "Check the straight line: decide which lengths form the complete section, and whether you need to add or subtract.";
   }
+  if(step?.kind==="equal")return "Matching tick marks represent equal lengths. Look for the known matching side.";
   if(step){
     const known=step.known.map(key=>sideMap.get(key).length);
     if(step.isHypotenuse){
@@ -404,20 +467,27 @@ function renderInspector(){
     const all=solutionSteps(current,sideMap);
     panel.innerHTML=`<span class="kicker">THE GEOMETER’S SCROLL</span>
       <h3 class="inspect-title">Complete worked solution</h3>
-      <p class="solution-disclaimer">One valid order is shown. You may have solved the triangles in a different order.</p>
+      <p class="solution-disclaimer">One valid order is shown. Shared edges may be solved by different routes.</p>
       <ol class="review-list">
         ${all.map((step,index)=>`<li class="review-item">
-          <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · TRIANGLE ${step.triangleId}</span><span>LOCATE ↗</span></button>
-          <p class="step-narrative">${step.kind==="overhang"?"Subtract the labelled overhang from the complete side.":"Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
-          <p class="step-equation">${step.equation}</p>
+          <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · ${step.kind==="pythagoras"?"TRIANGLE "+step.triangleId:step.kind==="equal"?"EQUAL MARKS":step.kind==="split"?"SHARED LONG SIDE":"OVERHANG"}</span><span>LOCATE ↗</span></button>
+          <p class="step-narrative">${step.kind==="equal"?"Matching ticks mean these two lengths are equal.":step.kind==="split"?"Combine the two shorter edges along one long side.":step.kind==="overhang"?(step.equation.includes("−")?"Subtract the overhang from the longer edge.":"Add the projecting overhang to the supporting side."):"Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
+          <p class="step-equation">${escapeHtml(step.equation)}</p>
           <p class="step-result">${step.isTarget?"x":"s"} = ${step.answer} cm</p>
         </li>`).join("")}
-      </ol><button class="btn-link" id="return-solving">← RETURN TO THE PILE</button>`;
+      </ol>
+      ${(current.extensions||[]).length?`<div class="worked-extensions"><h4>Compound-shape extensions</h4>${current.extensions.map(item=>
+        `<p><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.working)}</span></p>`).join("")}</div>`:""}
+      <button class="btn-link" id="return-solving">← RETURN TO THE PILE</button>`;
     panel.querySelector("#return-solving").addEventListener("click",()=>{solutionOpen=false;renderInspector();});
     panel.querySelectorAll("[data-review-side]").forEach(button=>button.addEventListener("click",()=>{
       selectedSide=button.dataset.reviewSide;
       renderDiagram(false);
     }));
+    return;
+  }
+  if(extensionMode && current.extensions?.length){
+    renderExtensions(panel);
     return;
   }
   const unprovided=[...sideMap.values()].filter(s=>!s.given);
@@ -464,6 +534,8 @@ function renderInspector(){
   panel.innerHTML=`<span class="kicker">THE GEOMETER’S NOTES</span>
     ${choices}
     ${body}
+    ${current.extensions?.length && solved.has(sideKey(current.target.a,current.target.b))?
+      `<button class="extension-cta" id="open-extension-panel">✦ GEOMETER'S EXTENSIONS · PERIMETER & AREA →</button>`:""}
     <div class="panel-actions">
       <button class="btn-link" id="solution-toggle">REVEAL FULL SOLUTION ↗</button>
       <button class="btn-link" id="reset-progress">START AGAIN ↻</button>
@@ -473,9 +545,12 @@ function renderInspector(){
     else{selectedSide=null;feedback=null;renderDiagram(false);}
   });
   panel.querySelector("#solution-toggle").addEventListener("click",()=>{solutionOpen=true;renderInspector();});
+  panel.querySelector("#open-extension-panel")?.addEventListener("click",()=>{
+    extensionMode=true;selectedSide=null;renderDiagram(false);
+  });
   panel.querySelector("#reset-progress").addEventListener("click",()=>{
     if(!window.confirm("Clear your discovered lengths and working notes for this challenge?"))return;
-    solved=new Set();notes={};hintLevels={};hintsUsed=0;feedback=null;selectedSide=null;
+    solved=new Set();notes={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
     saveProgress();renderDiagram(false);
   });
   const form=panel.querySelector("#answer-form");
@@ -493,6 +568,55 @@ function renderInspector(){
     notes[side.key]=event.target.value;saveProgress();
   });
 }
+
+function renderExtensions(panel){
+  const completed=(current.extensions||[]).filter(e=>extensionGrades[e.id]===true).length;
+  panel.innerHTML=
+    '<span class="kicker">THE GEOMETER’S SECOND TRIAL</span>'+
+    '<h3 class="inspect-title">Perimeter & area extensions</h3>'+
+    '<p class="inspect-intro">The final side is found. Now consider the <strong>whole outer shape</strong>, not just the individual triangles. Internal boundaries are not part of the perimeter.</p>'+
+    '<p class="extension-progress">'+completed+' / '+current.extensions.length+' extensions solved</p>'+
+    current.extensions.map(item=>{
+      const solvedItem=extensionGrades[item.id]===true;
+      return '<section class="extension-task"><h4>'+escapeHtml(item.title)+'</h4>'+
+        '<p>'+escapeHtml(item.prompt)+'</p>'+
+        (solvedItem?'<div class="result-feedback good">✓ Correct: '+escapeHtml(exactLength(item.value))+' '+escapeHtml(item.unit)+'</div>':
+          '<form class="extension-form" data-extension-id="'+escapeHtml(item.id)+'" autocomplete="off">'+
+          '<label for="extension-'+escapeHtml(item.id)+'">YOUR ANSWER ('+escapeHtml(item.unit)+')</label>'+
+          '<div class="input-row"><input id="extension-'+escapeHtml(item.id)+'" required maxlength="90" inputmode="decimal" placeholder="Your answer" aria-label="'+escapeHtml(item.title)+'"><button class="submit" type="submit">CHECK</button></div>'+
+          '<div class="extension-feedback" role="status" aria-live="polite"></div>'+
+          '</form>')+
+        '</section>';
+    }).join('')+
+    (completed===current.extensions.length?'<p class="all-extensions-done">✦ You have completed the full geometer’s challenge!</p>':"")+
+    '<div class="panel-actions"><button class="btn-link" id="extension-back">← RETURN TO THE PILE</button>'+
+    '<button class="btn-link" id="extension-solutions">REVIEW WORKED SOLUTIONS ↗</button></div>';
+  panel.querySelector("#extension-back").addEventListener("click",()=>{
+    extensionMode=false;renderInspector();
+  });
+  panel.querySelector("#extension-solutions").addEventListener("click",()=>{
+    solutionOpen=true;renderInspector();
+  });
+  panel.querySelectorAll(".extension-form").forEach(form=>{
+    form.addEventListener("submit",event=>{
+      event.preventDefault();
+      const item=current.extensions.find(ext=>ext.id===form.dataset.extensionId);
+      if(!item)return;
+      const value=form.querySelector("input").value;
+      const status=form.querySelector(".extension-feedback");
+      if(correctAnswer(value,item.value)){
+        extensionGrades[item.id]=true;saveProgress();renderExtensions(panel);
+      }else{
+        const numeric=parseAnswer(value);
+        status.className="extension-feedback result-feedback bad";
+        status.textContent=numeric===null ?
+          "Enter a positive number or a valid mathematical expression.":
+          "Not quite. For perimeter, remove internal edges. For area, add the non-overlapping triangular regions.";
+      }
+    });
+  });
+}
+
 function submitAnswer(raw){
   const side=sideMap.get(selectedSide);if(!side||side.given)return;
   const parsed=parseAnswer(raw);
@@ -515,18 +639,20 @@ function showCompletion(){
   const dialog=document.getElementById("completion-modal");
   dialog.querySelector("#final-answer").textContent="x = "+exactLength(sideMap.get(sideKey(current.target.a,current.target.b)).length)+" cm";
   dialog.querySelector("#completion-hints").textContent=hintsUsed===0?"Without any hints":hintsUsed+" clues used";
+  dialog.querySelector("#completion-extra").hidden=!current.extensions?.length;
   if(!dialog.open)dialog.showModal();
 }
 function openPuzzle(id){
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
-  current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;screen=id;clearTimeout(finishTimer);
+  current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;extensionMode=false;screen=id;clearTimeout(finishTimer);
   loadProgress();
   if(location.hash.slice(1)!==id)history.pushState(null,"","#"+id);
   const index=puzzles.indexOf(puzzle);
+  const following=puzzles[(index+1)%puzzles.length];
   root.innerHTML=header()+`<main class="challenge-main">
     <div class="challenge-heading"><a class="back" href="#puzzles">← ALL CHALLENGES</a>
-      <span class="chapter">CHALLENGE 0${index+1} / 0${puzzles.length}</span>
-      <h1>${puzzle.title}</h1><p>${puzzle.description}</p></div>
+      <span class="chapter">CHALLENGE ${String(index+1).padStart(2,"0")} / ${String(puzzles.length).padStart(2,"0")}</span>
+      <h1>${puzzle.title}</h1><p>${puzzle.description}</p><p class="challenge-tags">${(puzzle.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</p></div>
     <div class="challenge-layout"><div class="tablet">
       <div class="tablet-bar"><span><span class="symbol">✧</span> THE GEOMETER’S TABLET</span>
         <span class="tablet-controls"><button id="replay" class="small-btn replay-button" title="Replay the falling triangles" aria-label="Replay the falling triangles">↻ <span>REPLAY FALL</span></button>
@@ -536,7 +662,7 @@ function openPuzzle(id){
       </div></div>
       <aside class="side"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><div class="rule"></div>
         <h2>Find the final <em>length.</em></h2>
-        <p class="description">Start with the bottom triangle on the floor. Look for the labelled overhang: it is part of the chain. Click any marked side to investigate.</p>
+        <p class="description">Study which sides line up. A long side may cover two shorter edges, and some pieces project beyond their support. Select any marked side to investigate.</p>
         <div class="facts"><div><span>TRIANGLES</span><strong>${puzzle.triangles.length}</strong></div>
           <div><span>GIVEN LENGTHS</span><strong>${puzzle.triangles.reduce((n,t)=>n+t.givens.length,0)+(puzzle.extraSegments?.length||0)}</strong></div></div>
         <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
@@ -546,7 +672,7 @@ function openPuzzle(id){
           <p>Any mathematically correct length is accepted, even if you solve the target first. Progress and notes stay in this browser.</p></div>
       </aside>
     </div><div class="challenge-bottom"><span>ANCIENT WISDOM. FRESH PERSPECTIVES.</span>
-      <button data-puzzle="${puzzles.find(x=>x.id!==id).id}">TRY THE OTHER CHALLENGE →</button></div>
+      <button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
     </main>
     <dialog class="completion-dialog" id="completion-modal" aria-labelledby="completion-heading">
       <div class="completion-inner"><div class="completion-icon">✧</div><h2 id="completion-heading">The pile is solved.</h2>
@@ -554,7 +680,8 @@ function openPuzzle(id){
       <div class="completion-answer" id="final-answer"></div>
       <p id="completion-hints"></p><div class="completion-controls">
       <button class="confirm" id="completion-review">REVIEW THE FULL SOLUTION →</button>
-      <button id="completion-other">TRY ANOTHER PILE</button></div>
+      <button id="completion-extra" hidden>TRY PERIMETER & AREA EXTENSIONS ↗</button>
+      <button id="completion-other">TRY THE NEXT PILE</button></div>
       <button class="completion-close" id="completion-close">RETURN TO THE PILE</button></div>
     </dialog>`+footer();
   bind();
@@ -570,8 +697,11 @@ function openPuzzle(id){
   document.getElementById("completion-review").addEventListener("click",()=>{
     modal.close();solutionOpen=true;renderInspector();
   });
+  document.getElementById("completion-extra").addEventListener("click",()=>{
+    modal.close();extensionMode=true;solutionOpen=false;selectedSide=null;renderDiagram(false);
+  });
   document.getElementById("completion-other").addEventListener("click",()=>{
-    modal.close();openPuzzle(puzzles.find(x=>x.id!==id).id);
+    modal.close();openPuzzle(puzzles[(puzzles.findIndex(p=>p.id===id)+1)%puzzles.length].id);
   });
   renderDiagram(true);
   window.scrollTo({top:0,behavior:"instant"});
