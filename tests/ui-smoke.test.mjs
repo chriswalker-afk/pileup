@@ -272,6 +272,22 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     assert.match(puzzlePage,/id="diagram"/);
     assert.match(puzzlePage,/id="workspace-size-toggle"/,
       "The wider working panel button must remain available");
+    // A completed length is announced by a dedicated, stable live
+    // region; avoid making the whole mathematical editor announce again.
+    assert.match(puzzlePage,/id="progress-announcement" class="screenreader-only" role="status" aria-live="polite" aria-atomic="true"/);
+    assert.doesNotMatch(puzzlePage,/id="inspector" aria-live=/);
+    // Completion artwork is decorative; the actual mathematical answer,
+    // review, extensions and next challenge actions remain operable.
+    assert.match(puzzlePage,/class="completion-crest"/);
+    assert.match(puzzlePage,/class="completion-laurel"/);
+    assert.match(puzzlePage,/class="completion-laurel-leaves"/);
+    assert.match(puzzlePage,/class="completion-laurel-seal"/);
+    assert.match(puzzlePage,/aria-hidden="true"/);
+    assert.match(puzzlePage,/aria-describedby="completion-subtitle"/);
+    for(const id of ["final-answer","completion-hints","completion-review",
+      "completion-extra","completion-other","completion-close"]){
+      assert.ok(puzzlePage.includes('id="'+id+'"'),"Missing completion action "+id);
+    }
   }finally{
     for(const name of names){
       if(oldGlobals[name]===undefined)delete globalThis[name];
