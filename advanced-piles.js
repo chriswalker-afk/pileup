@@ -68,7 +68,7 @@ export function makeRectangleChallenge({
  for(const step of firstSteps){
    const t=attach(last,hypotenuse(last),step.at,step.leg,
      roman[triangles.length],palette[triangles.length%palette.length]);
-   triangles.push(t);last=t;
+   triangles.push(t);fallOrder.push(t.id);last=t;
  }
  if(second){
    // A second 90° frame sits outside the previous hypotenuse.
@@ -77,16 +77,22 @@ export function makeRectangleChallenge({
    // until Pythagoras is applied within the rectangle.
    const frame=attachRectangle(last,hypotenuse(last),second.depth,
      "R2","#c1c6b7");
-   rectangles.push(frame);
+   rectangles.push(frame);fallOrder.push(frame.id);
+   frame.suppressLabels=[
+     {a:frame.pts[2],b:frame.pts[3]},
+     second.edge==="left"?
+       {a:frame.pts[1],b:frame.pts[2]}:
+       {a:frame.pts[0],b:frame.pts[3]}
+   ];
    const edge=second.edge==="left"?
      [frame.pts[0],frame.pts[3]]:[frame.pts[1],frame.pts[2]];
    const next=attach(frame,edge,second.at,second.leg,
      roman[triangles.length],palette[triangles.length%palette.length]);
-   triangles.push(next);last=next;
+   triangles.push(next);fallOrder.push(next.id);last=next;
    for(const step of second.steps){
      const t=attach(last,hypotenuse(last),step.at,step.leg,
        roman[triangles.length],palette[triangles.length%palette.length]);
-     triangles.push(t);last=t;
+     triangles.push(t);fallOrder.push(t.id);last=t;
    }
  }
  const [a,b]=hypotenuse(last);
@@ -95,7 +101,7 @@ export function makeRectangleChallenge({
    throw Error("The authored rectangle pile falls below the floor.");
  return {
    id,title,epithet,difficulty,description,tags,
-   triangles,rectangles,
+   triangles,rectangles,fallOrder,
    target:{a,b},floor:{a:P,b:Q},
    solution:len(a,b),
    topology:second?"double-rectangle-chain":"rectangle-diagonal-chain",
