@@ -55,7 +55,7 @@ Inspired by the Pythagoras Pile Up classroom activity at [Great Maths Teaching I
 
 ## Working and layouts
 
-The homepage shows all six puzzles beside the introduction on a typical desktop screen. Individual puzzle screens keep the tablet and working panel visible simultaneously, with internal scrolling for longer workings. On phones and narrow tablets the layout stacks to preserve legibility.
+The homepage shows all nine puzzles beside the introduction on a typical desktop screen, with one-column cards on phones. Individual puzzle screens keep the tablet and working panel visible simultaneously, with internal scrolling for longer workings. On phones and narrow tablets the layout stacks to preserve legibility.
 
 Each side has **maths lines** (MathLive input with roots, fractions and powers) and a **drawing pad** (pen, stroke eraser, undo, clear). Work is stored locally per side in the browser. The old free-text textarea has been replaced; previously saved text is migrated to maths lines when possible. MathLive is loaded from a pinned CDN version, with a basic LaTeX input fallback if the CDN is unavailable.
 
@@ -98,3 +98,9 @@ Puzzle pages now carry engraved difficulty seals, a Greek-key tablet frame and a
 ## Graphics — Pass C
 
 A completed pile now reveals an Ancient Greek laurel-and-Pythagoras seal, with the exact final answer and the existing review/extension/next-pile controls. Correct intermediate lengths briefly illuminate their own label, advance the progress meter and announce the new discovery through a concise screen-reader status. Effects respect reduced-motion settings and leave the working area unchanged. See [Graphics Pass C](GRAPHICS_PASS_C.md) for details and an acceptance checklist.
+
+## Browser release audit (5 November 2026)
+
+The site includes a real-Chromium browser audit across **five screen sizes**, testing all **nine puzzles**, the homepage, drawing pad, autoplay, exact-answer completion, saved working and reduced-motion settings. The audit found and fixed the mobile challenge-gallery column bug, short-laptop drawing parchment overflow, and completion-wreath/title overlap.
+
+**Final verified result: 62 of 62 browser checks passed**, in addition to `npm run check`. See [Release audit and review notes](RELEASE_AUDIT_2026-11-05.md) for a full coverage matrix, fixes, screenshots and remaining iOS/stylus test limitations.
