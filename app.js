@@ -660,7 +660,20 @@ function renderDiagram(animate=false,forceMotion=false){
       y:t.pts.reduce((sum,z)=>sum+z.y,0)/t.pts.length})
   }));
   const relations=classifyRelationSides(current.lengthRelations,sideKey);
-  const sides=[...sideMap.values()].filter(side=>!side.suppressLabel);
+  // The 13-triangle photographic-style challenge would otherwise
+  // open with a distracting cloud of 18 question-mark chips. Like the
+  // reference worksheet, initially show the measured lengths and x.
+  // Selecting any shape/side reveals its unresolved measurements;
+  // successful discoveries also remain visible. Every side still has
+  // a selectable SVG hit target and a selector option.
+  const quietInterlock=current.id==="great-interlock";
+  const sides=[...sideMap.values()].filter(side=>{
+    if(side.suppressLabel)return false;
+    if(!quietInterlock)return true;
+    return side.given||side.isTarget||solved.has(side.key)||
+      (selectedSide&&(side.key===selectedSide||
+        side.triangleIds.includes(focusedShapeId)));
+  });
   // Reserve the least obstructed spots for givens and target x.
   sides.sort((a,b)=>Number(b.given)-Number(a.given)||
     Number(b.isOverhang)-Number(a.isOverhang)||
@@ -953,7 +966,7 @@ function renderInspector(){
         aria-pressed="${focusLabels}" title="${focusLabels?"Show every measurement":"Show only measurements belonging to the selected shape"}">
         ${focusLabels?"ALL LABELS":"FOCUS VIEW"}</button></div>
     <div class="clarity-selector-row"><select id="side-select">
-      <option value="">Select a marked side…</option>
+      <option value="">${current.id==="great-interlock"?"Select a side…":"Select a marked side…"}</option>
       ${unprovided.map((s,i)=>`<option value="${s.key}" ${selectedSide===s.key?"selected":""}>${s.isTarget?"Target x":"Side "+(i+1)+" · triangle "+s.triangleIds.join(" & ")}${solved.has(s.key)?" ✓":""}</option>`).join("")}
     </select>
     <button id="locate-side" type="button" class="clarity-locate"
@@ -961,7 +974,7 @@ function renderInspector(){
       aria-label="Locate selected side in diagram" ${selectedSide?"":"disabled"}>LOCATE ↗</button></div></div>`;
   let body;
   if(!side){
-    body=`<div class="workspace-brief"><strong>Select a ? on the diagram</strong><span>Or begin calculations on your scratchpad.</span></div>
+    body=`<div class="workspace-brief"><strong>${current.id==="great-interlock"?"Select a triangle or choose a side":"Select a ? on the diagram"}</strong><span>Or begin calculations on your scratchpad.</span></div>
       <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(side.given){
     body=`<div class="workspace-brief"><strong>Given: ${exactLength(side.length)} cm</strong><span>Select a missing length to solve it.</span></div>
