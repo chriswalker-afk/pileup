@@ -1,0 +1,31 @@
+name: Browser and visual usability audit
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chromium-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install browser automation client
+        run: npm install --no-save --ignore-scripts playwright-core@1.56.1
+      - name: Run static site and Chromium audit
+        run: |
+          google-chrome --version
+          python3 -m http.server 4173 > /tmp/pileup-http.log 2>&1 &
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail http://127.0.0.1:4173/ > /dev/null
+          node scripts/browser-audit.mjs
+      - name: Save audit measurements and browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pileup-browser-audit
+          path: audit-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
