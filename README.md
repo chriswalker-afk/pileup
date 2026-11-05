@@ -39,7 +39,8 @@ npm run check
 - `app.js` — frontend geometry, interactions, progress and animations
 - `puzzle-engine.js` — dependency graph, equal-length marks, valid answer evaluation and worked steps
 - `pile-geometry.js` — ten structurally distinct puzzles with exact mathematical givens
-- `distinct-piles.js` — deliberately authored cantilevers, split foundations, bridges, forks, terraces and twin plinths
+- `distinct-piles.js` — authored geometry for the retained cantilever, labyrinth and rectangle platform (plus archived constructors)
+- `reworked-piles.js` — replacement folded, zigzag, cascade and sequential-rectangle puzzles (4, 6, 7, 9)
 - `pile-variants.js` — precise split-edge and bridging arrangements
 - `pass-c.css` — collection preview and extension styling
 - `working-space.js` — line-by-line maths editor and drawing pad
