@@ -1,0 +1,178 @@
+/* GRAPHICS PASS C — reward the mathematical discovery, not the decoration.
+   The diagram and written working keep their current dimensions. */
+
+/* Visually hidden, live, meaningful progress announcements. */
+.screenreader-only{
+  position:absolute!important;width:1px!important;height:1px!important;
+  padding:0!important;margin:-1px!important;overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;white-space:nowrap!important;
+  border:0!important;clip-path:inset(50%)!important;
+}
+
+/* Individual discoveries are a one-shot glint on the EXACT solved
+   measurement, never an overlay covering the triangle underneath. */
+#diagram svg .side-chip.just-discovered rect {
+  animation:side-discovered-glow .85s ease-out both;
+  transform-box:fill-box;transform-origin:center;
+}
+@keyframes side-discovered-glow {
+  0% {stroke:#527d61;stroke-width:5px;filter:drop-shadow(0 0 11px #628b66a5);}
+  42%{stroke:#608e6a;stroke-width:3px;filter:drop-shadow(0 0 7px #628b6677);}
+  100%{stroke:#92b19a;stroke-width:1px;filter:none;}
+}
+.progress-track>span.progress-advanced {
+  animation:progress-discovery-glow .65s ease-out;
+}
+@keyframes progress-discovery-glow {
+  0%{filter:brightness(1.9) drop-shadow(0 0 6px #8cb79b);}
+  100%{filter:brightness(1) drop-shadow(0 0 0 transparent);}
+}
+body[data-view="puzzle"] #inspector .solved-engraving {
+  display:flex;align-items:center;gap:9px;
+  flex:0 0 auto;margin:2px 0 3px;padding:8px 11px;
+  border:1px solid #a8bd9e;
+  border-left:3px solid #527760;
+  background:#e9f0e2;color:#315841;
+  font:600 12px/1.4 'Cinzel',Georgia,serif;
+}
+body[data-view="puzzle"] #inspector .solved-engraving strong {
+  font-weight:600;color:#315841;
+}
+.solved-tick {
+  display:inline-grid;place-items:center;
+  flex:0 0 19px;width:19px;height:19px;
+  border-radius:50%;background:#41674d;color:#fff7df;
+  font:700 12px/1 system-ui,sans-serif;
+}
+
+/* A compact, crafted reward that can never strand the dialog actions
+   beyond the screen edge: the modal itself scrolls on short devices. */
+.completion-dialog {
+  box-sizing:border-box;
+  max-width:460px;
+  width:min(460px,calc(100% - 26px));
+  max-height:min(94dvh,680px);
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:#b8a67e transparent;
+  border:1px solid #a78b62;
+  background:#f7efde;
+  box-shadow:0 18px 75px #29241b7d;
+}
+.completion-dialog::backdrop {background:#29251dad;backdrop-filter:blur(2px);}
+.completion-inner {
+  box-sizing:border-box;
+  padding:clamp(16px,3vh,28px) clamp(15px,4vw,30px) 21px;
+  border:6px double #d0bc98;
+  background:radial-gradient(ellipse at 50% 0%,#fcf5e7 0%,#f5ead5 78%);
+}
+.completion-overline {
+  font:700 10px/1.2 'DM Sans',system-ui,sans-serif;
+  letter-spacing:.16em;color:#a18149;
+}
+.completion-crest {
+  display:grid;place-items:center;
+  height:clamp(96px,17vh,134px);
+  margin:2px auto 4px;
+  pointer-events:none;
+}
+.completion-laurel{
+  display:block;height:100%;width:auto;max-width:90%;overflow:visible;
+  color:#54775b;
+}
+.completion-laurel-stars {
+  stroke:#b09361;stroke-width:1.3;fill:#b09361;opacity:.52;
+  stroke-linecap:round;
+}
+.completion-laurel-stem {
+  fill:none;stroke:#6d8b65;stroke-width:1.9;
+  stroke-linecap:round;
+}
+.completion-laurel-leaves {fill:#718e6b;stroke:#597e60;stroke-width:.5;}
+.completion-laurel-ribbon {
+  fill:none;stroke:#aa905f;stroke-width:2.1;stroke-linecap:round;
+}
+.completion-laurel-seal circle:first-child{
+  fill:#f3ead7;stroke:#b0986c;stroke-width:1.7;
+}
+.completion-laurel-seal circle:nth-child(2){
+  fill:none;stroke:#c6b28b;stroke-width:1;stroke-dasharray:2 4;
+}
+.completion-laurel-seal path{
+  fill:#d4e0cc;stroke:#456850;stroke-width:2.1;stroke-linejoin:round;
+}
+.completion-laurel-seal circle:last-child{fill:#b28f55;}
+.completion-dialog[open] .completion-laurel-branches{
+  animation:laurel-gentle-rise .65s cubic-bezier(.16,.8,.3,1) both;
+  transform-box:fill-box;transform-origin:center;
+}
+.completion-dialog[open] .completion-laurel-seal{
+  animation:laurel-gentle-rise .48s cubic-bezier(.16,.8,.3,1) .12s both;
+  transform-box:fill-box;transform-origin:center;
+}
+@keyframes laurel-gentle-rise {
+  from{opacity:0;transform:translateY(11px) scale(.92);}
+  to{opacity:1;transform:translateY(0) scale(1);}
+}
+.completion-inner h2 {
+  font:600 clamp(22px,4vw,28px)/1.2 'Cinzel',Georgia,serif;
+  margin:2px 0 7px;color:#353f35;
+}
+.completion-inner .completion-subtitle {
+  font-size:12px;line-height:1.5;margin:0;color:#77684e;
+}
+.completion-inner .completion-answer {
+  margin:10px auto 5px;padding:9px 10px;
+  border-top:1px solid #ccb897;border-bottom:1px solid #ccb897;
+  font:600 clamp(24px,5vw,31px)/1.2 'Cinzel',Georgia,serif;
+  color:#365b46;
+  overflow-wrap:anywhere;
+}
+.completion-inner #completion-hints{
+  margin:6px 0;font-size:11px;color:#827254;
+}
+.completion-controls{
+  gap:7px;margin-top:13px;
+}
+.completion-controls button {
+  min-height:43px;padding:10px 12px;
+  letter-spacing:.045em;line-height:1.3;
+}
+.completion-controls button:hover {
+  background:#eee0c6;border-color:#8e754e;
+}
+.completion-controls .confirm:hover {
+  background:#436854;color:#fff3d6;
+}
+.completion-close {
+  min-height:39px;margin:8px auto 0;padding:8px 10px;
+}
+.completion-dialog button:focus-visible {
+  outline:3px solid #a67a38;outline-offset:3px;
+}
+@media(max-width:520px){
+  .completion-dialog {max-height:94dvh;width:calc(100% - 16px);}
+  .completion-inner {border-width:4px;padding:13px 12px 11px;}
+  .completion-crest{height:105px;}
+  .completion-inner h2{font-size:23px;}
+  .completion-controls button{min-height:44px;}
+}
+@media(max-height:630px){
+  .completion-inner {padding-top:11px;padding-bottom:10px;}
+  .completion-crest {height:88px;margin:0 auto;}
+  .completion-inner h2{font-size:22px;}
+  .completion-inner .completion-answer{margin:5px auto;padding:6px;}
+  .completion-controls{margin-top:7px;gap:5px;}
+  .completion-controls button{padding:8px 12px;min-height:38px;}
+}
+@media(prefers-reduced-motion:reduce){
+  #diagram svg .side-chip.just-discovered rect,
+  .progress-track>span.progress-advanced,
+  .completion-dialog[open] .completion-laurel-branches,
+  .completion-dialog[open] .completion-laurel-seal {
+    animation:none!important;transition:none!important;filter:none!important;
+    transform:none!important;opacity:1!important;
+  }
+}
