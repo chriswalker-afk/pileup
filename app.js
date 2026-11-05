@@ -231,34 +231,70 @@ function renderDiagram(animate=false,forceMotion=false){
     floor.append(el("line",{x1:x,y1:floorY+9,x2:x+7,y2:floorY+12,class:"stone-seam"}));
   }
   svg.append(floor);
-  current.triangles.forEach((triangle,i)=>{
-    const group=el("g",{class:"piece","data-id":triangle.id,tabindex:0,role:"button",
+  const pieces=[...current.triangles,...(current.rectangles||[])];
+  if(current.fallOrder){
+    pieces.sort((a,b)=>current.fallOrder.indexOf(a.id)-current.fallOrder.indexOf(b.id));
+  }
+  // A 10-triangle challenge should not force students to watch 12s
+  // of repetitive falling. Cap the whole construction at roughly 7s.
+  const stepMs=Math.max(290,Math.min(850,5400/Math.max(1,pieces.length-1)));
+  pieces.forEach((shape,i)=>{
+    const rectangle=shape.pts.length===4;
+    const group=el("g",{class:"piece"+(rectangle?" rectangle-piece":""),
+      "data-id":shape.id,tabindex:0,role:"button",
       style:"--delay:"+(i*stepMs)+"ms;--twist:"+(i%2?-13:12)+"deg",
-      "aria-label":"Select triangle "+triangle.id});
-    const tpts=triangle.pts.map(xy);
-    if(selectedSide&&!sideMap.get(selectedSide).triangleIds.includes(triangle.id))group.classList.add("dimmed");
-    if(selectedSide&&sideMap.get(selectedSide).triangleIds.includes(triangle.id))group.classList.add("selected");
-    group.append(el("polygon",{points:tpts.map(pt=>pt.x+","+pt.y).join(" "),fill:triangle.color}));
-    const corner=tpts[triangle.right];
-    const ends=tpts.filter((_,j)=>j!==triangle.right);
-    const unit=ends.map(end=>{
-      const v=({x:end.x-corner.x,y:end.y-corner.y});
-      const len=Math.hypot(v.x,v.y);
-      return {x:v.x/len,y:v.y/len};
-    });
-    const k=10;
-    group.append(el("path",{
-      d:"M"+(corner.x+unit[0].x*k)+" "+(corner.y+unit[0].y*k)
-       +"L"+(corner.x+(unit[0].x+unit[1].x)*k)+" "+(corner.y+(unit[0].y+unit[1].y)*k)
-       +"L"+(corner.x+unit[1].x*k)+" "+(corner.y+unit[1].y*k),
-      class:"angle-square"
+      "aria-label":"Select "+(rectangle?"rectangle ":"triangle ")+shape.id});
+    const tpts=shape.pts.map(xy);
+    if(selectedSide&&!sideMap.get(selectedSide).triangleIds.includes(shape.id))
+      group.classList.add("dimmed");
+    if(selectedSide&&sideMap.get(selectedSide).triangleIds.includes(shape.id))
+      group.classList.add("selected");
+    group.append(el("polygon",{
+      points:tpts.map(pt=>pt.x+","+pt.y).join(" "),fill:shape.color
     }));
-    const centroid={x:tpts.reduce((sum,z)=>sum+z.x,0)/3,y:tpts.reduce((sum,z)=>sum+z.y,0)/3};
-    group.append(el("text",{x:centroid.x,y:centroid.y,class:"triangle-number"},triangle.id));
-    group.append(el("title",{},"Triangle "+triangle.id));
-    group.addEventListener("click",()=>chooseTriangle(triangle.id));
+    function cornerMark(corner,first,second){
+      const u={x:first.x-corner.x,y:first.y-corner.y};
+      const w={x:second.x-corner.x,y:second.y-corner.y};
+      const ul=Math.hypot(u.x,u.y),wl=Math.hypot(w.x,w.y),k=rectangle?9:10;
+      if(ul<1e-5||wl<1e-5)return;
+      const a={x:u.x/ul*k,y:u.y/ul*k},b={x:w.x/wl*k,y:w.y/wl*k};
+      group.append(el("path",{
+        d:"M"+(corner.x+a.x)+" "+(corner.y+a.y)+
+          "L"+(corner.x+a.x+b.x)+" "+(corner.y+a.y+b.y)+
+          "L"+(corner.x+b.x)+" "+(corner.y+b.y),
+        class:"angle-square"
+      }));
+    }
+    if(rectangle){
+      // Two neat right-angle indicators establish the rectangle,
+      // while a dotted diagonal gives a real Pythagoras clue.
+      for(const j of [0,2]){
+        cornerMark(tpts[j],tpts[(j+3)%4],tpts[(j+1)%4]);
+      }
+      for(const diagonal of shape.diagonals||[]){
+        const a=xy(diagonal.a),b=xy(diagonal.b);
+        group.append(el("line",{
+          x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"rectangle-diagonal"
+        }));
+      }
+    }else{
+      const j=shape.right;
+      cornerMark(tpts[j],tpts[(j+1)%3],tpts[(j+2)%3]);
+    }
+    const centroid={
+      x:tpts.reduce((sum,z)=>sum+z.x,0)/tpts.length,
+      y:tpts.reduce((sum,z)=>sum+z.y,0)/tpts.length
+    };
+    group.append(el("text",{
+      x:centroid.x,y:centroid.y,
+      class:"triangle-number"+(rectangle?" rectangle-number":"")
+    },shape.id));
+    group.append(el("title",{},(rectangle?"Rectangle ":"Triangle ")+shape.id));
+    group.addEventListener("click",()=>chooseTriangle(shape.id));
     group.addEventListener("keydown",event=>{
-      if(event.key==="Enter"||event.key===" "){event.preventDefault();chooseTriangle(triangle.id);}
+      if(event.key==="Enter"||event.key===" "){
+        event.preventDefault();chooseTriangle(shape.id);
+      }
     });
     svg.append(group);
   });
