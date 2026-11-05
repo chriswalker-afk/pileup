@@ -296,6 +296,7 @@ try{
             }
             const active=get().querySelectorAll(".side-chip.is-emphasized").length;
             return {startingUnknowns,focused,active,
+              focusedUnknowns:get().querySelectorAll(".side-chip.unknown").length,
               focusedState:get().classList.contains("label-focus-active"),
               pressed:document.querySelector("#label-focus-toggle")?.getAttribute("aria-pressed")};
           });
@@ -307,11 +308,25 @@ try{
           const after=await page.evaluate(()=>{
             const svg=document.querySelector("#diagram svg");
             return {pressed:document.querySelector("#label-focus-toggle")?.getAttribute("aria-pressed"),
-              focused:svg.classList.contains("label-focus-active")};
+              focused:svg.classList.contains("label-focus-active"),
+              unknowns:svg.querySelectorAll(".side-chip.unknown").length};
           });
           insist(after.pressed==="false"&&!after.focused,
             "Student's explicit All Labels choice must override automatic isolation",after);
-          return {id,...outcome,manualOverride:after};
+          if(["nine-muses","acropolis","great-interlock"].includes(id))
+            insist(after.unknowns>outcome.focusedUnknowns,
+              "All Labels must restore the genuinely postponed question marks",
+              {id,outcome,after});
+          const manualKept=await page.evaluate(()=>{
+            const get=()=>document.querySelector("#diagram svg");
+            const piece=get().querySelector(".piece");
+            piece?.dispatchEvent(new MouseEvent("click",{bubbles:true}));
+            return {pressed:document.querySelector("#label-focus-toggle")?.getAttribute("aria-pressed"),
+              focused:get().classList.contains("label-focus-active")};
+          });
+          insist(manualKept.pressed==="false"&&!manualKept.focused,
+            "A subsequent triangle selection must respect the explicit All Labels override",manualKept);
+          return {id,...outcome,manualOverride:after,manualKept};
         });
       }
     }
