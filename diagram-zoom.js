@@ -162,12 +162,12 @@ export function connectZoomGestures(svg,getState,apply){
   svg.addEventListener("keydown",key);
   return ()=>{
     clear();
-    svg.removeEventListener("pointerdown",down);
-    svg.removeEventListener("pointermove",move);
-    svg.removeEventListener("pointerup",up);
-    svg.removeEventListener("pointercancel",up);
-    svg.removeEventListener("click",click,true);
-    svg.removeEventListener("wheel",wheel);
-    svg.removeEventListener("keydown",key);
+    svg.removeEventListener?.("pointerdown",down);
+    svg.removeEventListener?.("pointermove",move);
+    svg.removeEventListener?.("pointerup",up);
+    svg.removeEventListener?.("pointercancel",up);
+    svg.removeEventListener?.("click",click,true);
+    svg.removeEventListener?.("wheel",wheel);
+    svg.removeEventListener?.("keydown",key);
   };
 }
