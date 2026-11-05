@@ -1,0 +1,69 @@
+/* DIAGRAM READABILITY PASS D
+   Every measurement chip now has an always-visible, precise physical
+   association. Its fine stem starts at the actual measured side's
+   midpoint (or its exact dimension bracket), with a tiny anchor ring,
+   and ends at the nearest edge of that chip. Unlike the old hover-only
+   links, students can tell which side is measured at first glance. */
+#diagram svg .measurement-tethers{
+  pointer-events:none;
+}
+#diagram svg .measurement-tether{
+  opacity:.78;
+  transition:opacity .14s ease-out;
+  pointer-events:none;
+}
+#diagram svg .measurement-tether .side-association{
+  opacity:1;
+  fill:none;
+  stroke:#735c40;
+  stroke-width:1.6px;
+  stroke-linecap:round;
+  stroke-dasharray:none;
+  vector-effect:non-scaling-stroke;
+}
+#diagram svg .measurement-tether .measurement-anchor{
+  fill:#f5ead3;
+  stroke:#735c40;
+  stroke-width:1.35px;
+  vector-effect:non-scaling-stroke;
+}
+#diagram svg .measurement-tether.tether-target .side-association{
+  stroke:#426c54;
+  stroke-width:2.15px;
+}
+#diagram svg .measurement-tether.tether-target .measurement-anchor{
+  stroke:#426c54;
+}
+#diagram svg .measurement-tether.is-emphasized,
+#diagram svg.label-focus-active .measurement-tether.is-emphasized{
+  opacity:1;
+}
+#diagram svg .measurement-tether.is-emphasized .side-association{
+  stroke:#ad6d23;
+  stroke-width:2.6px;
+}
+#diagram svg .measurement-tether.is-emphasized .measurement-anchor{
+  fill:#fff7e2;
+  stroke:#a46b25;
+  stroke-width:2.35px;
+  r:4;
+}
+#diagram svg.label-focus-active .measurement-tether.focus-muted{
+  opacity:.09;
+}
+/* On compact phones, keep the stems quieter without making their
+   anchors invisible. The selected one is always shown at full weight. */
+@media (max-width:520px){
+  #diagram svg .measurement-tether{
+    opacity:.67;
+  }
+  #diagram svg .measurement-tether .side-association{
+    stroke-width:1.35px;
+  }
+  #diagram svg .measurement-tether.is-emphasized{
+    opacity:1;
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  #diagram svg .measurement-tether{transition:none!important}
+}
