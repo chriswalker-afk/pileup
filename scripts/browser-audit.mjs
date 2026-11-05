@@ -507,7 +507,11 @@ try{
           const symbols=[...svg.querySelectorAll(
             ".triangle-identity, .right-angle-marker, .equal-tick-group, .bracket-end-cap"
           )].slice(0,18).map(element=>{
-            const rect=element.getBoundingClientRect();
+            // SVG <g>.getBoundingClientRect() may omit a nested transform
+            // in Chromium. Measure the painted leaf (text/path/line)
+            // so the result reflects actual visible screen dimensions.
+            const painted=element.querySelector("text,path,line")||element;
+            const rect=painted.getBoundingClientRect();
             return {kind:element.getAttribute("class"),
               width:rect.width,height:rect.height,
               transform:element.getAttribute("transform")};
