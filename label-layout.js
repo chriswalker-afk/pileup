@@ -25,13 +25,19 @@ export function labelTether(entry,placement,explicitAnchor=null){
   const pos=placement.pos;
   const halfW=entry.width/2,halfH=entry.height/2;
   const sideMid=mid(entry.ends.a,entry.ends.b);
-  // A bracket can sit inside an exceptionally close label box.
-  // Attach to the real segment instead rather than drawing a
-  // zero-length leader with no visible origin.
-  const insideLabel=pt=>Math.abs(pt.x-pos.x)<=halfW+EPS&&
-    Math.abs(pt.y-pos.y)<=halfH+EPS;
-  const anchor=explicitAnchor&&!insideLabel(explicitAnchor)?
-    explicitAnchor:sideMid;
+  // A short side can be partly concealed by a large label chip.
+  // First use the measured midpoint or the true dimension bracket.
+  // If that is covered, attach to a clear point ON THE SAME SIDE.
+  // This is preferable to a zero-length line or a confusing corner
+  // marker that appears to identify a neighbouring side.
+  const covered=pt=>Math.abs(pt.x-pos.x)<=halfW+4&&
+    Math.abs(pt.y-pos.y)<=halfH+4;
+  const candidates=[explicitAnchor,sideMid,
+    ...[.4,.6,.3,.7,.2,.8,.1,.9,0,1].map(t=>({
+      x:entry.ends.a.x+(entry.ends.b.x-entry.ends.a.x)*t,
+      y:entry.ends.a.y+(entry.ends.b.y-entry.ends.a.y)*t
+    }))].filter(Boolean);
+  const anchor=candidates.find(pt=>!covered(pt))||sideMid;
   const dx=anchor.x-pos.x,dy=anchor.y-pos.y;
   const ratio=Math.max(Math.abs(dx)/Math.max(EPS,halfW),
     Math.abs(dy)/Math.max(EPS,halfH));
@@ -102,7 +108,7 @@ function score(entry,option,placed,edges,bounds){
   // the old algorithm would have considered the leader "short".
   let value=d*1.23+Math.abs(t)*.72+(flip?35:0)+Math.max(0,n-40)*.52;
   const link=labelTether(entry,{pos});
-  if(link.length<=EPS)value+=1400;
+  if(link.length<=1)value+=250000;
   // The label rectangle must not mask its very own measured line.
   if(crossesBox(entry.ends.a,entry.ends.b,box))value+=850;
   const leader=d>68?{a:center,b:pos}:null;
