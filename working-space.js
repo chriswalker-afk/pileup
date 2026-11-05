@@ -352,6 +352,12 @@ export function mountWorkingSpace(container, initial, onChange) {
   function switchTab(tab) {
     cleanup();
     work.tab=tab;commit();
+    // The ink pad has a fixed usable canvas height, so its parchment
+    // container must grow with that canvas rather than being stretched
+    // into the editor's remaining flex space. The inspector itself
+    // scrolls if there is not enough vertical room.
+    container.classList.toggle("ws-drawing-host",tab==="ink");
+    root.classList.toggle("ws-drawing",tab==="ink");
     math.classList.toggle("active",tab==="math");
     ink.classList.toggle("active",tab==="ink");
     math.setAttribute("aria-pressed",String(tab==="math"));
