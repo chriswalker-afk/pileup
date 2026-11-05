@@ -61,7 +61,7 @@
  .diagram-caption{font-size:7px}
 }
 @media(prefers-reduced-motion:reduce){
- #diagram svg .piece,#diagram svg.falling .piece{animation:none!important;opacity:1!important;transform:none!important}
+ #diagram svg .piece,#diagram svg.falling .piece{animation:none!important}
  #diagram svg .side-labels{transition:none!important}
 }
 #diagram svg .dimension-leader{
@@ -78,4 +78,13 @@
 @media(max-width:520px){
   .tablet-controls .replay-button{width:35px;padding:0}
   .tablet-controls .replay-button span{display:none}
+}
+
+@media(prefers-reduced-motion:reduce){
+  /* Initial assembly remains instant, but an explicit Replay Fall
+     click counts as the student's opt-in to show the motion. */
+  #diagram svg.manual-motion.falling .piece{
+    animation:greek-piece-drop 1340ms cubic-bezier(.22,.68,.32,1) both!important;
+    animation-delay:var(--delay)!important;
+  }
 }
