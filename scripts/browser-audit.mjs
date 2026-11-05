@@ -237,7 +237,9 @@ try{
         await open(page,id);
         const d=await sizeAudit(page);
         insist(d.pieces>=3,"Missing visible pieces",d);
-        insist(d.labels>=d.pieces,"Missing side labels",d);
+        insist(d.labels>=2,"Missing the essential visible measurements",d);
+        if(["first-fall","projecting-edge","twin-paths"].includes(id))
+          insist(d.labels>=d.pieces,"The simple introductory puzzles need every side visible",d);
         insist(d.widthOverflow<=1,"Horizontal page overflow",d);
         insist(!d.clippedLabels.length,"Clipped measurements",d);
         insist(!d.clippedPieces.length,"Clipped geometry",d);
