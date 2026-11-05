@@ -104,12 +104,12 @@ export function makeRisingZigzag(info){
   const I=tri("I",[P,Q,R],1,[given(P,Q),given(Q,R)]);
   const II=onHyp(I,P,R,6,8,"II");
   II.givens=[given(P,II.pts[2])];
-  const S=II.pts[2],III=attach(II,S,R,"b",15,"III");
-  III.givens=[given(R,III.pts[2])];
+  const S=II.pts[2],III=attach(II,S,R,"a",15,"III");
+  III.givens=[given(S,III.pts[2])];
   const T=III.pts[2],IV=onHyp(III,S,T,8,15,"IV");
   IV.givens=[given(S,IV.pts[2])];
-  const U=IV.pts[2],V=attach(IV,U,T,"b",20,"V");
-  V.givens=[given(T,V.pts[2])];
+  const U=IV.pts[2],V=attach(IV,U,T,"a",20,"V");
+  V.givens=[given(U,V.pts[2])];
   const [a,b]=hyp(V),VI=onHyp(V,a,b,7,24,"VI");
   VI.givens=[given(a,VI.pts[2])];
   return finish(info,[I,II,III,IV,V,VI],[],[VI.pts[2],b],[P,Q],{
@@ -195,6 +195,13 @@ export function makeSteppedAcropolis(info){
     fallOrder:["I","R1","II","R2","III","IV","V","VI","VII","VIII","IX","X"],
     extraSegments:[{...given(E,U),label:"2 CM OVERHANG"}],
     lengthRelations:[relation([D,U],[D,E],[E,U],"PROJECTING OVERHANG")],
+    // Opposite horizontal rectangle sides really are the same length.
+    // Show separate matching tick groups rather than relying on
+    // a visually implied (or entirely unmarked) equality.
+    equalSideGroups:[
+      [{a:R,b:T},{a:Q,b:S}],
+      [{a:U,b:B},{a:T,b:A}]
+    ],
     overhang:{a:E,b:U,value:2},
     rectangleReasoning:true,
     tags:["Stepped rectangle platforms","Two indispensable diagonals","10 cm sub-side","12 mathematical dependencies"],
