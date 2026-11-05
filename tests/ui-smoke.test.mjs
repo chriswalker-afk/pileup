@@ -76,6 +76,7 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
     createElementNS(_ns,tag){return new FakeNode(tag,width);},
     querySelector(selector){
       if(selector==="#diagram svg")return nodes.get("diagram")?.firstChild ?? null;
+      if(selector===".side-labels")return nodes.get("diagram")?.firstChild?.querySelector(".side-labels") ?? null;
       return new FakeNode(selector,width);
     },
     querySelectorAll(){return [];}
@@ -112,6 +113,17 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
         assert.ok(svg,"No SVG mounted for "+puzzle.id);
         const pieces=svg.querySelectorAll(".piece");
         assert.equal(pieces.length,puzzle.triangles.length);
+        const measurements=svg.querySelector(".side-labels");
+        assert.ok(measurements,"Every puzzle needs a measurements layer");
+        assert.ok(measurements.classList.contains("waiting"),
+          "Measurements must be hidden while pieces are still falling");
+        const ticks=svg.querySelectorAll(".equal-side-tick");
+        const ticksInMeasurementLayer=measurements.querySelectorAll(".equal-side-tick");
+        assert.equal(ticksInMeasurementLayer.length,ticks.length,
+          "Equal-length marks must be in the delayed measurements layer");
+        if(puzzle.equalSideGroups?.length){
+          assert.ok(ticks.length>0,"Marked-equal sides must have tick marks");
+        }
         const chips=svg.querySelectorAll(".side-chip");
         const rects=chips.map(group=>group.children.find(child=>child.tag==="rect")).filter(Boolean)
           .map(rect=>({
@@ -135,9 +147,38 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
           assert.ok(piece.lastAnimation,"Missing falling animation for "+puzzle.id);
           assert.equal(piece.lastAnimation.options.fill,"both");
         }
+        assert.ok(measurements.classList.contains("waiting"),
+          "Equal-length marks must remain hidden while pieces are animating");
         if(puzzle.id==="twin-paths"){
-          assert.equal(svg.querySelectorAll(".equal-side-tick").length,4,
+          assert.equal(ticks.length,4,
             "Two matching edges should have two tick marks each.");
+          // Replay must hide marks again until the second fall ends.
+          document.getElementById("skip").handlers.click();
+          assert.equal(measurements.classList.contains("waiting"),false,
+            "Tick marks should reveal when the animation ends");
+          document.getElementById("replay").handlers.click();
+          const replaySvg=nodes.get("diagram").firstChild;
+          const replayMeasurements=replaySvg.querySelector(".side-labels");
+          assert.ok(replayMeasurements.classList.contains("waiting"),
+            "Replay Fall should hide the matching marks until landing");
+          assert.equal(replayMeasurements.querySelectorAll(".equal-side-tick").length,4);
+          assert.equal(replaySvg.querySelectorAll(".equal-side-tick").length,4,
+            "Replay must not duplicate the marks");
+          document.getElementById("skip").handlers.click();
+          assert.equal(replayMeasurements.classList.contains("waiting"),false,
+            "Skip should reveal the marks immediately");
+          document.getElementById("labels-toggle").handlers.click({currentTarget:{
+            setAttribute(){}}});
+          assert.ok(replayMeasurements.classList.contains("hidden-labels"),
+            "Hiding measurements must also hide equality marks");
+          document.getElementById("labels-toggle").handlers.click({currentTarget:{
+            setAttribute(){}}});
+          assert.equal(replayMeasurements.classList.contains("hidden-labels"),false,
+            "Showing measurements must restore equality marks");
+        }else{
+          document.getElementById("skip").handlers.click();
+          assert.equal(measurements.classList.contains("waiting"),false,
+            "Measurements reveal once the animation is skipped");
         }
         cases++;
       }
