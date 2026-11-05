@@ -1,0 +1,76 @@
+/* Pass B: interactive solving layer on the classical Greek design */
+:root{--solution-green:#3d6556;--clay:#a75a45}
+.piece polygon,.piece path{transition:stroke .16s,opacity .16s}
+.piece{outline:none}
+.piece.dimmed{opacity:.38}
+.piece:focus-visible polygon,.piece.selected polygon{stroke:#745d34;stroke-width:4px}
+.triangle-number{font:600 2.1px 'Cinzel',serif;fill:#403e35;opacity:.68;pointer-events:none;text-anchor:middle;dominant-baseline:middle}
+.active-side{stroke:#b37b37;stroke-width:7px;stroke-linecap:round;opacity:.9;vector-effect:non-scaling-stroke;pointer-events:none}
+.side-hit{stroke:transparent;stroke-width:23px;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:stroke;cursor:pointer;outline:none}
+.side-hit:focus-visible{stroke:#866e4a66}
+.side-labels{transition:opacity .35s}
+.side-labels.waiting{opacity:0;pointer-events:none}
+.side-labels.hidden-labels{opacity:0;pointer-events:none}
+.side-chip{cursor:pointer;pointer-events:all}
+.side-chip circle,.side-chip rect{stroke:#877759;stroke-width:.2px}
+.side-chip.unknown circle{fill:#faf4e6}
+.side-chip.target circle{fill:#324b42;stroke:#f8edce;stroke-width:.35px}
+.side-chip.solved rect,.side-chip.solved circle{fill:#d5e3d6;stroke:#77927c}
+.side-chip.selected rect,.side-chip.selected circle{stroke:#b17b35;stroke-width:.6px}
+.side-chip text{font:700 2.2px 'DM Sans',sans-serif;fill:#473d2f;text-anchor:middle;dominant-baseline:middle;pointer-events:none}
+.side-chip.target text{fill:#fff3d9;font:italic bold 2.4px Georgia,serif}
+.side-chip.solved text{fill:#2c5848;font-size:1.9px}
+.label-given{pointer-events:none;font:700 2.05px 'DM Sans',sans-serif;fill:#38352d;stroke:#fbf6e9;stroke-width:.85px;paint-order:stroke;stroke-linejoin:round;text-anchor:middle;dominant-baseline:middle}
+.status-strip{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 2px 0;color:#756952;font-size:11px;font-weight:600}
+.progress-track{height:5px;background:#d8c7a7;border:0;margin-top:9px;overflow:hidden}
+.progress-track>span{display:block;background:#4d7864;height:100%;transition:width .22s}
+.side .inspector{min-height:0;padding:16px 17px 17px}
+.inspect-title{font:600 15px 'Cinzel',serif;margin:9px 0 8px}
+.inspect-intro{font-size:12px;line-height:1.65;color:#756b5e;margin:0 0 12px}
+.inspect-field{margin:13px 0;display:block}
+.inspect-field label,.inspect-field .field-label{display:block;margin-bottom:7px;font-size:10px;font-weight:700;letter-spacing:.09em;color:#7a6b53}
+.inspect-field select,.inspect-field input,.inspect-field textarea{border:1px solid #c4ae86;border-radius:0;background:#fdf7e9;color:#3b3a33;font:500 15px 'DM Sans',sans-serif;padding:10px 12px;width:100%;min-width:0}
+.inspect-field input{font-size:17px}
+.inspect-field input:focus,.inspect-field textarea:focus,.inspect-field select:focus{outline:2px solid #a78655;outline-offset:1px}
+.inspect-field textarea{resize:vertical;min-height:72px;line-height:1.5}
+.inspect-field select{font-size:12px}
+.input-row{display:flex;gap:9px}.input-row input{flex:1;min-width:0}.input-row .submit{border:0;background:#314a3f;color:#fff5dd;padding:0 15px;font-size:11px;font-weight:700;letter-spacing:.04em}
+.input-row .submit:hover{background:#48745c}
+.result-feedback{margin:9px 0 0;padding:9px 11px;font-size:12px;line-height:1.55}
+.result-feedback.good{background:#dae8db;color:#2c5b41}
+.result-feedback.bad{background:#f2e2d1;color:#8b4c36}
+.hint-area{margin-top:15px;border-top:1px solid #d0bfa0;padding-top:12px}
+.hint-button{border:1px solid #b49b76;background:transparent;color:#846736;padding:9px 11px;font-size:10px;font-weight:700;letter-spacing:.06em;width:100%}
+.hint-button:hover{background:#f7ecd8}
+.hint-content{background:#f9f1df;padding:11px;margin-top:9px;color:#64543e;font-size:12px;line-height:1.7}
+.hint-content strong{color:#3e4b3f}
+.working-details{border-top:1px solid #d5c4a4;padding-top:12px;margin-top:14px}
+.working-details summary{cursor:pointer;color:#7b653e;font-size:11px;font-weight:700}
+.working-details p{font-size:10px;color:#81745e;margin:8px 0}
+.btn-link{border:0;background:transparent;padding:9px 0;color:#816338;font-size:10px;font-weight:700;letter-spacing:.05em;text-align:left}
+.btn-link:hover{text-decoration:underline}
+.panel-actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;border-top:1px solid #d9c9a9;margin-top:15px;padding-top:8px}
+.solved-note{margin:11px 0 0;color:#3d6952;font-size:12px}
+.review-list{list-style:none;padding:0;margin:12px 0;max-height:430px;overflow-y:auto}
+.review-item{border-top:1px solid #d0bf9e;padding:14px 2px 15px}
+.review-item button{display:flex;justify-content:space-between;align-items:center;gap:5px;width:100%;border:0;background:transparent;color:#5d573e;padding:0;text-align:left}
+.review-item button:hover{text-decoration:underline}
+.review-item .step-equation{font:16px Georgia,serif;margin:8px 0;color:#3c4c42}
+.review-item .step-result{font:600 15px 'DM Sans',sans-serif;color:#345747}
+.review-item .step-narrative{font-size:11px;color:#776b5b;line-height:1.65;margin:8px 0 0}
+.solution-disclaimer{font-size:11px;color:#7e6e55;line-height:1.7}
+.completion-dialog{border:1px solid #b7a07d;background:#f7eedc;padding:0;max-width:420px;width:calc(100% - 36px);box-shadow:0 24px 90px #201c1780;color:#3e3c31}
+.completion-dialog::backdrop{background:#302b23a6}
+.completion-inner{padding:33px 31px 29px;border:7px double #d4c1a0;text-align:center}
+.completion-icon{font:47px 'Cinzel',serif;color:#5e7b62;margin-bottom:10px}
+.completion-inner h2{font:600 30px 'Cinzel',serif;margin:0 0 9px}
+.completion-inner p{font-size:13px;line-height:1.8;color:#76684d}
+.completion-answer{font:500 33px 'Cinzel',serif;color:#426958;margin:17px 0}
+.completion-controls{display:flex;flex-direction:column;gap:9px;margin-top:17px}
+.completion-controls button{border:1px solid #b5a17c;padding:13px 16px;background:transparent;color:#66543c;font-size:11px;letter-spacing:.08em;font-weight:700}
+.completion-controls .confirm{background:#334d43;color:#fff0d5;border-color:#334d43}
+.completion-close{display:block;margin:11px auto 0;background:transparent;border:0;color:#7d6c50;font-size:11px}
+@media(max-width:1090px){.side{padding:25px 19px}.inspect-field input{font-size:16px}}
+@media(max-width:800px){.challenge-layout{align-items:start}.side{padding:29px 23px}}
+@media(max-width:520px){.side{padding:25px 18px}.tablet-inside{min-height:370px}#diagram svg{height:340px}.tablet-bar{padding:0 7px}.input-row .submit{padding:0 12px}.label-given{font-size:2.25px}}
+@media(prefers-reduced-motion:reduce){.progress-track>span,.piece polygon,.piece path,.side-labels{transition:none!important}}
