@@ -56,6 +56,9 @@ export function buildSides(puzzle) {
       s.isRectangleDiagonal=true;
     }
     for(const measurement of rect.givens||[])markGiven(measurement);
+    for(const descriptor of rect.suppressLabels||[]){
+      register(descriptor.a,descriptor.b).suppressLabel=true;
+    }
   }
   for (const extra of puzzle.extraSegments || []) markGiven(extra, true);
   for (const relation of puzzle.lengthRelations || []) {
@@ -91,6 +94,29 @@ export function buildSides(puzzle) {
   if (!sides.has(targetKey)) throw Error("The target must be an edge of a triangle.");
   sides.get(targetKey).isTarget = true;
   return sides;
+}
+
+/** Automatically carry equal opposite rectangle sides into the
+ * student's discovered measurements. These equalities follow from
+ * the rectangle rather than requiring repetitive answer submissions.
+ */
+export function propagateRectangleSides(puzzle,sides,solved){
+  let changed=true,count=0;
+  while(changed){
+    changed=false;
+    for(const rect of puzzle.rectangles||[]){
+      for(const pair of rectangleOppositePairs(rect)){
+        const members=pair.map(s=>sides.get(sideKey(s.a,s.b)));
+        for(let i=0;i<2;i++){
+          const candidate=members[i],other=members[1-i];
+          if(!candidate.given&&!solved.has(candidate.key) && isKnown(other,solved)){
+            solved.add(candidate.key);changed=true;count++;
+          }
+        }
+      }
+    }
+  }
+  return count;
 }
 
 export function sidesOfTriangle(triangle, sides) {
