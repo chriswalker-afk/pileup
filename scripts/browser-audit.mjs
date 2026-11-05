@@ -205,7 +205,7 @@ try{
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
         if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
-        if(["first-fall","acropolis"].includes(id)&&
+        if(["first-fall","acropolis","twin-paths","split-project"].includes(id)&&
           ["desktop","phone"].includes(name))await snap(page,id+"-"+name);
         return d;
       });
@@ -432,6 +432,7 @@ try{
       });
       insist(brackets.total>0&&!brackets.mismatch.length,
         "Split-side dimension brackets do not follow their label Focus state",brackets);
+      if(name==="desktop"||name==="phone")await snap(page,"twin-paths-focused-"+name);
       return {all,preview,highlighted,located,brackets};
     });
     await run(name+" / drawing containment and working controls",async()=>{
