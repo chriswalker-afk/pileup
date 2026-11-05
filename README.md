@@ -48,7 +48,7 @@ npm run check
 - `tests/` — automated checks
 - `.github/workflows/` — GitHub Pages and validation workflows
 
-The library contains **ten distinct geometries**: a first rising spine, two-arm cantilever, shared-side puzzle, split foundation with an overhanging beam, fork-and-rejoin arch, open bridge, triple-base terrace, rectangle platform and two-plinth Acropolis, and the interlocked thirteen-triangle masterpiece. Exact targets and the current QA standard are in [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md). Historical six-puzzle answer lists are archived.
+The library contains **ten distinct geometries**: a first rising spine, two-arm cantilever, shared-side puzzle, a compact inset fold, fork-and-rejoin arch, broad zigzag, nine-face leaning cascade, rectangle platform, successive Acropolis rectangle steps and a thirteen-triangle interlocking masterpiece. Exact targets and the current QA standard are in [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md). Historical six-puzzle answer lists are archived.
 
 ## Credits
 
@@ -68,7 +68,7 @@ Students can switch between a compact or wider working panel on desktop, enlarge
 
 ## Advanced puzzles and student workspace
 
-The advanced collection uses **different architectures**: The Nine Muses (three foundations and nine triangles), The Marble Terrace (eight triangles on one real rectangle platform), and The Acropolis (ten triangles and **two independent rectangle plinths**). Both Acropolis diagonals are required to reach its 25 cm finale. See [Advanced challenges](ADVANCED_CHALLENGES.md) and [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md).
+The advanced collection uses **different architectures**: The Nine Muses (nine dependent triangles on one foundation), The Marble Terrace (eight triangles on one real rectangle platform), and The Acropolis (ten triangles and **two consecutive rectangle steps**). Both Acropolis diagonals are necessary to reach its 15 cm finale. See [Advanced challenges](ADVANCED_CHALLENGES.md) and [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md).
 
 The student panel prioritises maths lines and handwriting rather than explanatory text. A general scratchpad is available before choosing a side, with separate per-side working saved locally.
 
@@ -121,3 +121,7 @@ The diagram now places given, target and unknown measurements using a proximity-
 ## Ten different puzzle architectures (2026)
 
 Seven of the original nine constructions were substantially redrawn to make their supports and solving routes less repetitive. First Fall and Twin Paths retain their original mathematics; the other seven now have distinct cantilever, two-base, forked, bridge, terrace or plinth structures. All ten use physically connected non-overlapping shapes and complete exact solutions. The older browser-local progress for redesigned puzzles is preserved separately, while the two unchanged challenges keep their saved work. The tenth, [The Great Interlock](THE_GREAT_INTERLOCK.md), adds thirteen dense right triangles and two mathematically indispensable floor supports, with a final 24 cm horizontal roof. See [Current architecture and exact target values](PUZZLE_ARCHITECTURE_2026.md).
+
+## Dependency-first repair of challenges 4, 6, 7 and 9
+
+The previously balanced/open-bridge constructions were replaced after classroom review with new fully connected folded, zigzag, cascading and consecutive-platform silhouettes. Each one has a single clear mathematical start and a traceable chain to x, without relying on unmarked equality of detached sides. Two real opposite-side matching-mark groups appear on the Acropolis rectangles. The four revised puzzles use a new version of their browser-local progress key; other challenges are not affected. See [worked routes and QA checks](DEPENDENCY_REDESIGN_2026.md).
