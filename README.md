@@ -11,7 +11,7 @@ A mathematics puzzle website with an Ancient Greek aesthetic: watch right-angled
 1. Pick a challenge. Watch the falling triangles, or skip/replay the animation.
 2. Select a marked side or click a triangle to investigate it. A side shared by two triangles has one mathematical length.
 3. Enter an exact length (`√281` or `sqrt(281)`) or a suitably rounded decimal.
-4. Explore independently or request progressively revealing hints.
+4. Record your reasoning as properly typeset mathematical lines or draw directly onto the sketch pad. Explore independently or request progressively revealing hints.
 5. Find `x` to finish, then review the full worked solution. Two puzzles also unlock perimeter and area extensions.
 
 Any correct length can be entered, in any order; students may solve the puzzle on paper and enter the final answer directly.
@@ -41,7 +41,9 @@ npm run check
 - `pile-geometry.js` — curated puzzle catalogue with overhang layouts
 - `pile-variants.js` — precise split-edge and bridging arrangements
 - `pass-c.css` — collection preview and extension styling
-- `PASS_A.md`, `PASS_B.md`, `PASS_B2.md` and `PASS_C.md` — development/review notes
+- `working-space.js` — line-by-line maths editor and drawing pad
+- `pass-d.css` — compact, responsive single-screen layouts and working UI
+- `PASS_A.md`, `PASS_B.md`, `PASS_B2.md`, `PASS_C.md`, and `PASS_D_WORKSPACE.md` — development/review notes
 - `tests/` — automated checks
 - `.github/workflows/` — GitHub Pages and validation workflows
 
@@ -50,3 +52,9 @@ The library contains **six** original, mathematically exact puzzles including in
 ## Credits
 
 Inspired by the Pythagoras Pile Up classroom activity at [Great Maths Teaching Ideas](https://www.greatmathsteachingideas.com/) and the design credited to @mrallanmaths in the reference worksheet. The website diagrams and current puzzles are original, not reproduced scans.
+
+## Working and layouts
+
+The homepage shows all six puzzles beside the introduction on a typical desktop screen. Individual puzzle screens keep the tablet and working panel visible simultaneously, with internal scrolling for longer workings. On phones and narrow tablets the layout stacks to preserve legibility.
+
+Each side has **maths lines** (MathLive input with roots, fractions and powers) and a **drawing pad** (pen, stroke eraser, undo, clear). Work is stored locally per side in the browser. The old free-text textarea has been replaced; previously saved text is migrated to maths lines when possible. MathLive is loaded from a pinned CDN version, with a basic LaTeX input fallback if the CDN is unavailable.
