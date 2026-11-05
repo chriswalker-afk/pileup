@@ -205,8 +205,10 @@ try{
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
         if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
-        if(["first-fall","acropolis","twin-paths","split-project"].includes(id)&&
-          ["desktop","phone"].includes(name))await snap(page,id+"-"+name);
+        // Each rewritten silhouette is visually audited at both
+        // desktop and phone size; do not rely only on overlap counts.
+        if(["desktop","phone"].includes(name))
+          await snap(page,"architecture-"+id+"-"+name);
         return d;
       });
     }
