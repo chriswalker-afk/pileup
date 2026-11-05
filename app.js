@@ -1,6 +1,7 @@
 import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTriangle, readySteps, solutionSteps } from "./puzzle-engine.js";
 import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
+import { fitPileInTablet } from "./pile-visibility.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -186,14 +187,7 @@ function renderDiagram(animate=false,forceMotion=false){
   pieceAnimations.forEach(animation=>{try{animation.cancel()}catch(_){}});
   pieceAnimations=[];
   if(fallRequest){cancelAnimationFrame(fallRequest);fallRequest=0;}
-  const W=960,H=590,floorY=518;
-  const points=current.triangles.flatMap(t=>t.pts);
-  const minX=Math.min(...points.map(q=>q.x));
-  const maxX=Math.max(...points.map(q=>q.x));
-  const maxY=Math.max(...points.map(q=>q.y));
-  const scale=Math.min(790/(maxX-minX),418/maxY);
-  const offsetX=(W-(maxX-minX)*scale)/2-minX*scale;
-  const xy=pt=>({x:offsetX+pt.x*scale,y:floorY-pt.y*scale});
+  const {width:W,height:H,floorY,xy}=fitPileInTablet(current);
   const toSide=side=>({a:xy(side.a),b:xy(side.b)});
   const canvas=document.getElementById("diagram");
   const svg=el("svg",{viewBox:"0 0 "+W+" "+H,role:"img",
