@@ -70,3 +70,12 @@ Students can switch between a compact or wider working panel on desktop, enlarge
 Three harder problems extend the catalogue: **The Nine Muses** (9 triangles), **The Marble Terrace** (8 triangles + rectangle) and **The Acropolis** (10 triangles + two rectangles). Rectangles contribute mathematical reasoning through their diagonals and equal opposite sides. See [Advanced challenges](ADVANCED_CHALLENGES.md) for the answer chains and testing checklist.
 
 The student panel prioritises maths lines and handwriting rather than explanatory text. A general scratchpad is available before choosing a side, with separate per-side working saved locally.
+
+
+## Automatic falling animation
+
+A puzzle normally **animates as soon as it opens**, with labels appearing after the final triangle or rectangle settles. Use **Replay Fall** to watch the construction again or **Skip Animation** to show the finished puzzle immediately.
+
+If your device requests **reduced motion**, the site initially respects that preference and shows the assembled pile. The tablet toolbar displays **AUTO OFF**. Click or tap it once to enable **AUTO ON** for this website; your choice is saved in this browser, and every subsequently opened puzzle will begin falling automatically. Turning AUTO OFF stops automatic falling while leaving the manual Replay control available. The selection also works across page refreshes.
+
+The first-fall completion timer starts **only after the first animation frame**. This prevents opening a puzzle in a background tab from silently finishing its animation before you view it.
