@@ -1,12 +1,45 @@
 /**
  * Accessible diagram magnification independent of puzzle mathematics.
  *
- * Zoom changes only the SVG viewBox: shapes/labels remain crisp and
- * unchanged, so the fall animation, SVG hit targets and stored
- * mathematical working are preserved.
+ * Zoom changes the SVG viewBox to magnify geometry. Measurement
+ * annotations are counter-scaled around their true side anchors so
+ * labels retain a constant physical on-screen size and separation.
+ * Mathematical lengths, falling pieces and stored working are unchanged.
  */
 export const ZOOM_LEVELS=Object.freeze([1,1.25,1.5,2,2.5,3,4]);
 export const MAX_ZOOM=ZOOM_LEVELS.at(-1);
+
+/**
+ * An SVG measurement label should move with the side it describes,
+ * but its text, background and short connector should NOT grow with
+ * geometric zoom. Applying the inverse scale around that side's own
+ * fixed anchor exactly cancels viewBox magnification for the annotation,
+ * while preserving its physical side attachment.
+ *
+ * At 100% return null so SVG keeps the original, untransformed drawing.
+ */
+export function fixedAnnotationTransform(anchor,scale){
+  if(!Number.isFinite(anchor?.x)||!Number.isFinite(anchor?.y)||
+    !Number.isFinite(scale)||scale<=0)
+    throw Error("Invalid fixed-size annotation geometry");
+  if(Math.abs(scale-1)<1e-8)return null;
+  const inverse=1/scale;
+  return "translate("+anchor.x+" "+anchor.y+") scale("+inverse+
+    ") translate("+(-anchor.x)+" "+(-anchor.y)+")";
+}
+
+/**
+ * Pure mapping used in tests: the label centre/leader endpoint stays
+ * the same screen distance from the associated side during zoom.
+ */
+export function fixedAnnotationPoint(point,anchor,scale){
+  if(!Number.isFinite(point?.x)||!Number.isFinite(point?.y)||
+    !Number.isFinite(anchor?.x)||!Number.isFinite(anchor?.y)||
+    !Number.isFinite(scale)||scale<=0)
+    throw Error("Invalid fixed-size annotation position");
+  return {x:anchor.x+(point.x-anchor.x)/scale,
+    y:anchor.y+(point.y-anchor.y)/scale};
+}
 const limit=(value,min,max)=>Math.min(max,Math.max(min,value));
 const numeric=(value,fallback)=>Number.isFinite(value)?value:fallback;
 

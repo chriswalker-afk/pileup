@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {ZOOM_LEVELS,MAX_ZOOM,newZoom,zoomViewBox,zoomAt,zoomStep,
-  panPixels,pointerAnchor} from "../diagram-zoom.js";
+  panPixels,pointerAnchor,fixedAnnotationTransform,fixedAnnotationPoint}
+  from "../diagram-zoom.js";
 
 const close=(a,b,epsilon=1e-7)=>assert.ok(Math.abs(a-b)<epsilon,
   "Expected "+a+" to equal "+b);
@@ -92,4 +93,57 @@ test("invalid dimensions throw, and nonsensical interaction numbers are clamped"
   close(a.scale,1);
   const b=zoomAt(newZoom(),2,-10,10);
   assert.ok(b.x>=0&&b.y>=0);
+});
+
+test("measurement labels stay the same on-screen size at every magnification",()=>{
+  const anchor={x:312.25,y:188.5};
+  const labelCenter={x:355,y:211};
+  const labelWidth=84,labelHeight=27;
+  const stemEnd={x:324.5,y:196.25};
+  const centerDistance={
+    x:labelCenter.x-anchor.x,y:labelCenter.y-anchor.y
+  };
+  for(const zoom of ZOOM_LEVELS){
+    const placed=fixedAnnotationPoint(labelCenter,anchor,zoom);
+    const end=fixedAnnotationPoint(stemEnd,anchor,zoom);
+    // viewBox multiplies distances by zoom. The inverse annotation
+    // scale exactly cancels it for text, chip backgrounds, and stem.
+    close((placed.x-anchor.x)*zoom,centerDistance.x);
+    close((placed.y-anchor.y)*zoom,centerDistance.y);
+    close((end.x-anchor.x)*zoom,stemEnd.x-anchor.x);
+    close((end.y-anchor.y)*zoom,stemEnd.y-anchor.y);
+    close(labelWidth/zoom*zoom,labelWidth);
+    close(labelHeight/zoom*zoom,labelHeight);
+    const transform=fixedAnnotationTransform(anchor,zoom);
+    if(zoom===1)assert.equal(transform,null);
+    else {
+      assert.ok(transform.startsWith("translate("));
+      assert.ok(transform.includes("scale("+1/zoom+")"));
+    }
+  }
+});
+
+test("annotation anchors do not drift during panning, Fit and zoom transitions",()=>{
+  const anchor={x:185,y:340},label={x:225,y:370};
+  let s=zoomAt(newZoom(),2,.4,.65);
+  let point=fixedAnnotationPoint(label,anchor,s.scale);
+  close((point.x-anchor.x)*s.scale,40);
+  close((point.y-anchor.y)*s.scale,30);
+  const moved=panPixels(s,45,-25,780,480);
+  point=fixedAnnotationPoint(label,anchor,moved.scale);
+  close(point.x,fixedAnnotationPoint(label,anchor,s.scale).x);
+  close(point.y,fixedAnnotationPoint(label,anchor,s.scale).y);
+  s=zoomAt(moved,4,.3,.2);
+  point=fixedAnnotationPoint(label,anchor,s.scale);
+  close((point.x-anchor.x)*s.scale,40);
+  close((point.y-anchor.y)*s.scale,30);
+  const reset=zoomAt(s,1);
+  assert.equal(fixedAnnotationTransform(anchor,reset.scale),null);
+  assert.deepEqual(fixedAnnotationPoint(label,anchor,reset.scale),label);
+});
+
+test("invalid annotation transforms are rejected",()=>{
+  assert.throws(()=>fixedAnnotationTransform({x:2,y:3},0),/Invalid/);
+  assert.throws(()=>fixedAnnotationTransform({x:NaN,y:3},2),/Invalid/);
+  assert.throws(()=>fixedAnnotationPoint({x:1,y:2},{x:1,y:0},-1),/Invalid/);
 });

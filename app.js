@@ -2,7 +2,8 @@ import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTr
 import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
-import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures } from "./diagram-zoom.js";
+import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures,
+  fixedAnnotationTransform } from "./diagram-zoom.js";
 import { labelsForShape, centreSideAtZoom } from "./label-clarity.js";
 import {layoutMeasurements, classifyRelationSides, dimensionBracket, labelTether} from "./label-layout.js";
 import {crowdedUnknownKeys,compactFace} from "./label-density.js";
@@ -131,12 +132,34 @@ function refreshZoomControls(){
   if(plus)plus.disabled=scale>=3.999;
   if(fit)fit.disabled=scale<=1.001;
 }
+/**
+ * Only the pieces and mathematical geometry magnify. Label chips,
+ * their precise attachment dots and leaders are counter-scaled around
+ * the physical side they annotate, so they stay the same CSS-pixel
+ * size AND distance from that side at 125–400% zoom.
+ *
+ * This is a cheap transform update rather than a diagram redraw: it
+ * also works during pinch, pan, Locate, Replay and restoring progress.
+ */
+function syncFixedSizeAnnotations(svg,scale){
+  for(const node of svg.querySelectorAll(".side-chip, .measurement-tether, .zoom-fixed-symbol")){
+    const rawX=node.getAttribute("data-zoom-anchor-x");
+    const rawY=node.getAttribute("data-zoom-anchor-y");
+    if(rawX===null||rawY===null)continue;
+    const x=Number(rawX),y=Number(rawY);
+    if(!Number.isFinite(x)||!Number.isFinite(y))continue;
+    const transform=fixedAnnotationTransform({x,y},scale);
+    if(transform)node.setAttribute("transform",transform);
+    else node.removeAttribute("transform");
+  }
+}
 function setDiagramZoom(next){
   zoomState=next;
   const svg=document.querySelector("#diagram svg");
   if(svg){
     const box=zoomViewBox(next);
     svg.setAttribute("viewBox",[box.x,box.y,box.width,box.height].join(" "));
+    syncFixedSizeAnnotations(svg,next.scale);
     svg.classList.toggle("diagram-is-zoomed",next.scale>1.001);
     const baseDescription="A pile of "+current.triangles.length+" right-angled triangles"+
       (current.rectangles?.length?" and "+current.rectangles.length+" rectangles":"")+
@@ -563,12 +586,16 @@ function renderDiagram(animate=false,forceMotion=false){
       const ul=Math.hypot(u.x,u.y),wl=Math.hypot(w.x,w.y),k=rectangle?9:10;
       if(ul<1e-5||wl<1e-5)return;
       const a={x:u.x/ul*k,y:u.y/ul*k},b={x:w.x/wl*k,y:w.y/wl*k};
-      group.append(el("path",{
+      const angle=el("g",{class:"zoom-fixed-symbol right-angle-marker",
+        "data-zoom-anchor-x":corner.x,"data-zoom-anchor-y":corner.y,
+        "aria-hidden":"true"});
+      angle.append(el("path",{
         d:"M"+(corner.x+a.x)+" "+(corner.y+a.y)+
           "L"+(corner.x+a.x+b.x)+" "+(corner.y+a.y+b.y)+
           "L"+(corner.x+b.x)+" "+(corner.y+b.y),
         class:"angle-square"
       }));
+      group.append(angle);
     }
     if(rectangle){
       // Two neat right-angle indicators establish the rectangle,
@@ -590,10 +617,14 @@ function renderDiagram(animate=false,forceMotion=false){
       x:tpts.reduce((sum,z)=>sum+z.x,0)/tpts.length,
       y:tpts.reduce((sum,z)=>sum+z.y,0)/tpts.length
     };
-    group.append(el("text",{
+    const identity=el("g",{class:"zoom-fixed-symbol triangle-identity",
+      "data-zoom-anchor-x":centroid.x,"data-zoom-anchor-y":centroid.y,
+      "aria-hidden":"true"});
+    identity.append(el("text",{
       x:centroid.x,y:centroid.y,
       class:"triangle-number"+(rectangle?" rectangle-number":"")
     },shape.id));
+    group.append(identity);
     group.append(el("title",{},(rectangle?"Rectangle ":"Triangle ")+shape.id));
     group.addEventListener("click",()=>chooseTriangle(shape.id));
     group.addEventListener("keydown",event=>{
@@ -639,7 +670,11 @@ function renderDiagram(animate=false,forceMotion=false){
       x1:ends.a.x,y1:ends.a.y,x2:ends.b.x,y2:ends.b.y,class:"side-trace-line"
     }));
     for(const point of [ends.a,ends.b]){
-      trace.append(el("circle",{cx:point.x,cy:point.y,r:4.1,class:"side-trace-end"}));
+      const marker=el("g",{class:"zoom-fixed-symbol side-trace-dot",
+        "data-zoom-anchor-x":point.x,"data-zoom-anchor-y":point.y,
+        "aria-hidden":"true"});
+      marker.append(el("circle",{cx:point.x,cy:point.y,r:4.1,class:"side-trace-end"}));
+      trace.append(marker);
     }
     traces.append(trace);
   }
@@ -654,16 +689,20 @@ function renderDiagram(animate=false,forceMotion=false){
       if(!side)continue;
       const endpoints=toSide(side),dx=endpoints.b.x-endpoints.a.x,dy=endpoints.b.y-endpoints.a.y;
       const L=Math.hypot(dx,dy),nx=-dy/L,ny=dx/L,tx=dx/L,ty=dy/L;
+      const mx=(endpoints.a.x+endpoints.b.x)/2,my=(endpoints.a.y+endpoints.b.y)/2;
+      const equalMarks=el("g",{class:"zoom-fixed-symbol equal-tick-group",
+        "data-zoom-anchor-x":mx,"data-zoom-anchor-y":my,
+        "aria-hidden":"true"});
       const ticks=Math.min(3,groupIndex+2);
       for(let j=0;j<ticks;j++){
         const shift=(j-(ticks-1)/2)*8;
-        const cx=(endpoints.a.x+endpoints.b.x)/2+tx*shift;
-        const cy=(endpoints.a.y+endpoints.b.y)/2+ty*shift;
-        labels.append(el("line",{
+        const cx=mx+tx*shift,cy=my+ty*shift;
+        equalMarks.append(el("line",{
           x1:cx-nx*8,y1:cy-ny*8,x2:cx+nx*8,y2:cy+ny*8,
           class:"equal-side-tick"
         }));
       }
+      labels.append(equalMarks);
     }
   }
 
@@ -755,9 +794,16 @@ function renderDiagram(animate=false,forceMotion=false){
         class:"dimension-bracket-spine"
       }));
       for(const [a,b] of [bracket.capA,bracket.capB]){
-        bracketGroup.append(el("line",{
+        // The bracket spine tracks the measured length, while the
+        // little perpendicular endpoint caps retain their physical size.
+        const centre={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+        const cap=el("g",{class:"zoom-fixed-symbol bracket-end-cap",
+          "data-zoom-anchor-x":centre.x,"data-zoom-anchor-y":centre.y,
+          "aria-hidden":"true"});
+        cap.append(el("line",{
           x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"dimension-bracket-cap"
         }));
+        bracketGroup.append(cap);
       }
       brackets.append(bracketGroup);
     }
@@ -766,10 +812,16 @@ function renderDiagram(animate=false,forceMotion=false){
     // The fine anchor dot and connection remain clear without hover,
     // while hover/focus/selection illuminate this precise relationship.
     const tether=labelTether(info,chosen,bracket?.mid||null);
+    // Both groups must share the SAME inverse-zoom anchor. The label
+    // and connector then stay attached at every magnification.
+    group.setAttribute("data-zoom-anchor-x",tether.anchor.x);
+    group.setAttribute("data-zoom-anchor-y",tether.anchor.y);
     const attach=el("g",{
       class:"measurement-tether"+(side.isTarget?" tether-target":""),
       "data-side-key":side.key
     });
+    attach.setAttribute("data-zoom-anchor-x",tether.anchor.x);
+    attach.setAttribute("data-zoom-anchor-y",tether.anchor.y);
     attach.append(el("line",{
       x1:tether.anchor.x,y1:tether.anchor.y,
       x2:tether.end.x,y2:tether.end.y,
