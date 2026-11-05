@@ -9,8 +9,8 @@ import {
 const cases=[
   {id:"first-fall",triangles:3,overhang:5,unknown:4,
     chain:["20","15","8","10"],target:10},
-  {id:"labyrinth",triangles:5,overhang:6,unknown:6,
-    chain:["30","24","10","2√41","10√2","√281"],target:Math.sqrt(281)}
+  {id:"labyrinth",triangles:5,overhang:4,unknown:6,
+    chain:["20","24","10","2√41","10√2","√281"],target:Math.sqrt(281)}
 ];
 for(const expected of cases){
   test(expected.id+" is an exact, grounded, solvable overhang pile",()=>{
@@ -34,7 +34,7 @@ for(const expected of cases){
     assert.deepEqual(steps.map(s=>s.answer),expected.chain);
     assert.equal(steps[0].kind,"pythagoras");
     assert.equal(steps[1].kind,"overhang");
-    assert.match(steps[1].equation,/−/);
+    assert.match(steps[1].equation,expected.id==="first-fall"?/−/:/\+/);
     assert.equal(steps[2].isHypotenuse,false);
     assert.match(steps[2].equation,/−/);
     assert.equal(steps.at(-1).isTarget,true);
