@@ -607,8 +607,7 @@ function renderInspector(){
       <div class="hint-area"><button class="hint-button" id="hint-next" ${level>=4?"disabled":""}>${level?level>=4?"ALL CLUES SHOWN":"REVEAL NEXT CLUE ("+(level+1)+"/4)":"NEED A CLUE? (1/4)"}</button>
       ${level?`<div class="hint-content"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>`;
   }
-  panel.innerHTML=`<span class="kicker">THE GEOMETER’S NOTES</span>
-    ${choices}
+  panel.innerHTML=`${choices}
     ${body}
     ${current.extensions?.length && solved.has(sideKey(current.target.a,current.target.b))?
       `<button class="extension-cta" id="open-extension-panel">✦ GEOMETER'S EXTENSIONS · PERIMETER & AREA →</button>`:""}
@@ -759,11 +758,9 @@ function openPuzzle(id){
         <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
         <div class="progress-track" aria-label="Number of missing lengths discovered"><span id="progress-fill" style="width:0"></span></div>
         <div class="inspector" id="inspector" aria-live="polite"></div>
-        <div class="side-bottom"><strong>✦ THE CHAIN IS YOURS TO DISCOVER</strong>
-          <p>Any mathematically correct length is accepted, even if you solve the target first. Progress and notes stay in this browser.</p></div>
+
       </aside>
-    </div><div class="challenge-bottom"><span>ANCIENT WISDOM. FRESH PERSPECTIVES.</span>
-      <button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
+    </div><div class="challenge-bottom"><button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
     </main>
     <dialog class="completion-dialog" id="completion-modal" aria-labelledby="completion-heading">
       <div class="completion-inner"><div class="completion-icon">✧</div><h2 id="completion-heading">The pile is solved.</h2>
