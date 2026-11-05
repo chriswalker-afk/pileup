@@ -12,7 +12,7 @@ const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
 function home(gallery=false){
  screen='home';clearTimeout(finishTimer);
- root.innerHTML=header()+`<main><section class="hero"><div><div class="eyebrow">— AN ANCIENT PUZZLE · A MODERN CHALLENGE</div><h1>When triangles<br><em>fall into place.</em></h1><p class="lead">In the footsteps of Pythagoras, follow a trail of hidden lengths. Each answer unlocks the next. Can you uncover the final side?</p><div class="actions"><button class="btn primary" data-puzzle="first-fall">BEGIN THE TRIAL &nbsp; →</button><button class="btn plain" data-gallery>EXPLORE THE CHALLENGES ↗</button></div><p class="footnote">✦ &nbsp; RIGHT-ANGLED TRIANGLES. ONE HIDDEN ANSWER.</p></div><div class="illustration"><svg viewBox="0 0 470 430" role="img" aria-label="Decorative arrangement of coloured geometric triangles"><polygon points="75,260 285,260 285,116" fill="#d7ae69" stroke="#433c31" stroke-width="3"/><polygon points="285,116 285,260 402,190" fill="#7fa7a1" stroke="#433c31" stroke-width="3"/><polygon points="75,260 285,260 184,370" fill="#b77f70" stroke="#433c31" stroke-width="3"/><polygon points="134,73 285,116 75,260" fill="#a7a0bb" stroke="#433c31" stroke-width="3"/><g fill="#433c31" font-size="21" font-family="Georgia,serif"><text x="170" y="249">a</text><text x="308" y="222">b</text><text x="194" y="311">c</text><text x="194" y="102">?</text></g><path d="M47 367H425M47 375H425" stroke="#ae9e80"/></svg><span class="illustration-caption">FIG. I — THE BEAUTY OF CONNECTION</span></div></section><div class="meander"></div><section class="section"><div class="section-title"><div class="eyebrow">THE METHOD</div><h2>Three steps to discovery</h2><p>Simple in principle. Surprisingly deep in practice.</p></div><div class="steps"><article><span class="number">I.</span><h3>Watch the fall</h3><p>Right-angled triangles tumble onto a carefully constructed geometric tablet.</p></article><article><span class="number">II.</span><h3>Follow the clues</h3><p>Known lengths lead to unknown lengths. Discover where the chain begins.</p></article><article><span class="number">III.</span><h3>Find the final side</h3><p>Use Pythagoras' theorem to connect the pieces and reach the target.</p></article></div></section><section class="section" id="challenges"><div class="section-title"><div class="eyebrow">CHOOSE YOUR PATH</div><h2>The challenges</h2><p>Two mathematically exact piles. Choose your own route to the answer.</p></div><div class="cards">${puzzles.map((x,i)=>`<button class="challenge-card" data-puzzle="${x.id}"><span class="card-index">0${i+1} / ${x.epithet}</span><span class="card-mark" aria-hidden="true">${i?'⌁':'△'}</span><span class="card-title">${x.title}</span><span class="card-description">${x.description}</span><span class="card-footer"><span>${x.triangles.length} TRIANGLES</span><span>${x.difficulty} ↗</span></span></button>`).join('')}</div></section></main>`+footer();
+ root.innerHTML=header()+`<main><section class="hero"><div><div class="eyebrow">— AN ANCIENT PUZZLE · A MODERN CHALLENGE</div><h1>When triangles<br><em>fall into place.</em></h1><p class="lead">In the footsteps of Pythagoras, follow a trail of hidden lengths. Each answer unlocks the next. Can you uncover the final side?</p><div class="actions"><button class="btn primary" data-puzzle="first-fall">BEGIN THE TRIAL &nbsp; →</button><button class="btn plain" data-gallery>EXPLORE THE CHALLENGES ↗</button></div><p class="footnote">✦ &nbsp; RIGHT-ANGLED TRIANGLES. ONE HIDDEN ANSWER.</p></div><div class="illustration"><svg viewBox="0 0 470 430" role="img" aria-label="Decorative arrangement of coloured geometric triangles"><polygon points="75,260 285,260 285,116" fill="#d7ae69" stroke="#433c31" stroke-width="3"/><polygon points="285,116 285,260 402,190" fill="#7fa7a1" stroke="#433c31" stroke-width="3"/><polygon points="75,260 285,260 184,370" fill="#b77f70" stroke="#433c31" stroke-width="3"/><polygon points="134,73 285,116 75,260" fill="#a7a0bb" stroke="#433c31" stroke-width="3"/><g fill="#433c31" font-size="21" font-family="Georgia,serif"><text x="170" y="249">a</text><text x="308" y="222">b</text><text x="194" y="311">c</text><text x="194" y="102">?</text></g><path d="M47 367H425M47 375H425" stroke="#ae9e80"/></svg><span class="illustration-caption">FIG. I — THE BEAUTY OF CONNECTION</span></div></section><div class="meander"></div><section class="section"><div class="section-title"><div class="eyebrow">THE METHOD</div><h2>Three steps to discovery</h2><p>Simple in principle. Surprisingly deep in practice.</p></div><div class="steps"><article><span class="number">I.</span><h3>Watch the fall</h3><p>Right-angled triangles tumble onto a carefully constructed geometric tablet.</p></article><article><span class="number">II.</span><h3>Follow the clues</h3><p>Known lengths lead to unknown lengths. Discover where the chain begins.</p></article><article><span class="number">III.</span><h3>Find the final side</h3><p>Use Pythagoras' theorem to connect the pieces and reach the target.</p></article></div></section><section class="section" id="challenges"><div class="section-title"><div class="eyebrow">CHOOSE YOUR PATH</div><h2>The challenges</h2><p>Six original piles, each with a different way to connect the mathematics.</p></div><div class="cards">${puzzles.map((x,i)=>`<button class="challenge-card" data-puzzle="${x.id}"><span class="card-index">${String(i+1).padStart(2,"0")} / ${x.epithet}</span><span class="card-mark" aria-hidden="true">${["△","↗","≡","⌁","◇","✧"][i]}</span><span class="card-title">${x.title}</span><span class="card-description">${x.description}</span><span class="card-tags">${(x.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</span><span class="card-footer"><span>${x.triangles.length} TRIANGLES</span><span>${x.difficulty} ↗</span></span></button>`).join('')}</div></section></main>`+footer();
  bind();if(gallery)requestAnimationFrame(()=>document.getElementById('challenges')?.scrollIntoView({behavior:reduced.matches?'instant':'smooth'}));
 }
 function el(name,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,String(v)));if(text)x.textContent=text;return x;}
@@ -450,12 +450,12 @@ function renderInspector(){
     const all=solutionSteps(current,sideMap);
     panel.innerHTML=`<span class="kicker">THE GEOMETER’S SCROLL</span>
       <h3 class="inspect-title">Complete worked solution</h3>
-      <p class="solution-disclaimer">One valid order is shown. You may have solved the triangles in a different order.</p>
+      <p class="solution-disclaimer">One valid order is shown. Shared edges may be solved by different routes.</p>
       <ol class="review-list">
         ${all.map((step,index)=>`<li class="review-item">
-          <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · TRIANGLE ${step.triangleId}</span><span>LOCATE ↗</span></button>
-          <p class="step-narrative">${step.kind==="overhang"?"Subtract the labelled overhang from the complete side.":"Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
-          <p class="step-equation">${step.equation}</p>
+          <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · ${step.kind==="pythagoras"?"TRIANGLE "+step.triangleId:step.kind==="equal"?"EQUAL MARKS":step.kind==="split"?"SHARED LONG SIDE":"OVERHANG"}</span><span>LOCATE ↗</span></button>
+          <p class="step-narrative">${step.kind==="equal"?"Matching ticks mean these two lengths are equal.":step.kind==="split"?"Combine the two shorter edges along one long side.":step.kind==="overhang"?(step.equation.includes("−")?"Subtract the overhang from the longer edge.":"Add the projecting overhang to the supporting side."):"Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
+          <p class="step-equation">${escapeHtml(step.equation)}</p>
           <p class="step-result">${step.isTarget?"x":"s"} = ${step.answer} cm</p>
         </li>`).join("")}
       </ol><button class="btn-link" id="return-solving">← RETURN TO THE PILE</button>`;
@@ -565,14 +565,15 @@ function showCompletion(){
 }
 function openPuzzle(id){
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
-  current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;screen=id;clearTimeout(finishTimer);
+  current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;extensionMode=false;screen=id;clearTimeout(finishTimer);
   loadProgress();
   if(location.hash.slice(1)!==id)history.pushState(null,"","#"+id);
   const index=puzzles.indexOf(puzzle);
+  const following=puzzles[(index+1)%puzzles.length];
   root.innerHTML=header()+`<main class="challenge-main">
     <div class="challenge-heading"><a class="back" href="#puzzles">← ALL CHALLENGES</a>
-      <span class="chapter">CHALLENGE 0${index+1} / 0${puzzles.length}</span>
-      <h1>${puzzle.title}</h1><p>${puzzle.description}</p></div>
+      <span class="chapter">CHALLENGE ${String(index+1).padStart(2,"0")} / ${String(puzzles.length).padStart(2,"0")}</span>
+      <h1>${puzzle.title}</h1><p>${puzzle.description}</p><p class="challenge-tags">${(puzzle.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</p></div>
     <div class="challenge-layout"><div class="tablet">
       <div class="tablet-bar"><span><span class="symbol">✧</span> THE GEOMETER’S TABLET</span>
         <span class="tablet-controls"><button id="replay" class="small-btn replay-button" title="Replay the falling triangles" aria-label="Replay the falling triangles">↻ <span>REPLAY FALL</span></button>
@@ -582,7 +583,7 @@ function openPuzzle(id){
       </div></div>
       <aside class="side"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><div class="rule"></div>
         <h2>Find the final <em>length.</em></h2>
-        <p class="description">Start with the bottom triangle on the floor. Look for the labelled overhang: it is part of the chain. Click any marked side to investigate.</p>
+        <p class="description">Study which sides line up. A long side may cover two shorter edges, and some pieces project beyond their support. Select any marked side to investigate.</p>
         <div class="facts"><div><span>TRIANGLES</span><strong>${puzzle.triangles.length}</strong></div>
           <div><span>GIVEN LENGTHS</span><strong>${puzzle.triangles.reduce((n,t)=>n+t.givens.length,0)+(puzzle.extraSegments?.length||0)}</strong></div></div>
         <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
@@ -592,7 +593,7 @@ function openPuzzle(id){
           <p>Any mathematically correct length is accepted, even if you solve the target first. Progress and notes stay in this browser.</p></div>
       </aside>
     </div><div class="challenge-bottom"><span>ANCIENT WISDOM. FRESH PERSPECTIVES.</span>
-      <button data-puzzle="${puzzles.find(x=>x.id!==id).id}">TRY THE OTHER CHALLENGE →</button></div>
+      <button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
     </main>
     <dialog class="completion-dialog" id="completion-modal" aria-labelledby="completion-heading">
       <div class="completion-inner"><div class="completion-icon">✧</div><h2 id="completion-heading">The pile is solved.</h2>
@@ -617,7 +618,7 @@ function openPuzzle(id){
     modal.close();solutionOpen=true;renderInspector();
   });
   document.getElementById("completion-other").addEventListener("click",()=>{
-    modal.close();openPuzzle(puzzles.find(x=>x.id!==id).id);
+    modal.close();openPuzzle(puzzles[(puzzles.findIndex(p=>p.id===id)+1)%puzzles.length].id);
   });
   renderDiagram(true);
   window.scrollTo({top:0,behavior:"instant"});
