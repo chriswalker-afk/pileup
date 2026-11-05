@@ -192,6 +192,16 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
           assert.equal(measurements.classList.contains("waiting"),false,
             "Measurements reveal once the animation is skipped");
         }
+        const inspector=nodes.get("inspector")?.innerHTML||"";
+        assert.match(inspector,/id="working-pad-mount"/,
+          "Students should have a scratchpad immediately, before selecting a side");
+        const page=nodes.get("app")?.innerHTML||"";
+        assert.ok(!page.includes("Study which sides line up."),
+          "Remove unneeded explanatory flavour copy from the workspace");
+        assert.ok(!page.includes('Find the final <em>length.</em>'),
+          "Remove the repeated final-length headline");
+        assert.ok(!page.includes('class="facts"'),
+          "Triangle and given counts should not crowd the working panel");
         cases++;
       }
     }
