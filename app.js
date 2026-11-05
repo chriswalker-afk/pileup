@@ -143,8 +143,10 @@ function refreshZoomControls(){
  */
 function syncFixedSizeAnnotations(svg,scale){
   for(const node of svg.querySelectorAll(".side-chip, .measurement-tether")){
-    const x=Number(node.getAttribute("data-zoom-anchor-x"));
-    const y=Number(node.getAttribute("data-zoom-anchor-y"));
+    const rawX=node.getAttribute("data-zoom-anchor-x");
+    const rawY=node.getAttribute("data-zoom-anchor-y");
+    if(rawX===null||rawY===null)continue;
+    const x=Number(rawX),y=Number(rawY);
     if(!Number.isFinite(x)||!Number.isFinite(y))continue;
     const transform=fixedAnnotationTransform({x,y},scale);
     if(transform)node.setAttribute("transform",transform);
@@ -789,10 +791,8 @@ function renderDiagram(animate=false,forceMotion=false){
     const tether=labelTether(info,chosen,bracket?.mid||null);
     // Both groups must share the SAME inverse-zoom anchor. The label
     // and connector then stay attached at every magnification.
-    for(const annotation of [group]){
-      annotation.setAttribute("data-zoom-anchor-x",tether.anchor.x);
-      annotation.setAttribute("data-zoom-anchor-y",tether.anchor.y);
-    }
+    group.setAttribute("data-zoom-anchor-x",tether.anchor.x);
+    group.setAttribute("data-zoom-anchor-y",tether.anchor.y);
     const attach=el("g",{
       class:"measurement-tether"+(side.isTarget?" tether-target":""),
       "data-side-key":side.key
