@@ -25,7 +25,7 @@ function setWorkingFocused(wide){
   }
 }
 
-const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav><a href="#home">THE AGORA</a><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
+const header=()=>'<header><a class="brand" href="#home" aria-label="Pythagoras Pile Up home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav aria-label="Main navigation"><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
 function miniPreview(puzzle){
   const shapes=[...puzzle.triangles,...(puzzle.rectangles||[])];
@@ -49,7 +49,7 @@ function home(gallery=false){
   disposeWorking();disposeWorking=()=>{};
   screen="home";clearTimeout(finishTimer);
   if(document.body?.dataset)document.body.dataset.view="home";
-  root.innerHTML=header()+`<main class="home-compact">
+  root.innerHTML=header()+`<main id="home" class="home-compact">
     <section class="home-story" aria-labelledby="home-heading">
       <div class="home-story-top">
         <div class="eyebrow">✧ AN ANCIENT PUZZLE · A MODERN CHALLENGE</div>
@@ -68,14 +68,14 @@ function home(gallery=false){
           <span><b>III</b> Find the final x</span>
         </div>
         <button class="btn primary home-start" data-puzzle="first-fall">BEGIN THE FIRST TRIAL <span aria-hidden="true">→</span></button>
-        <p class="footnote">SIX ORIGINAL CHALLENGES · FROM APPRENTICE TO MASTER</p>
+        <p class="footnote">${puzzles.length} CHALLENGES · FROM APPRENTICE TO MASTER</p>
       </div>
     </section>
     <section class="home-library" id="challenges" aria-labelledby="home-challenge-title">
       <div class="home-library-heading">
         <div>
           <div class="eyebrow">CHOOSE YOUR PATH</div>
-          <h2 id="home-challenge-title">The six trials</h2>
+          <h2 id="home-challenge-title">The challenges</h2>
         </div>
         <p>Different piles. Different connections.</p>
       </div>

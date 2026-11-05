@@ -214,6 +214,36 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     assert.match(home,/class="home-puzzle-grid"/);
     assert.equal((home.match(/class="challenge-card home-challenge-card"/g)||[]).length,9);
     assert.ok(!home.includes("Three steps to discovery"));
+    // Navigation must be meaningful and non-duplicative now that
+    // introduction and challenge catalogue share one dashboard.
+    const assertSingleNavigation=html=>{
+      const nav=html.match(/<nav[^>]*>([\s\S]*?)<\/nav>/);
+      assert.ok(nav,"Page must have a labelled navigation region");
+      assert.match(nav[0],/aria-label="Main navigation"/);
+      assert.equal((nav[1].match(/<a /g)||[]).length,1,
+        "Only one main navigation link should be present");
+      assert.match(nav[1],/href="#puzzles">THE CHALLENGES<\/a>/);
+      assert.ok(!html.includes("THE AGORA"),
+        "The old Agora link duplicated the challenges destination");
+      assert.match(html,/class="brand" href="#home"/,
+        "The site brand remains the way back to the introduction");
+    };
+    assertSingleNavigation(home);
+    assert.match(home,/id="home" class="home-compact"/);
+    assert.match(home,/9 CHALLENGES/);
+    assert.ok(!home.includes("The six trials"));
+
+    location.hash="#puzzles";show();
+    const catalogue=nodes.get("app")?.innerHTML||"";
+    assertSingleNavigation(catalogue);
+    assert.equal((catalogue.match(/class="challenge-card home-challenge-card"/g)||[]).length,9,
+      "Challenges link should expose every puzzle");
+
+    location.hash="#first-fall";show();
+    const puzzlePage=nodes.get("app")?.innerHTML||"";
+    assertSingleNavigation(puzzlePage);
+    assert.match(puzzlePage,/← ALL CHALLENGES/,
+      "Individual puzzles retain their dedicated back-to-catalogue link");
   }finally{
     for(const name of names){
       if(oldGlobals[name]===undefined)delete globalThis[name];
