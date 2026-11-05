@@ -292,6 +292,90 @@ try{
       if(name==="desktop"||name==="phone")await snap(page,"zoom-acropolis-"+name);
       return {afterZoom:first,panBefore:before,panAfter:after,reset};
     });
+    await run(name+" / label Focus, exact trace and Locate at zoom",async()=>{
+      await open(page,"acropolis");
+      const svg=page.locator("#diagram svg");
+      const labels=svg.locator(".side-chip");
+      const all=await labels.count();
+      insist(all>=12,"Complex pile has too few marked sides",{all});
+      const correspondence=await svg.evaluate(root=>{
+        const data=[...root.querySelectorAll(".side-chip")].map(chip=>{
+          const key=chip.getAttribute("data-side-key");
+          const trace=[...root.querySelectorAll(".side-trace")].find(e=>e.getAttribute("data-side-key")===key);
+          const association=[...root.querySelectorAll(".side-association")].find(e=>e.getAttribute("data-side-key")===key);
+          const hit=[...root.querySelectorAll(".side-hit")].find(e=>e.getAttribute("data-side-key")===key);
+          const line=trace?.querySelector("line");
+          const same=hit&&line&&["x1","y1","x2","y2"].every(attr=>
+            Math.abs(Number(hit.getAttribute(attr))-Number(line.getAttribute(attr)))<.001);
+          return {key,trace:!!trace,connector:!!association,hit:!!hit,same};
+        });
+        return {total:data.length,missing:data.filter(x=>!x.trace||!x.connector||x.hit&&!x.same)};
+      });
+      insist(correspondence.missing.length===0,
+        "Labels lack a connector or exact segment geometry",correspondence);
+      const label=svg.locator(".side-chip.given:not(.overhang)").first();
+      const key=await label.getAttribute("data-side-key");
+      await label.hover();
+      const preview=await svg.evaluate((root,k)=>{
+        const trace=[...root.querySelectorAll(".side-trace")].find(x=>x.getAttribute("data-side-key")===k);
+        const chip=[...root.querySelectorAll(".side-chip")].find(x=>x.getAttribute("data-side-key")===k);
+        return {on:trace?.classList.contains("is-emphasized")||false,
+          chip:chip?.classList.contains("is-emphasized")||false,
+          number:root.querySelectorAll(".side-trace.is-emphasized").length};
+      },key);
+      insist(preview.on&&preview.chip&&preview.number===1,
+        "Hover fails to connect a length chip to its exact side",preview);
+      await page.mouse.move(4,4);
+      insist(await svg.locator(".side-trace.is-emphasized").count()===0,
+        "Side preview persists after pointer leaves the label");
+      const focus=page.locator("#label-focus-toggle");
+      insist(await focus.getAttribute("aria-pressed")==="false",
+        "All labels must be shown by default");
+      await focus.click();
+      insist(await focus.getAttribute("aria-pressed")==="true",
+        "Focus view button failed to switch on");
+      await page.locator("#side-select").selectOption({index:1});
+      const highlighted=await svg.evaluate(root=>({
+        focused:root.classList.contains("label-focus-active"),
+        muted:root.querySelectorAll(".side-chip.focus-muted").length,
+        strong:root.querySelectorAll(".side-chip:not(.focus-muted)").length,
+        traces:root.querySelectorAll(".side-trace.is-emphasized").length
+      }));
+      insist(highlighted.focused&&highlighted.muted>0&&highlighted.strong>=3&&
+        highlighted.traces===1,"Focus view does not isolate the active shape",highlighted);
+      await page.locator("#diagram-zoom-in").click();
+      await page.locator("#diagram-zoom-in").click();
+      await page.locator("#diagram-zoom-in").click();
+      const before=await svg.evaluate(e=>({
+        width:e.viewBox.baseVal.width,height:e.viewBox.baseVal.height
+      }));
+      await page.locator("#locate-side").click();
+      const located=await svg.evaluate(e=>{
+        const box=e.viewBox.baseVal,selected=document.querySelector(".side-chip.selected");
+        const key=selected?.getAttribute("data-side-key");
+        const line=[...e.querySelectorAll(".side-trace")].find(n=>n.getAttribute("data-side-key")===key)?.querySelector("line");
+        const mx=(Number(line.getAttribute("x1"))+Number(line.getAttribute("x2")))/2;
+        const my=(Number(line.getAttribute("y1"))+Number(line.getAttribute("y2")))/2;
+        return {box:{x:box.x,y:box.y,w:box.width,h:box.height},mx,my,
+          label:document.querySelector("#diagram-zoom-level").textContent};
+      });
+      insist(Math.abs(located.box.w-before.width)<.001 &&
+        Math.abs(located.box.h-before.height)<.001,
+        "Locate unexpectedly reset the zoom",located);
+      insist(located.mx>=located.box.x-1&&
+        located.mx<=located.box.x+located.box.w+1&&
+        located.my>=located.box.y-1&&
+        located.my<=located.box.y+located.box.h+1,
+        "Locate did not bring selected side into the visible SVG",located);
+      await page.locator("#label-focus-toggle").click();
+      insist(await svg.locator(".side-chip.focus-muted").count()===0,
+        "All Labels does not restore every measurement");
+      await page.locator("#replay").click();
+      if(await page.locator("#skip").isVisible())await page.locator("#skip").click();
+      insist(await svg.locator(".side-chip").count()===all,
+        "Replay/Skip changed the measurement count after Focus view");
+      return {all,preview,highlighted,located};
+    });
     await run(name+" / drawing containment and working controls",async()=>{
       await open(page,"first-fall");
       await page.locator(".ws-tab").nth(1).click();

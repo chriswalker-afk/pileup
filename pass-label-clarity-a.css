@@ -1,0 +1,161 @@
+/* LABEL CLARITY — PASS A
+   Purely interactive highlights: label positions and mathematical
+   line lengths are unchanged. No hovering required for touchscreen. */
+
+/* Link a side to its actual endpoints and label. The association is
+   silent until its matching side or measurement is hovered, focused
+   or selected. Avoid adding clutter in All Labels mode. */
+#diagram svg .side-traces{pointer-events:none}
+#diagram svg .side-trace{
+  opacity:0;pointer-events:none;
+  transition:opacity .13s ease-out;
+}
+#diagram svg .side-trace.is-emphasized{opacity:1}
+#diagram svg .side-trace-line {
+  stroke:#af7430;stroke-width:5;
+  stroke-linecap:round;
+  vector-effect:non-scaling-stroke;
+  fill:none;
+}
+#diagram svg .side-trace-end {
+  fill:#fff0d3;stroke:#a8682d;stroke-width:2.2;
+  vector-effect:non-scaling-stroke;
+}
+#diagram svg .side-association {
+  opacity:0;pointer-events:none;
+  fill:none;stroke:#9a692b;stroke-width:1.7;
+  stroke-dasharray:4 3;
+  vector-effect:non-scaling-stroke;
+}
+#diagram svg .side-association.is-emphasized{opacity:.95}
+#diagram svg .side-chip.is-emphasized rect{
+  stroke:#a56821;stroke-width:2.5;
+  fill-opacity:1;filter:drop-shadow(0 1px 3px #805b2d52);
+}
+#diagram svg .side-chip.target.is-emphasized rect{stroke:#e0b567;stroke-width:3}
+#diagram svg .dimension-leader.is-emphasized {
+  stroke:#ac7636;stroke-width:1.9;
+  opacity:1;stroke-dasharray:3 3;
+  vector-effect:non-scaling-stroke;
+}
+
+/* Focus view is opt-in: only measurements on the selected triangle
+   or rectangle remain strong. All muted labels are still clickable
+   so a student can change side without switching modes. */
+#diagram svg.label-focus-active .side-chip.focus-muted{
+  opacity:.14;transition:opacity .16s ease;
+}
+#diagram svg.label-focus-active .dimension-leader.focus-muted{opacity:.09}
+#diagram svg.label-focus-active .piece.focus-piece-muted{
+  opacity:.48;transition:opacity .15s ease;
+}
+#diagram svg.label-focus-active .side-chip.focus-muted:hover,
+#diagram svg.label-focus-active .side-chip.focus-muted:focus-visible{
+  opacity:1;
+}
+#diagram svg .side-chip.is-emphasized{opacity:1}
+#diagram svg .piece:focus-visible polygon{stroke:#ae773a;stroke-width:3.4px}
+
+/* Use the unused heading area of the existing side selector rather
+   than creating an extra section or reducing writing-space height. */
+body[data-view="puzzle"] .clarity-field {
+  display:flex;flex-direction:column;gap:4px;
+  flex:0 0 auto;
+}
+body[data-view="puzzle"] .clarity-selector-heading{
+  display:flex;justify-content:space-between;align-items:center;gap:6px;
+  min-width:0;
+}
+body[data-view="puzzle"] .clarity-selector-heading label {
+  display:block;min-width:0;flex:1;
+  margin:0;line-height:1.28;
+}
+body[data-view="puzzle"] .clarity-selector-row {
+  display:flex;gap:5px;align-items:stretch;width:100%;min-width:0;
+}
+body[data-view="puzzle"] .clarity-selector-row select{
+  flex:1;min-width:0;width:100%;
+}
+body[data-view="puzzle"] .clarity-focus-toggle,
+body[data-view="puzzle"] .clarity-locate{
+  flex:0 0 auto;min-width:0;white-space:nowrap;
+  padding:4px 7px;
+  border:1px solid #baa583;
+  background:#f2e9d8;color:#6b5436;
+  font:700 9px/1.2 'DM Sans',system-ui,sans-serif;
+  letter-spacing:.035em;
+  cursor:pointer;
+}
+body[data-view="puzzle"] .clarity-focus-toggle{
+  min-height:26px;
+}
+body[data-view="puzzle"] .clarity-focus-toggle[aria-pressed="true"]{
+  background:#385f4b;border-color:#385f4b;color:#fff7e3;
+}
+body[data-view="puzzle"] .clarity-locate{
+  align-self:stretch;
+  display:flex;align-items:center;justify-content:center;
+  min-height:34px;
+}
+body[data-view="puzzle"] .clarity-locate:disabled{
+  opacity:.35;cursor:default;
+}
+body[data-view="puzzle"] .clarity-locate:hover:not(:disabled),
+body[data-view="puzzle"] .clarity-focus-toggle:hover{
+  border-color:#64866b;background:#e5ebdf;color:#345a44;
+}
+body[data-view="puzzle"] .clarity-focus-toggle[aria-pressed="true"]:hover {
+  background:#456f58;color:#fff;
+}
+body[data-view="puzzle"] .clarity-focus-toggle:focus-visible,
+body[data-view="puzzle"] .clarity-locate:focus-visible{
+  outline:2px solid #a67a38;outline-offset:2px;
+}
+@media (min-width:900px) and (max-height:700px){
+  body[data-view="puzzle"] .clarity-selector-heading label {font-size:8px}
+  body[data-view="puzzle"] .clarity-focus-toggle {min-height:21px;padding:2px 5px;font-size:8px}
+  body[data-view="puzzle"] .clarity-locate {min-height:30px;font-size:8px;padding:3px 5px}
+}
+@media (max-width:520px){
+  body[data-view="puzzle"] .clarity-selector-heading label {font-size:9px}
+  body[data-view="puzzle"] .clarity-locate {min-height:42px;letter-spacing:0}
+  body[data-view="puzzle"] .clarity-focus-toggle {min-height:38px}
+}
+@media (prefers-reduced-motion:reduce){
+  #diagram svg .side-trace,
+  #diagram svg .side-chip,
+  #diagram svg .piece.focus-piece-muted {transition:none!important}
+}
+
+
+/* Short laptops reserve a narrow, single-line selector heading.
+   The mode button is inset into that existing line, instead of
+   increasing the inspector's minimum height and covering the hint. */
+@media(min-width:900px){
+  body[data-view="puzzle"] .clarity-field{gap:3px}
+  body[data-view="puzzle"] .clarity-selector-heading {
+    height:15px;min-height:15px;
+    position:relative;align-items:start;
+  }
+  body[data-view="puzzle"] .clarity-selector-heading label {
+    line-height:13px;max-width:calc(100% - 86px);
+    align-self:start;
+  }
+  body[data-view="puzzle"] .clarity-focus-toggle {
+    position:absolute;right:0;top:-4px;
+    height:21px;min-height:21px;
+    padding:1px 5px;
+    font-size:8px;
+  }
+}
+
+
+/* On an ordinary 768px laptop the spare fallback-typesetting note
+   could protrude from the flex-allocated maths parchment over the
+   hint action. Keep the editable maths rows, remove only that
+   non-essential helper when vertical room is limited. */
+@media(min-width:900px) and (max-height:850px){
+  body[data-view="puzzle"] #inspector .ws-root:not(.ws-drawing) .ws-body>.ws-help{
+    display:none!important;
+  }
+}

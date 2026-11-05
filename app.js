@@ -3,6 +3,7 @@ import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
 import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures } from "./diagram-zoom.js";
+import { labelsForShape, centreSideAtZoom } from "./label-clarity.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -50,6 +51,64 @@ const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
 let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
 let pendingDiscoveredKey=null;
+let focusLabels=false,focusedShapeId=null,previewSideKey=null;
+
+/**
+ * One visual relationship for the chip, its exact full segment, and
+ * its owning shape. This changes CSS classes only: never unmount
+ * the mathematical working editor in response to hover or Focus.
+ */
+function refreshLabelClarity(){
+  const svg=document.querySelector("#diagram svg");
+  if(!svg)return;
+  const hasFocus=focusLabels&&Boolean(selectedSide)&&Boolean(focusedShapeId);
+  const permitted=hasFocus?labelsForShape(sideMap,focusedShapeId):new Set();
+  const emphasis=previewSideKey||selectedSide;
+  svg.classList.toggle("label-focus-enabled",focusLabels);
+  svg.classList.toggle("label-focus-active",hasFocus);
+  for(const selector of [".side-chip",".side-trace",".dimension-leader"]){
+    for(const element of svg.querySelectorAll(selector)){
+      const key=element.getAttribute?.("data-side-key");
+      if(!key)continue;
+      element.classList.toggle("is-emphasized",emphasis===key);
+      element.classList.toggle("focus-muted",hasFocus && !permitted.has(key) && emphasis!==key);
+    }
+  }
+  for(const piece of svg.querySelectorAll(".piece")){
+    piece.classList.toggle("focus-piece-muted",
+      hasFocus&&piece.dataset?.id!==focusedShapeId&&
+      !sideMap.get(emphasis)?.triangleIds.includes(piece.dataset?.id));
+  }
+}
+function previewExactSide(key){
+  if(animating)return;
+  previewSideKey=key;
+  refreshLabelClarity();
+}
+function clearSidePreview(key){
+  if(previewSideKey===key){previewSideKey=null;refreshLabelClarity();}
+}
+function attachSidePreview(element,key){
+  element.addEventListener("pointerenter",()=>previewExactSide(key));
+  element.addEventListener("pointerleave",()=>clearSidePreview(key));
+  element.addEventListener("focus",()=>previewExactSide(key));
+  element.addEventListener("blur",()=>clearSidePreview(key));
+}
+function locateSelectedSide(){
+  const side=sideMap.get(selectedSide);
+  if(!side||animating)return;
+  const {xy}=fitPileInTablet(current);
+  setDiagramZoom(centreSideAtZoom(zoomState,xy(side.a),xy(side.b)));
+  previewSideKey=null;
+  refreshLabelClarity();
+  const svg=document.querySelector("#diagram svg");
+  if(window.innerWidth<=899){
+    svg?.scrollIntoView?.({block:"center",behavior:"instant"});
+  }
+  const notice=document.getElementById("progress-announcement");
+  if(notice)notice.textContent="Located selected length in the diagram.";
+}
+
 let disposeWorking=()=>{};
 let extensionMode=false,extensionGrades={};
 let zoomState=newZoom();
@@ -255,6 +314,7 @@ function homeHeroIllustration(){
 }
 function home(gallery=false){
   detachDiagramZoom();detachDiagramZoom=()=>{};
+  focusLabels=false;focusedShapeId=null;previewSideKey=null;
   disposeWorking();disposeWorking=()=>{};
   screen="home";clearTimeout(finishTimer);
   if(document.body?.dataset)document.body.dataset.view="home";
@@ -393,12 +453,15 @@ function chooseTriangle(id){
   const options=edges.filter(s=>s&&!s.given&&!s.suppressLabel&&!solved.has(s.key));
   const choices=readySteps(current,sideMap,solved);
   const side=options.find(s=>choices.some(step=>step.sideKey===s.key))||options[0]||edges.find(s=>s&&!s.given&&!s.suppressLabel)||edges.find(Boolean);
-  if(side)chooseSide(side.key);
+  if(side)chooseSide(side.key,id);
 }
-function chooseSide(key){
+function chooseSide(key,shapeId=null){
   if(animating)return;
-  if(!sideMap.has(key))return;
+  const side=sideMap.get(key);
+  if(!side)return;
   selectedSide=key;
+  focusedShapeId=shapeId||side.triangleIds[0]||null;
+  previewSideKey=null;
   feedback=null;
   solutionOpen=false;
   renderDiagram(false);
@@ -413,6 +476,7 @@ let fallRequest=0;
 function renderDiagram(animate=false,forceMotion=false){
   const discoveredNow=pendingDiscoveredKey;
   pendingDiscoveredKey=null;
+  previewSideKey=null;
   const shouldAnimate=animate&&(forceMotion||autoFallEnabled());
   clearTimeout(finishTimer);
   pieceAnimations.forEach(animation=>{try{animation.cancel()}catch(_){}});
@@ -510,10 +574,9 @@ function renderDiagram(animate=false,forceMotion=false){
     });
     svg.append(group);
   });
-  if(selectedSide){
-    const side=sideMap.get(selectedSide),ends=toSide(side);
-    svg.append(el("line",{x1:ends.a.x,y1:ends.a.y,x2:ends.b.x,y2:ends.b.y,class:"active-side"}));
-  }
+  // A dedicated trace draws the exact endpoints of the selected or
+  // hovered length. It is deliberately overlaid without modifying
+  // triangle geometry or the label-placement algorithm.
   // Collinear full/part edges overlap. Hit targets are ordered with short,
   // currently unknown edges above long or given edges for reliable selection.
   const orderedSides=[...sideMap.values()].filter(s=>!s.suppressLabel).sort((a,b)=>
@@ -523,10 +586,11 @@ function renderDiagram(animate=false,forceMotion=false){
     const ends=toSide(side);
     const hit=el("line",{
       x1:ends.a.x,y1:ends.a.y,x2:ends.b.x,y2:ends.b.y,
-      class:"side-hit",tabindex:0,role:"button",
+      class:"side-hit","data-side-key":side.key,tabindex:0,role:"button",
       "aria-label":(side.given?"Given "+exactLength(side.length)+" centimetres":side.isTarget?"Select target x":"Select an unknown side")
         +" of triangle "+side.triangleIds.join(" and ")
     });
+    attachSidePreview(hit,side.key);
     hit.addEventListener("click",()=>chooseSide(side.key));
     hit.addEventListener("keydown",event=>{
       if(event.key==="Enter"||event.key===" "){event.preventDefault();chooseSide(side.key);}
@@ -535,6 +599,20 @@ function renderDiagram(animate=false,forceMotion=false){
   }
 
   const labels=el("g",{class:"side-labels"+(shouldAnimate?" waiting":"")});
+  const traces=el("g",{class:"side-traces","aria-hidden":"true"});
+  for(const side of sideMap.values()){
+    if(side.suppressLabel)continue;
+    const ends=toSide(side);
+    const trace=el("g",{class:"side-trace","data-side-key":side.key});
+    trace.append(el("line",{
+      x1:ends.a.x,y1:ends.a.y,x2:ends.b.x,y2:ends.b.y,class:"side-trace-line"
+    }));
+    for(const point of [ends.a,ends.b]){
+      trace.append(el("circle",{cx:point.x,cy:point.y,r:4.1,class:"side-trace-end"}));
+    }
+    traces.append(trace);
+  }
+  labels.append(traces);
   // Matching tick marks are measurements: hide and reveal them with all
   // other measurement labels after the final piece has settled.
   // Their geometry is drawn on the actual side (above the hit targets
@@ -652,6 +730,13 @@ function renderDiagram(animate=false,forceMotion=false){
     const width=Math.max(fontSize+12,textWidth+15);
     const chosen=positioning(side,width);
     const pos=chosen.pos;
+    const ends=toSide(side);
+    const labelConnector=el("line",{
+      x1:(ends.a.x+ends.b.x)/2,y1:(ends.a.y+ends.b.y)/2,
+      x2:pos.x,y2:pos.y,
+      class:"side-association","data-side-key":side.key
+    });
+    traces.append(labelConnector);
     occupied.push({x:pos.x,y:pos.y,w:width,h:boxHeight});
     const classes=["side-chip",side.given?"given":solvedSide?"solved":side.isTarget?"target":"unknown"];
     if(side.isOverhang)classes.push("overhang");
@@ -674,7 +759,8 @@ function renderDiagram(animate=false,forceMotion=false){
       const ends=toSide(side);
       labels.append(el("line",{
         x1:(ends.a.x+ends.b.x)/2,y1:(ends.a.y+ends.b.y)/2,
-        x2:pos.x,y2:pos.y,class:"dimension-leader"
+        x2:pos.x,y2:pos.y,class:"dimension-leader",
+        "data-side-key":side.key
       }));
     }
     group.append(el("rect",{x:pos.x-width/2,y:pos.y-boxHeight/2,width,height:boxHeight,rx:4}));
@@ -691,6 +777,7 @@ function renderDiagram(animate=false,forceMotion=false){
       }
     });
     if(side.isOverhang)group.removeAttribute("tabindex");
+    attachSidePreview(group,side.key);
     labels.append(group);
   }
   if(!visible)labels.classList.add("hidden-labels");
@@ -735,6 +822,7 @@ function renderDiagram(animate=false,forceMotion=false){
     document.getElementById("replay").disabled=false;
   }
   renderInspector();
+  refreshLabelClarity();
   if(discoveredNow){
     const bar=document.getElementById("progress-fill");
     bar?.classList.add("progress-advanced");
@@ -879,7 +967,9 @@ function renderInspector(){
     });
     panel.querySelectorAll("[data-review-side]").forEach(button=>button.addEventListener("click",()=>{
       selectedSide=button.dataset.reviewSide;
+      focusedShapeId=sideMap.get(selectedSide)?.triangleIds[0]||null;
       renderDiagram(false);
+      locateSelectedSide();
     }));
     return;
   }
@@ -889,12 +979,18 @@ function renderInspector(){
   }
   const unprovided=[...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel);
   const side=selectedSide?sideMap.get(selectedSide):null;
-  const choices=`<div class="inspect-field">
-    <label for="side-select">CHOOSE A SIDE TO INVESTIGATE</label>
-    <select id="side-select">
+  const choices=`<div class="inspect-field clarity-field">
+    <div class="clarity-selector-heading"><label for="side-select">CHOOSE A SIDE TO INVESTIGATE</label>
+      <button id="label-focus-toggle" type="button" class="clarity-focus-toggle"
+        aria-pressed="${focusLabels}" title="${focusLabels?"Show every measurement":"Show only measurements belonging to the selected shape"}">
+        ${focusLabels?"ALL LABELS":"FOCUS VIEW"}</button></div>
+    <div class="clarity-selector-row"><select id="side-select">
       <option value="">Select a marked side…</option>
       ${unprovided.map((s,i)=>`<option value="${s.key}" ${selectedSide===s.key?"selected":""}>${s.isTarget?"Target x":"Side "+(i+1)+" · triangle "+s.triangleIds.join(" & ")}${solved.has(s.key)?" ✓":""}</option>`).join("")}
-    </select></div>`;
+    </select>
+    <button id="locate-side" type="button" class="clarity-locate"
+      title="Centre the chosen length in the zoomed diagram"
+      aria-label="Locate selected side in diagram" ${selectedSide?"":"disabled"}>LOCATE ↗</button></div></div>`;
   let body;
   if(!side){
     body=`<div class="workspace-brief"><strong>Select a ? on the diagram</strong><span>Or begin calculations on your scratchpad.</span></div>
@@ -929,9 +1025,18 @@ function renderInspector(){
       <button class="btn-link" id="solution-toggle">REVEAL FULL SOLUTION ↗</button>
       <button class="btn-link" id="reset-progress">START AGAIN ↻</button>
     </div>`;
+  panel.querySelector("#label-focus-toggle").addEventListener("click",event=>{
+    focusLabels=!focusLabels;
+    const button=event.currentTarget;
+    button.setAttribute("aria-pressed",String(focusLabels));
+    button.textContent=focusLabels?"ALL LABELS":"FOCUS VIEW";
+    button.title=focusLabels?"Show every measurement":"Show only the selected shape’s measurements";
+    refreshLabelClarity();
+  });
+  panel.querySelector("#locate-side").addEventListener("click",locateSelectedSide);
   panel.querySelector("#side-select").addEventListener("change",event=>{
     if(event.target.value)chooseSide(event.target.value);
-    else{selectedSide=null;feedback=null;renderDiagram(false);}
+    else{selectedSide=null;focusedShapeId=null;previewSideKey=null;feedback=null;renderDiagram(false);}
   });
   panel.querySelector("#solution-toggle").addEventListener("click",()=>{
     solutionOpen=true;renderInspector();
@@ -943,7 +1048,7 @@ function renderInspector(){
   panel.querySelector("#reset-progress").addEventListener("click",()=>{
     if(!window.confirm("Clear solved lengths, maths lines, drawings and hints for this challenge?"))return;
     solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
-    pendingDiscoveredKey=null;
+    pendingDiscoveredKey=null;focusedShapeId=null;previewSideKey=null;
     saveProgress();renderDiagram(false);
   });
   const form=panel.querySelector("#answer-form");
@@ -1081,6 +1186,7 @@ function openPuzzle(id){
   if(document.body?.dataset)document.body.dataset.view="puzzle";
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
   current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;extensionMode=false;screen=id;clearTimeout(finishTimer);
+  focusLabels=false;focusedShapeId=null;previewSideKey=null;
   pendingDiscoveredKey=null;
   loadProgress();
   if(location.hash.slice(1)!==id)history.pushState(null,"","#"+id);
