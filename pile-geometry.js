@@ -6,6 +6,10 @@ import {
   makeTwinPlinthAcropolis
 } from "./distinct-piles.js";
 import { makeGreatInterlock } from "./interlocking-pile.js";
+import {
+  makeFoldedStaircase,makeRisingZigzag,
+  makeNineStepCascade,makeSteppedAcropolis
+} from "./reworked-piles.js";
 import { assertFullyVisiblePuzzle } from "./pile-visibility.js";
 
 /**
@@ -124,35 +128,35 @@ export const puzzles=[
     architecture:{family:"split full side",summary:"Two upper sections exactly cover one diagonal",
       features:["one ground base","two upper roofs","matching ticks"]}
   }),
-  makeSuspendedProjectChallenge({
+  makeFoldedStaircase({
     id:"split-project",title:"Split & Project",epithet:"THE BUILDERS",
     difficulty:"ADVANCED",
-    description:"Two grounded piers hold a long projecting beam over an open gap. Subtract ground spans, match lengths and add the overhang."
+    description:"Follow a compact uphill fold: use 3–4–5, subtract from 13, find the 2 cm inset and climb to the final roof."
   }),
   makeForkAndRejoinChallenge({
     id:"labyrinth",title:"The Geometer’s Labyrinth",epithet:"THE ARCHITECT",
     difficulty:"EXPERT",
     description:"Two different calculation paths rise around a triangular opening. Their results rejoin to support one final roof."
   }),
-  makeBridgeChallenge({
+  makeRisingZigzag({
     id:"great-pile",title:"The Great Pile Up",epithet:"THE MASTER GEOMETER",
     difficulty:"MASTER CHALLENGE",
-    description:"Two separate abutments support a long beam above an open bay. Calculate through its asymmetric rising roof."
+    description:"Six right triangles climb in an alternating zigzag. Each newly discovered side unlocks the next face."
   }),
-  makeTerracedMusesChallenge({
+  makeNineStepCascade({
     id:"nine-muses",title:"The Nine Muses",epithet:"THE ACADEMY",
     difficulty:"MASTER CHALLENGE",
-    description:"Three independent foundations carry twin terraces. Matching lengths reconnect the two ridges beneath a final crown."
+    description:"Nine linked triangles lean upwards like a stepped sculpture. The single marked 2 cm offset opens the middle tier."
   }),
   makePlatformTerraceChallenge({
     id:"marble-terrace",title:"The Marble Terrace",epithet:"THE MASTER BUILDER",
     difficulty:"MASTER CHALLENGE",
     description:"A broad rectangle is the foundation. Its diagonal reveals a split rooftop carrying two staggered towers."
   }),
-  makeTwinPlinthAcropolis({
+  makeSteppedAcropolis({
     id:"acropolis",title:"The Acropolis",epithet:"THE GRAND ARCHITECT",
     difficulty:"GRAND CHALLENGE",
-    description:"Two separate stone plinths flank an open bay. Solve both diagonals and unite their widths in the crowning bridge."
+    description:"Two rectangular platforms rise one after the other. Each diagonal is essential before the zigzag canopy can be solved."
   }),
   makeGreatInterlock({
     id:"great-interlock",title:"The Great Interlock",epithet:"THE MASTERPIECE",
