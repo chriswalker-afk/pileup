@@ -108,3 +108,7 @@ The site includes a real-Chromium browser audit across **five screen sizes**, te
 ## Zooming into diagrams
 
 All nine puzzles have **− / + / FIT** controls in the tablet, with a percentage readout from 100% to 400%. Drag a magnified image to move around it, use Ctrl/Command + wheel to zoom near the mouse, or focus the SVG and use arrow keys to pan. Magnification is preserved while working through a puzzle, but resets to the complete fitted view when starting another challenge. Zoom uses SVG viewBox, leaving geometry, side selection, animations and the student working area intact. See [Diagram zoom controls](DIAGRAM_ZOOM.md) for shortcuts and testing.
+
+## Label clarity — Pass A
+
+Hover or focus a measurement to see a temporary trace of its **exact side and endpoints**. Use **FOCUS VIEW** beside the side selector to keep the selected triangle or rectangle’s labels prominent, and switch back to **ALL LABELS** at any time. The **LOCATE** button brings a selected side into view without losing the current diagram zoom. This does not change mathematical working or label positions. See [Label Clarity Pass A](LABEL_CLARITY_PASS_A.md) for use and QA.
