@@ -316,12 +316,12 @@ try{
       const label=svg.locator(".side-chip.given:not(.overhang)").first();
       const key=await label.getAttribute("data-side-key");
       await label.hover();
-      const preview=await svg.evaluate((k)=>{
-        const trace=[...document.querySelectorAll(".side-trace")].find(x=>x.getAttribute("data-side-key")===k);
-        const chip=[...document.querySelectorAll(".side-chip")].find(x=>x.getAttribute("data-side-key")===k);
-        return {on:trace.classList.contains("is-emphasized"),
-          chip:chip.classList.contains("is-emphasized"),
-          number:document.querySelectorAll(".side-trace.is-emphasized").length};
+      const preview=await svg.evaluate((root,k)=>{
+        const trace=[...root.querySelectorAll(".side-trace")].find(x=>x.getAttribute("data-side-key")===k);
+        const chip=[...root.querySelectorAll(".side-chip")].find(x=>x.getAttribute("data-side-key")===k);
+        return {on:trace?.classList.contains("is-emphasized")||false,
+          chip:chip?.classList.contains("is-emphasized")||false,
+          number:root.querySelectorAll(".side-trace.is-emphasized").length};
       },key);
       insist(preview.on&&preview.chip&&preview.number===1,
         "Hover fails to connect a length chip to its exact side",preview);
