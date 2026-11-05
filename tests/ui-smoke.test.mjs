@@ -16,6 +16,7 @@ class FakeNode {
     this._classes = new Set();
     this.innerHTML = ""; this.textContent = ""; this.hidden = false;
     this.disabled = false; this.open = false; this.firstChild = null;
+    this.className="";this.value="";
     this.classList = {
       add: (...classes) => classes.forEach(x=>this._classes.add(x)),
       remove: (...classes) => classes.forEach(x=>this._classes.delete(x)),
@@ -32,6 +33,11 @@ class FakeNode {
   append(...children){
     this.children.push(...children);
     this.firstChild = this.children[0] ?? null;
+  }
+  insertBefore(child,before){
+    const index=this.children.indexOf(before);
+    this.children.splice(index<0?this.children.length:index,0,child);
+    this.firstChild=this.children[0]??null;
   }
   replaceChildren(...children){
     this.children = [...children];
@@ -50,6 +56,9 @@ class FakeNode {
   }
   querySelector(selector){return this.querySelectorAll(selector)[0] ?? new FakeNode(selector,this.width);}
   getBoundingClientRect(){return {width:this.width,height:490};}
+  focus(){}
+  getContext(){return {setTransform(){},clearRect(){},beginPath(){},
+    moveTo(){},lineTo(){},stroke(){},arc(){},fill(){}};}
   focus(){}
   animate(frames,options){
     const animation={frames,options,cancel(){}};
@@ -74,6 +83,7 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
       return node;
     },
     createElementNS(_ns,tag){return new FakeNode(tag,width);},
+    createElement(tag){return new FakeNode(tag,width);},
     querySelector(selector){
       if(selector==="#diagram svg")return nodes.get("diagram")?.firstChild ?? null;
       if(selector===".side-labels")return nodes.get("diagram")?.firstChild?.querySelector(".side-labels") ?? null;
