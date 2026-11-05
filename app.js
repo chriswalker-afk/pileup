@@ -127,7 +127,7 @@ function renderDiagram(animate=false){
   svg.append(floor);
   current.triangles.forEach((triangle,i)=>{
     const group=el("g",{class:"piece","data-id":triangle.id,tabindex:0,role:"button",
-      style:"--delay:"+(i*690)+"ms;--twist:"+(i%2?-13:12)+"deg",
+      style:"--delay:"+(i*850)+"ms;--twist:"+(i%2?-13:12)+"deg",
       "aria-label":"Select triangle "+triangle.id});
     const tpts=triangle.pts.map(xy);
     if(selectedSide&&!sideMap.get(selectedSide).triangleIds.includes(triangle.id))group.classList.add("dimmed");
@@ -263,6 +263,15 @@ function renderDiagram(animate=false){
         group.append(el("line",{x1:pt.x-nx*5,y1:pt.y-ny*5,x2:pt.x+nx*5,y2:pt.y+ny*5,class:"overhang-bracket"}));
       }
     }
+    if(overlapKeys.has(side.key)){
+      // Thin leader lines distinguish the whole hypotenuse from its
+      // overlapping shorter section when both are still unknown.
+      const ends=toSide(side);
+      labels.append(el("line",{
+        x1:(ends.a.x+ends.b.x)/2,y1:(ends.a.y+ends.b.y)/2,
+        x2:pos.x,y2:pos.y,class:"dimension-leader"
+      }));
+    }
     group.append(el("rect",{x:pos.x-width/2,y:pos.y-boxHeight/2,width,height:boxHeight,rx:4}));
     group.append(el("text",{
       x:pos.x,y:pos.y,style:"font-size:"+fontSize+"px",class:"measure-text"
@@ -304,13 +313,13 @@ function renderDiagram(animate=false){
             {opacity:1,transform:"translate(0px, 24px) rotate(-3deg)",offset:.68},
             {opacity:1,transform:"translate(0px, -12px) rotate(1.4deg)",offset:.84},
             {opacity:1,transform:"translate(0px, 0px) rotate(0deg)",offset:1}
-          ],{delay:i*690,duration:1180,easing:"cubic-bezier(.22,.68,.32,1)",fill:"both"}));
+          ],{delay:i*850,duration:1340,easing:"cubic-bezier(.22,.68,.32,1)",fill:"both"}));
         });
       }else{
         svg.classList.add("falling");
       }
     });
-    finishTimer=setTimeout(stopAnimation,(current.triangles.length-1)*690+1230);
+    finishTimer=setTimeout(stopAnimation,(current.triangles.length-1)*850+1400);
   }else{
     animating=false;
     document.getElementById("skip").hidden=true;
@@ -518,7 +527,7 @@ function openPuzzle(id){
       <h1>${puzzle.title}</h1><p>${puzzle.description}</p></div>
     <div class="challenge-layout"><div class="tablet">
       <div class="tablet-bar"><span><span class="symbol">✧</span> THE GEOMETER’S TABLET</span>
-        <span class="tablet-controls"><button id="replay" class="small-btn" title="Replay animation" aria-label="Replay animation">↻</button>
+        <span class="tablet-controls"><button id="replay" class="small-btn replay-button" title="Replay the falling triangles" aria-label="Replay the falling triangles">↻ <span>REPLAY FALL</span></button>
         <button id="labels-toggle" class="small-btn" title="Show or hide measurements" aria-label="Show or hide measurements" aria-pressed="false">◉</button></span></div>
       <div class="tablet-inside"><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
         <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
