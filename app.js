@@ -4,7 +4,8 @@ import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
 import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures } from "./diagram-zoom.js";
 import { labelsForShape, centreSideAtZoom } from "./label-clarity.js";
-import {layoutMeasurements, classifyRelationSides, dimensionBracket} from "./label-layout.js";
+import {layoutMeasurements, classifyRelationSides, dimensionBracket, labelTether} from "./label-layout.js";
+import {crowdedUnknownKeys,compactFace} from "./label-density.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -52,7 +53,7 @@ const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
 let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
 let pendingDiscoveredKey=null;
-let focusLabels=false,focusedShapeId=null,previewSideKey=null;
+let focusLabels=false,focusUserChoice=false,focusedShapeId=null,previewSideKey=null;
 
 /**
  * One visual relationship for the chip, its exact full segment, and
@@ -64,10 +65,15 @@ function refreshLabelClarity(){
   if(!svg)return;
   const hasFocus=focusLabels&&Boolean(selectedSide)&&Boolean(focusedShapeId);
   const permitted=hasFocus?labelsForShape(sideMap,focusedShapeId):new Set();
+  const allShapes=[...current.triangles,...(current.rectangles||[])];
+  const xy=fitPileInTablet(current).xy;
+  const isCompact=hasFocus&&allShapes.some(shape=>
+    shape.id===focusedShapeId&&compactFace(shape,allShapes,xy));
   const emphasis=previewSideKey||selectedSide;
   svg.classList.toggle("label-focus-enabled",focusLabels);
   svg.classList.toggle("label-focus-active",hasFocus);
-  for(const selector of [".side-chip",".side-trace",".dimension-leader",".dimension-bracket"]){
+  svg.classList.toggle("compact-label-focus",isCompact);
+  for(const selector of [".side-chip",".side-trace",".measurement-tether",".dimension-bracket"]){
     for(const element of svg.querySelectorAll(selector)){
       const key=element.getAttribute?.("data-side-key");
       if(!key)continue;
@@ -315,7 +321,7 @@ function homeHeroIllustration(){
 }
 function home(gallery=false){
   detachDiagramZoom();detachDiagramZoom=()=>{};
-  focusLabels=false;focusedShapeId=null;previewSideKey=null;
+  focusLabels=false;focusUserChoice=false;focusedShapeId=null;previewSideKey=null;
   disposeWorking();disposeWorking=()=>{};
   screen="home";clearTimeout(finishTimer);
   if(document.body?.dataset)document.body.dataset.view="home";
@@ -477,6 +483,13 @@ function chooseSide(key,shapeId=null){
   if(!side)return;
   selectedSide=key;
   focusedShapeId=shapeId||side.triangleIds[0]||null;
+  // In a tight cluster, automatically isolate the chosen piece's
+  // measurements. An explicit All Labels choice always takes priority.
+  if(!focusUserChoice){
+    const shapes=[...current.triangles,...(current.rectangles||[])];
+    const shape=shapes.find(t=>t.id===focusedShapeId);
+    if(shape)focusLabels=compactFace(shape,shapes,fitPileInTablet(current).xy);
+  }
   previewSideKey=null;
   feedback=null;
   solutionOpen=false;
@@ -615,6 +628,8 @@ function renderDiagram(animate=false,forceMotion=false){
   }
 
   const labels=el("g",{class:"side-labels"+(shouldAnimate?" waiting":"")});
+  const compactScene=pieces.some(shape=>compactFace(shape,pieces,xy));
+  svg.classList.toggle("has-compact-triangles",compactScene);
   const traces=el("g",{class:"side-traces","aria-hidden":"true"});
   for(const side of sideMap.values()){
     if(side.suppressLabel)continue;
@@ -669,13 +684,26 @@ function renderDiagram(animate=false,forceMotion=false){
   // initially obscures the geometry. Show givens and x, then disclose
   // unknown labels on the selected face (or once discovered). All
   // sides remain selectable through SVG hit targets and the side list.
-  const quietDense=["great-interlock","nine-muses","acropolis"].includes(current.id);
+  // Authentic worksheet-style first view for all six-or-more-piece
+  // piles: givens and x are always visible; intermediate unknowns
+  // appear when their particular triangle is investigated.
+  const quietDense=pieces.length>=6;
+  // All Labels is an explicit opt-in to show *every* measurement,
+  // including postponed question marks. Returning to Focus View
+  // restores the low-clutter state without losing student work.
+  const forceAllLabels=focusUserChoice&&!focusLabels;
+  const compactKeys=pieces.length>=4?
+    crowdedUnknownKeys(sideMap.values(),xy):new Set();
   const sides=[...sideMap.values()].filter(side=>{
     if(side.suppressLabel)return false;
-    if(!quietDense)return true;
-    return side.given||side.isTarget||solved.has(side.key)||
-      (selectedSide&&(side.key===selectedSide||
-        side.triangleIds.includes(focusedShapeId)));
+    if(forceAllLabels)return true;
+    // Never hide givens, discovered lengths, the target or the chosen
+    // shape's measurements. Only defer nonessential '?' labels in
+    // genuinely crowded regions until that triangle is investigated.
+    if(side.given||side.isTarget||solved.has(side.key))return true;
+    if(selectedSide&&(side.key===selectedSide||
+      side.triangleIds.includes(focusedShapeId)))return true;
+    return !quietDense&&!compactKeys.has(side.key);
   });
   // Reserve the least obstructed spots for givens and target x.
   sides.sort((a,b)=>Number(b.given)-Number(a.given)||
@@ -701,25 +729,22 @@ function renderDiagram(animate=false,forceMotion=false){
   const byKey=new Map(descriptors.map(item=>[item.key,item]));
   // Brackets identify the physical extent of whole versus part edges.
   const brackets=el("g",{class:"measurement-brackets","aria-hidden":"true"});
-  labels.append(brackets);
+  const tethers=el("g",{class:"measurement-tethers","aria-hidden":"true"});
+  labels.append(brackets,tethers);
   for(const side of sides){
     const info=byKey.get(side.key);
     const {solvedSide,label,width}=info;
     const chosen=placements.get(side.key);
     const pos=chosen.pos;
     const ends=info.ends;
-    const labelConnector=el("line",{
-      x1:(ends.a.x+ends.b.x)/2,y1:(ends.a.y+ends.b.y)/2,
-      x2:pos.x,y2:pos.y,
-      class:"side-association","data-side-key":side.key
-    });
-    traces.append(labelConnector);
     const classes=["side-chip",side.given?"given":solvedSide?"solved":side.isTarget?"target":"unknown"];
     if(side.isOverhang)classes.push("overhang");
     if(selectedSide===side.key)classes.push("selected");
     if(discoveredNow===side.key)classes.push("just-discovered");
     const group=el("g",{class:classes.join(" "),"data-side-key":side.key,role:"button",tabindex:0,
-      "aria-label":(side.isOverhang?"Given overhang ":side.isTarget?"Final target ":side.given?"Given ":"Missing length ")+label});
+      "aria-label":(side.isOverhang?"Given overhang ":side.isTarget?"Final target ":side.given?"Given ":"Missing length ")+
+        label+" on "+(side.triangleIds.length>1?"shared side of ":"side of ")+
+        (side.triangleIds.join(" and ")||"the straight-line segment")});
     const relationKind=relations.get(side.key)||(side.isOverhang?"overhang":null);
     const bracket=relationKind?dimensionBracket(ends.a,ends.b,chosen,relationKind):null;
     if(bracket){
@@ -736,17 +761,25 @@ function renderDiagram(animate=false,forceMotion=false){
       }
       brackets.append(bracketGroup);
     }
-    if(chosen.needsLeader){
-      // Only long-distance callouts need permanent leaders. For a
-      // split span, join to its bracket rather than a misleading part.
-      const anchor=bracket?bracket.mid:{
-        x:(ends.a.x+ends.b.x)/2,y:(ends.a.y+ends.b.y)/2
-      };
-      labels.append(el("line",{
-        x1:anchor.x,y1:anchor.y,x2:pos.x,y2:pos.y,
-        class:"dimension-leader","data-side-key":side.key
-      }));
-    }
+    // Always-visible, understated physical attachment from the exact
+    // side (or the span bracket) to the nearest edge of its own chip.
+    // The fine anchor dot and connection remain clear without hover,
+    // while hover/focus/selection illuminate this precise relationship.
+    const tether=labelTether(info,chosen,bracket?.mid||null);
+    const attach=el("g",{
+      class:"measurement-tether"+(side.isTarget?" tether-target":""),
+      "data-side-key":side.key
+    });
+    attach.append(el("line",{
+      x1:tether.anchor.x,y1:tether.anchor.y,
+      x2:tether.end.x,y2:tether.end.y,
+      class:"side-association","data-side-key":side.key
+    }));
+    attach.append(el("circle",{
+      cx:tether.anchor.x,cy:tether.anchor.y,r:2.7,
+      class:"measurement-anchor","data-side-key":side.key
+    }));
+    tethers.append(attach);
     group.append(el("rect",{x:pos.x-width/2,y:pos.y-boxHeight/2,width,height:boxHeight,rx:4}));
     group.append(el("text",{
       x:pos.x,y:pos.y,style:"font-size:"+fontSize+"px",class:"measure-text"
@@ -962,6 +995,10 @@ function renderInspector(){
     return;
   }
   const unprovided=[...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel);
+  const shapes=[...current.triangles,...(current.rectangles||[])];
+  const xy=fitPileInTablet(current).xy;
+  const hasSmallCluster=shapes.length>=4&&
+    shapes.some(shape=>compactFace(shape,shapes,xy));
   const side=selectedSide?sideMap.get(selectedSide):null;
   const choices=`<div class="inspect-field clarity-field">
     <div class="clarity-selector-heading"><label for="side-select">CHOOSE A SIDE TO INVESTIGATE</label>
@@ -969,7 +1006,7 @@ function renderInspector(){
         aria-pressed="${focusLabels}" title="${focusLabels?"Show every measurement":"Show only measurements belonging to the selected shape"}">
         ${focusLabels?"ALL LABELS":"FOCUS VIEW"}</button></div>
     <div class="clarity-selector-row"><select id="side-select">
-      <option value="">${["great-interlock","nine-muses","acropolis"].includes(current.id)?"Select a side…":"Select a marked side…"}</option>
+      <option value="">${hasSmallCluster?"Select a side…":"Select a marked side…"}</option>
       ${unprovided.map((s,i)=>`<option value="${s.key}" ${selectedSide===s.key?"selected":""}>${s.isTarget?"Target x":"Side "+(i+1)+" · triangle "+s.triangleIds.join(" & ")}${solved.has(s.key)?" ✓":""}</option>`).join("")}
     </select>
     <button id="locate-side" type="button" class="clarity-locate"
@@ -977,7 +1014,7 @@ function renderInspector(){
       aria-label="Locate selected side in diagram" ${selectedSide?"":"disabled"}>LOCATE ↗</button></div></div>`;
   let body;
   if(!side){
-    body=`<div class="workspace-brief"><strong>${["great-interlock","nine-muses","acropolis"].includes(current.id)?"Select a triangle or choose a side":"Select a ? on the diagram"}</strong><span>Or begin calculations on your scratchpad.</span></div>
+    body=`<div class="workspace-brief"><strong>${hasSmallCluster?"Tap a triangle to inspect its lengths":"Select a ? on the diagram"}</strong><span>Choose a side above, or start working on your scratchpad.</span></div>
       <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(side.given){
     body=`<div class="workspace-brief"><strong>Given: ${exactLength(side.length)} cm</strong><span>Select a missing length to solve it.</span></div>
@@ -1009,13 +1046,12 @@ function renderInspector(){
       <button class="btn-link" id="solution-toggle">REVEAL FULL SOLUTION ↗</button>
       <button class="btn-link" id="reset-progress">START AGAIN ↻</button>
     </div>`;
-  panel.querySelector("#label-focus-toggle").addEventListener("click",event=>{
+  panel.querySelector("#label-focus-toggle").addEventListener("click",()=>{
     focusLabels=!focusLabels;
-    const button=event.currentTarget;
-    button.setAttribute("aria-pressed",String(focusLabels));
-    button.textContent=focusLabels?"ALL LABELS":"FOCUS VIEW";
-    button.title=focusLabels?"Show every measurement":"Show only the selected shape’s measurements";
-    refreshLabelClarity();
+    focusUserChoice=true;
+    // This action also changes which unknown chips exist in crowded
+    // areas, so a fresh SVG is required. Ordinary hover never does so.
+    renderDiagram(false);
   });
   panel.querySelector("#locate-side").addEventListener("click",locateSelectedSide);
   panel.querySelector("#side-select").addEventListener("change",event=>{
@@ -1170,7 +1206,7 @@ function openPuzzle(id){
   if(document.body?.dataset)document.body.dataset.view="puzzle";
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
   current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;extensionMode=false;screen=id;clearTimeout(finishTimer);
-  focusLabels=false;focusedShapeId=null;previewSideKey=null;
+  focusLabels=false;focusUserChoice=false;focusedShapeId=null;previewSideKey=null;
   pendingDiscoveredKey=null;
   loadProgress();
   if(location.hash.slice(1)!==id)history.pushState(null,"","#"+id);

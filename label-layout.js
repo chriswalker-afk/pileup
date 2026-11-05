@@ -12,6 +12,42 @@ const dot=(a,b)=>a.x*b.x+a.y*b.y;
 function rect(pos,w,h){
   return {left:pos.x-w/2,right:pos.x+w/2,top:pos.y-h/2,bottom:pos.y+h/2};
 }
+/**
+ * The quiet, always-visible attachment is an actual geometric pointer,
+ * not an approximate decorative slash. It begins at the midpoint of
+ * the measured side (or the midpoint of its full/part bracket) and
+ * finishes at the *near edge* of the corresponding label chip.
+ *
+ * This eliminates the old ambiguity in which a label could sit 20-60
+ * pixels away from its measured side with no visible connector.
+ */
+export function labelTether(entry,placement,explicitAnchor=null){
+  const pos=placement.pos;
+  const halfW=entry.width/2,halfH=entry.height/2;
+  const sideMid=mid(entry.ends.a,entry.ends.b);
+  // A short side can be partly concealed by a large label chip.
+  // First use the measured midpoint or the true dimension bracket.
+  // If that is covered, attach to a clear point ON THE SAME SIDE.
+  // This is preferable to a zero-length line or a confusing corner
+  // marker that appears to identify a neighbouring side.
+  const covered=pt=>Math.abs(pt.x-pos.x)<=halfW+4&&
+    Math.abs(pt.y-pos.y)<=halfH+4;
+  const candidates=[explicitAnchor,sideMid,
+    ...[.4,.6,.3,.7,.2,.8,.1,.9,0,1].map(t=>({
+      x:entry.ends.a.x+(entry.ends.b.x-entry.ends.a.x)*t,
+      y:entry.ends.a.y+(entry.ends.b.y-entry.ends.a.y)*t
+    }))].filter(Boolean);
+  const anchor=candidates.find(pt=>!covered(pt))||sideMid;
+  const dx=anchor.x-pos.x,dy=anchor.y-pos.y;
+  const ratio=Math.max(Math.abs(dx)/Math.max(EPS,halfW),
+    Math.abs(dy)/Math.max(EPS,halfH));
+  // If the labelled segment is hidden *inside* the chip, scoring
+  // should move the chip. Retain a finite zero-length connector here.
+  if(ratio<=1+EPS)return {anchor,end:anchor,length:0};
+  const fraction=1/ratio;
+  const end={x:pos.x+dx*fraction,y:pos.y+dy*fraction};
+  return {anchor,end,length:distance(anchor,end)};
+}
 function overlap(a,b,padding=4){
   const x=Math.min(a.right+padding,b.right)-Math.max(a.left-padding,b.left);
   const y=Math.min(a.bottom+padding,b.bottom)-Math.max(a.top-padding,b.top);
@@ -67,24 +103,30 @@ function score(entry,option,placed,edges,bounds){
     pos.y<bounds.minY+entry.height/2||
     pos.y>bounds.floorY-entry.height/2)return INF;
   const d=distance(pos,center);
-  // The original scoring barely penalised a long displaced label.
-  // Adjacency now matters, once box collisions have been excluded.
-  let value=d*1.12+Math.abs(t)*.62+(flip?35:0)+Math.max(0,n-40)*.42;
+  // Proximity matters, but only if the chip still points to its own
+  // edge. Penalise visually deceptive connector crossings even when
+  // the old algorithm would have considered the leader "short".
+  let value=d*1.23+Math.abs(t)*.72+(flip?35:0)+Math.max(0,n-40)*.52;
+  const link=labelTether(entry,{pos});
+  if(link.length<=1)value+=250000;
+  // The label rectangle must not mask its very own measured line.
+  if(crossesBox(entry.ends.a,entry.ends.b,box))value+=850;
   const leader=d>68?{a:center,b:pos}:null;
-  if(leader){
-    value+=42+(d-68)*.45;
-    for(const edge of edges){
-      if(edge.key!==entry.key&&segmentsCross(leader.a,leader.b,edge.a,edge.b))
-        value+=46;
-    }
+  if(leader)value+=30+(d-68)*.65;
+  if(link.length>EPS)for(const edge of edges){
+    if(edge.key!==entry.key&&segmentsCross(link.anchor,link.end,edge.a,edge.b))
+      value+=260;
   }
   for(const other of placed){
     const covered=overlap(box,other.rect);
     if(covered>0)value+=500000+covered*120;
-    if(leader&&other.lead&&segmentsCross(leader.a,leader.b,other.lead.a,other.lead.b))
-      value+=115;
-    if(leader&&crossesBox(leader.a,leader.b,other.rect))value+=175;
-    if(other.lead&&crossesBox(other.lead.a,other.lead.b,box))value+=175;
+    if(link.length>EPS&&other.tether&&
+      segmentsCross(link.anchor,link.end,other.tether.anchor,other.tether.end))
+      value+=220;
+    if(link.length>EPS&&crossesBox(link.anchor,link.end,other.rect))
+      value+=360;
+    if(other.tether&&crossesBox(other.tether.anchor,other.tether.end,box))
+      value+=360;
   }
   return value;
 }
@@ -126,6 +168,7 @@ function choose(entry,placed,edges,bounds){
   return {key:entry.key,pos:chosen.pos,nx:nx*sign,ny:ny*sign,
     distance:d,needsLeader:d>68,
     rect:rect(chosen.pos,entry.width,entry.height),
+    tether:labelTether(entry,chosen),
     lead:d>68?{a:chosen.center,b:chosen.pos}:null,
     penalty:best};
 }
