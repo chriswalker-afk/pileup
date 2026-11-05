@@ -126,7 +126,8 @@ function loadProgress(){
     }
     if(saved.workingBySide && typeof saved.workingBySide==="object"){
       for(const [key,value] of Object.entries(saved.workingBySide)){
-        if(sideMap.has(key)&&!sideMap.get(key).given)workingBySide[key]=sanitizeWorking(value);
+        if(key==="__scratch__" || (sideMap.has(key)&&!sideMap.get(key).given))
+          workingBySide[key]=sanitizeWorking(value);
       }
     }else if(saved.notes && typeof saved.notes==="object"){
       // One-time conversion from the old free-text working field.
@@ -582,35 +583,29 @@ function renderInspector(){
     </select></div>`;
   let body;
   if(!side){
-    const available=readySteps(current,sideMap,solved);
-    const message=available.length
-      ?"Look for a triangle with two known lengths. Select a ? on its side, or choose one in the list."
-      :"The final target is waiting for your answer.";
-    body=`<h3 class="inspect-title">Where would you begin?</h3>
-      <p class="inspect-intro">${message} You can solve on paper and enter the target directly.</p>`;
+    body=`<div class="workspace-brief"><strong>Select a ? on the diagram</strong><span>Or begin calculations on your scratchpad.</span></div>
+      <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(side.given){
-    body=`<h3 class="inspect-title">Given: ${exactLength(side.length)} cm</h3>
-      <p class="inspect-intro">This length is already known. Try selecting a side marked with ? or x.</p>`;
+    body=`<div class="workspace-brief"><strong>Given: ${exactLength(side.length)} cm</strong><span>Select a missing length to solve it.</span></div>
+      <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(solved.has(side.key)){
-    body=`<h3 class="inspect-title">Length discovered ✓</h3>
-      <p class="solved-note">${side.isTarget?"The final length x":"This shared length"} = <strong>${exactLength(side.length)} cm</strong></p>
-      <p class="inspect-intro">This measurement is now available wherever the side is shared.</p>
+    body=`<p class="solved-note"><strong>✓ ${side.isTarget?"x":"Length"} = ${exactLength(side.length)} cm</strong></p>
       <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else{
     const level=hintLevels[side.key]||0;
     const valid=readySteps(current,sideMap,solved).some(step=>step.sideKey===side.key);
-    body=`<h3 class="inspect-title">${side.isTarget?"Discover the final x":"Find this missing length"}</h3>
-      <p class="inspect-intro">${valid?"This side can be found from two known lengths.":"You can enter the answer now if you have worked it out, or find an earlier length first."}</p>
+    body=`<div class="workspace-answer-head"><strong>${side.isTarget?"Solve x":"Missing length"}</strong>
+        <span>${valid?"Ready to calculate":"You may need another side first"}</span></div>
       <form id="answer-form" autocomplete="off">
-        <div class="inspect-field"><label for="answer-input">YOUR ANSWER (CM)</label>
-          <div class="input-row"><input id="answer-input" name="answer" inputmode="decimal" maxlength="90" placeholder="e.g. √205 or 14.3" aria-describedby="answer-format" required>
-          <button class="submit" type="submit">CHECK →</button></div>
-          <span id="answer-format" class="solution-disclaimer">Use an exact value or a decimal to at least 3 s.f. You can type sqrt(205).</span></div>
+        <div class="inspect-field answer-field"><label for="answer-input">ANSWER (CM)</label>
+          <div class="input-row"><input id="answer-input" name="answer" inputmode="decimal" maxlength="90"
+            placeholder="e.g. √205 or 14.3" aria-label="Answer in centimetres" title="Exact surds and rounded decimals accepted" required>
+          <button class="submit" type="submit">CHECK →</button></div></div>
       </form>
       <div id="answer-feedback" role="status" aria-live="polite"></div>
+      <div id="working-pad-mount" class="working-pad-mount"></div>
       <div class="hint-area"><button class="hint-button" id="hint-next" ${level>=4?"disabled":""}>${level?level>=4?"ALL CLUES SHOWN":"REVEAL NEXT CLUE ("+(level+1)+"/4)":"NEED A CLUE? (1/4)"}</button>
-      ${level?`<div class="hint-content"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>
-      <div id="working-pad-mount" class="working-pad-mount"></div>`;
+      ${level?`<div class="hint-content"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>`;
   }
   panel.innerHTML=`<span class="kicker">THE GEOMETER’S NOTES</span>
     ${choices}
@@ -630,7 +625,7 @@ function renderInspector(){
     extensionMode=true;selectedSide=null;renderDiagram(false);
   });
   panel.querySelector("#reset-progress").addEventListener("click",()=>{
-    if(!window.confirm("Clear your discovered lengths and working notes for this challenge?"))return;
+    if(!window.confirm("Clear solved lengths, maths lines, drawings and hints for this challenge?"))return;
     solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
     saveProgress();renderDiagram(false);
   });
@@ -658,8 +653,8 @@ function renderInspector(){
       escapeHtml(hintText(side,level))+"</p>";
   });
   const space=panel.querySelector("#working-pad-mount");
-  if(space && side && !side.given){
-    const id=side.key;
+  if(space){
+    const id=side && !side.given?side.key:"__scratch__";
     disposeWorking=mountWorkingSpace(space,workingBySide[id],working=>{
       workingBySide[id]=working;
       return saveProgress();
@@ -761,10 +756,6 @@ function openPuzzle(id){
         <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
       </div></div>
       <aside class="side"><div class="side-topline"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><button id="workspace-size-toggle" type="button" class="workspace-size-toggle" aria-pressed="false" title="Widen the student working panel">↔ More working room</button></div><div class="rule"></div>
-        <h2>Find the final <em>length.</em></h2>
-        <p class="description">Study which sides line up. A long side may cover two shorter edges, and some pieces project beyond their support. Select any marked side to investigate.</p>
-        <div class="facts"><div><span>TRIANGLES</span><strong>${puzzle.triangles.length}</strong></div>
-          <div><span>GIVEN LENGTHS</span><strong>${puzzle.triangles.reduce((n,t)=>n+t.givens.length,0)+(puzzle.extraSegments?.length||0)}</strong></div></div>
         <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
         <div class="progress-track" aria-label="Number of missing lengths discovered"><span id="progress-fill" style="width:0"></span></div>
         <div class="inspector" id="inspector" aria-live="polite"></div>
