@@ -152,6 +152,18 @@ body[data-view="puzzle"] #inspector .solved-engraving strong {
 .completion-dialog button:focus-visible {
   outline:3px solid #a67a38;outline-offset:3px;
 }
+body[data-view="puzzle"] .side button:focus-visible,
+body[data-view="puzzle"] .side select:focus-visible,
+body[data-view="puzzle"] .side input:focus-visible {
+  outline:2px solid #a67a38;outline-offset:2px;
+}
+#diagram svg .side-chip:focus-visible rect {
+  stroke:#a67a38;stroke-width:3px;
+}
+#diagram svg .side-hit:focus-visible {
+  stroke:#a67a38;stroke-opacity:.75;
+}
+
 @media(max-width:520px){
   .completion-dialog {max-height:94dvh;width:calc(100% - 16px);}
   .completion-inner {border-width:4px;padding:13px 12px 11px;}
