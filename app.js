@@ -458,12 +458,19 @@ function renderInspector(){
           <p class="step-equation">${escapeHtml(step.equation)}</p>
           <p class="step-result">${step.isTarget?"x":"s"} = ${step.answer} cm</p>
         </li>`).join("")}
-      </ol><button class="btn-link" id="return-solving">← RETURN TO THE PILE</button>`;
+      </ol>
+      ${(current.extensions||[]).length?`<div class="worked-extensions"><h4>Compound-shape extensions</h4>${current.extensions.map(item=>
+        `<p><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.working)}</span></p>`).join("")}</div>`:""}
+      <button class="btn-link" id="return-solving">← RETURN TO THE PILE</button>`;
     panel.querySelector("#return-solving").addEventListener("click",()=>{solutionOpen=false;renderInspector();});
     panel.querySelectorAll("[data-review-side]").forEach(button=>button.addEventListener("click",()=>{
       selectedSide=button.dataset.reviewSide;
       renderDiagram(false);
     }));
+    return;
+  }
+  if(extensionMode && current.extensions?.length){
+    renderExtensions(panel);
     return;
   }
   const unprovided=[...sideMap.values()].filter(s=>!s.given);
@@ -510,6 +517,8 @@ function renderInspector(){
   panel.innerHTML=`<span class="kicker">THE GEOMETER’S NOTES</span>
     ${choices}
     ${body}
+    ${current.extensions?.length && solved.has(sideKey(current.target.a,current.target.b))?
+      `<button class="extension-cta" id="open-extension-panel">✦ GEOMETER'S EXTENSIONS · PERIMETER & AREA →</button>`:""}
     <div class="panel-actions">
       <button class="btn-link" id="solution-toggle">REVEAL FULL SOLUTION ↗</button>
       <button class="btn-link" id="reset-progress">START AGAIN ↻</button>
@@ -519,9 +528,12 @@ function renderInspector(){
     else{selectedSide=null;feedback=null;renderDiagram(false);}
   });
   panel.querySelector("#solution-toggle").addEventListener("click",()=>{solutionOpen=true;renderInspector();});
+  panel.querySelector("#open-extension-panel")?.addEventListener("click",()=>{
+    extensionMode=true;selectedSide=null;renderDiagram(false);
+  });
   panel.querySelector("#reset-progress").addEventListener("click",()=>{
     if(!window.confirm("Clear your discovered lengths and working notes for this challenge?"))return;
-    solved=new Set();notes={};hintLevels={};hintsUsed=0;feedback=null;selectedSide=null;
+    solved=new Set();notes={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
     saveProgress();renderDiagram(false);
   });
   const form=panel.querySelector("#answer-form");
@@ -539,6 +551,55 @@ function renderInspector(){
     notes[side.key]=event.target.value;saveProgress();
   });
 }
+
+function renderExtensions(panel){
+  const completed=(current.extensions||[]).filter(e=>extensionGrades[e.id]===true).length;
+  panel.innerHTML=
+    '<span class="kicker">THE GEOMETER’S SECOND TRIAL</span>'+
+    '<h3 class="inspect-title">Perimeter & area extensions</h3>'+
+    '<p class="inspect-intro">The final side is found. Now consider the <strong>whole outer shape</strong>, not just the individual triangles. Internal boundaries are not part of the perimeter.</p>'+
+    '<p class="extension-progress">'+completed+' / '+current.extensions.length+' extensions solved</p>'+
+    current.extensions.map(item=>{
+      const solvedItem=extensionGrades[item.id]===true;
+      return '<section class="extension-task"><h4>'+escapeHtml(item.title)+'</h4>'+
+        '<p>'+escapeHtml(item.prompt)+'</p>'+
+        (solvedItem?'<div class="result-feedback good">✓ Correct: '+escapeHtml(exactLength(item.value))+' '+escapeHtml(item.unit)+'</div>':
+          '<form class="extension-form" data-extension-id="'+escapeHtml(item.id)+'" autocomplete="off">'+
+          '<label for="extension-'+escapeHtml(item.id)+'">YOUR ANSWER ('+escapeHtml(item.unit)+')</label>'+
+          '<div class="input-row"><input id="extension-'+escapeHtml(item.id)+'" required maxlength="90" inputmode="decimal" placeholder="Your answer" aria-label="'+escapeHtml(item.title)+'"><button class="submit" type="submit">CHECK</button></div>'+
+          '<div class="extension-feedback" role="status" aria-live="polite"></div>'+
+          '</form>')+
+        '</section>';
+    }).join('')+
+    (completed===current.extensions.length?'<p class="all-extensions-done">✦ You have completed the full geometer’s challenge!</p>':"")+
+    '<div class="panel-actions"><button class="btn-link" id="extension-back">← RETURN TO THE PILE</button>'+
+    '<button class="btn-link" id="extension-solutions">REVIEW WORKED SOLUTIONS ↗</button></div>';
+  panel.querySelector("#extension-back").addEventListener("click",()=>{
+    extensionMode=false;renderInspector();
+  });
+  panel.querySelector("#extension-solutions").addEventListener("click",()=>{
+    solutionOpen=true;renderInspector();
+  });
+  panel.querySelectorAll(".extension-form").forEach(form=>{
+    form.addEventListener("submit",event=>{
+      event.preventDefault();
+      const item=current.extensions.find(ext=>ext.id===form.dataset.extensionId);
+      if(!item)return;
+      const value=form.querySelector("input").value;
+      const status=form.querySelector(".extension-feedback");
+      if(correctAnswer(value,item.value)){
+        extensionGrades[item.id]=true;saveProgress();renderExtensions(panel);
+      }else{
+        const numeric=parseAnswer(value);
+        status.className="extension-feedback result-feedback bad";
+        status.textContent=numeric===null ?
+          "Enter a positive number or a valid mathematical expression.":
+          "Not quite. For perimeter, remove internal edges. For area, add the non-overlapping triangular regions.";
+      }
+    });
+  });
+}
+
 function submitAnswer(raw){
   const side=sideMap.get(selectedSide);if(!side||side.given)return;
   const parsed=parseAnswer(raw);
@@ -561,6 +622,7 @@ function showCompletion(){
   const dialog=document.getElementById("completion-modal");
   dialog.querySelector("#final-answer").textContent="x = "+exactLength(sideMap.get(sideKey(current.target.a,current.target.b)).length)+" cm";
   dialog.querySelector("#completion-hints").textContent=hintsUsed===0?"Without any hints":hintsUsed+" clues used";
+  dialog.querySelector("#completion-extra").hidden=!current.extensions?.length;
   if(!dialog.open)dialog.showModal();
 }
 function openPuzzle(id){
@@ -601,7 +663,8 @@ function openPuzzle(id){
       <div class="completion-answer" id="final-answer"></div>
       <p id="completion-hints"></p><div class="completion-controls">
       <button class="confirm" id="completion-review">REVIEW THE FULL SOLUTION →</button>
-      <button id="completion-other">TRY ANOTHER PILE</button></div>
+      <button id="completion-extra" hidden>TRY PERIMETER & AREA EXTENSIONS ↗</button>
+      <button id="completion-other">TRY THE NEXT PILE</button></div>
       <button class="completion-close" id="completion-close">RETURN TO THE PILE</button></div>
     </dialog>`+footer();
   bind();
@@ -616,6 +679,9 @@ function openPuzzle(id){
   document.getElementById("completion-close").addEventListener("click",()=>modal.close());
   document.getElementById("completion-review").addEventListener("click",()=>{
     modal.close();solutionOpen=true;renderInspector();
+  });
+  document.getElementById("completion-extra").addEventListener("click",()=>{
+    modal.close();extensionMode=true;solutionOpen=false;selectedSide=null;renderDiagram(false);
   });
   document.getElementById("completion-other").addEventListener("click",()=>{
     modal.close();openPuzzle(puzzles[(puzzles.findIndex(p=>p.id===id)+1)%puzzles.length].id);
