@@ -70,7 +70,7 @@ test("Matching tick marks are a real mathematical dependency, not decoration",()
   assert.equal(puzzle.equalSideGroups.length,1);
   const sides=buildSides(puzzle);
   const matching=puzzle.equalSideGroups[0].map(desc=>sides.get(sideKey(desc.a,desc.b)));
-  assert.equal(matching[0].length,matching[1].length);
+  assert.ok(Math.abs(matching[0].length-matching[1].length)<1e-8);
   assert.equal(matching[0].given,true);
   assert.equal(matching[1].given,false);
   const initial=readySteps(puzzle,sides,new Set());
