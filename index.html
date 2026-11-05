@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#efe5d1">
+<meta name="description" content="Pythagoras Pile Up: a classical Greek-inspired geometric puzzle of falling right triangles.">
+<title>Pythagoras Pile Up | The Geometer's Challenge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#373a32;--gold:#a17b43;--line:#c8b994;--paper:#eee4d0;--stone:#f6edda}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(ellipse at 30% 4%,#faf5e9,transparent 48%),repeating-linear-gradient(0deg,transparent 0 3px,#725c3805 3px 4px),var(--paper);font-family:'DM Sans',system-ui,sans-serif}
+button,a{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
+header{height:89px;border-bottom:1px solid var(--line);max-width:1400px;padding:0 48px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:12px;font:600 17px 'Cinzel',serif;letter-spacing:.055em;white-space:nowrap}
+.brand .seal{border:1px solid var(--gold);color:var(--gold);height:40px;width:40px;display:grid;place-items:center;border-radius:50%;font:27px Georgia,serif}.brand em{font-style:normal;color:var(--gold)}
+nav{display:flex;gap:35px}nav a{font-weight:700;letter-spacing:.15em;font-size:10px}nav a:hover{color:var(--gold)}
+.header-note{color:#98886e;font-size:10px;letter-spacing:.15em}
+.hero,.section,.challenge-main{max-width:1400px;margin:auto;padding-left:48px;padding-right:48px}
+.hero{min-height:585px;display:grid;grid-template-columns:1.08fr 1fr;gap:20px;align-items:center;padding-top:65px;padding-bottom:75px}
+.eyebrow{color:var(--gold);font-size:10px;font-weight:700;letter-spacing:.19em}
+.hero h1{font:500 clamp(45px,5.4vw,75px)/1.2 'Cinzel',Georgia,serif;letter-spacing:-.045em;margin:28px 0 22px}
+.hero h1 em,.side h2 em{font-style:normal;color:var(--gold)}
+.lead{color:#655f53;line-height:1.8;max-width:530px;font-size:17px}
+.actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:32px 0}
+.btn{border:0;padding:19px 25px;letter-spacing:.13em;font-size:10px;font-weight:700}.primary{background:#31433e;color:#f9efd9;box-shadow:0 4px 0 #b7a484}.primary:hover{background:#466158}
+.plain{background:transparent;color:#5a513e}.plain:hover{color:var(--gold)}
+.footnote{font-size:10px;letter-spacing:.13em;color:#8c7c62}
+.illustration{position:relative;display:flex;align-items:center;justify-content:center;min-height:430px}
+.illustration:before{content:'';width:420px;height:420px;border:1px solid #c6b594;border-radius:50%;position:absolute;box-shadow:inset 0 0 0 17px #e8dbc344,0 0 0 17px #e8dbc344}
+.illustration svg{z-index:1;width:min(100%,470px);filter:drop-shadow(0 13px 12px #594b3020)}
+.illustration-caption{position:absolute;bottom:0;font:10px 'Cinzel',serif;letter-spacing:.17em;color:#968466}
+.meander{height:16px;border-top:1px solid #c5b590;border-bottom:1px solid #c5b590;background:repeating-linear-gradient(90deg,transparent 0 9px,#baa783 9px 11px,transparent 11px 23px,#baa783 23px 25px,transparent 25px 35px)}
+.section{padding-top:75px;padding-bottom:88px}.section-title{text-align:center}.section-title h2{font:500 clamp(30px,3.3vw,45px) 'Cinzel',serif;letter-spacing:-.03em;margin:17px 0 10px}.section-title p{color:#776c5c;font-size:14px;margin:0}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:58px}.steps article{border-top:1px solid #b6a47f;padding-top:22px}.steps .number{font:39px 'Cinzel',serif;color:#a18a5e}.steps h3{font:600 19px 'Cinzel',serif;margin:17px 0 10px}.steps p{font-size:14px;line-height:1.8;color:#796f60;max-width:340px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;margin-top:52px}
+.challenge-card{position:relative;text-align:left;border:1px solid #c6b696;background:#f7efdf;padding:29px 33px;min-height:300px;display:flex;align-items:flex-start;flex-direction:column;transition:transform .2s,box-shadow .2s;color:var(--ink)}
+.challenge-card:before{content:'';position:absolute;inset:7px;border:1px solid #ded1b6;pointer-events:none}.challenge-card:hover{transform:translateY(-5px);box-shadow:0 12px 28px #3c332018}
+.card-index,.card-footer{font-weight:700;letter-spacing:.13em;font-size:10px;color:#9a7c4b}
+.card-mark{position:absolute;right:38px;top:30px;width:63px;height:63px;border:1px solid #c3b18e;border-radius:50%;display:grid;place-items:center;font:38px Georgia,serif;color:#aa8d60}
+.card-title{font:600 27px 'Cinzel',serif;margin:75px 0 13px}
+.card-description{font-size:14px;line-height:1.8;color:#766d5e;max-width:430px}
+.card-footer{margin-top:auto;padding-top:27px;width:100%;display:flex;justify-content:space-between}
+footer{max-width:1400px;margin:auto;padding:35px 48px 50px;border-top:1px solid #d1c2a3;display:flex;gap:25px;justify-content:space-between;align-items:center;font-size:10px;color:#8b7b62;letter-spacing:.08em}footer span:nth-child(2){letter-spacing:0;text-align:center;line-height:1.5}
+.challenge-main{padding-top:42px;padding-bottom:72px}.challenge-heading{text-align:center;position:relative;margin-bottom:28px}
+.back{position:absolute;top:0;left:0;font-size:10px;letter-spacing:.13em;color:#927747;font-weight:700}.back:hover{color:#3c352a}
+.chapter{font-size:10px;letter-spacing:.2em;color:var(--gold)}.challenge-heading h1{font:500 clamp(29px,3.6vw,49px) 'Cinzel',serif;margin:17px 0 9px}.challenge-heading p{color:#766d5e;font-size:13px;max-width:620px;margin:0 auto;line-height:1.7}
+.challenge-layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(280px,.84fr);gap:23px}
+.tablet{min-width:0;border:1px solid #b4a181;background:#d9cbb1;padding:12px;box-shadow:0 14px 32px #3d321c1a,inset 0 0 0 4px #e5d9c2}
+.tablet-bar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font:700 10px 'Cinzel',serif;letter-spacing:.12em}
+.tablet-bar .symbol{color:var(--gold);font-size:19px;margin-right:9px}.tablet-controls{display:flex;gap:8px}.small-btn{height:32px;min-width:35px;border:1px solid #b5a587;background:#efe5d2;color:#4c483e;font-size:21px}.small-btn:hover{background:#fff7e7}.small-btn:disabled{opacity:.42}
+.tablet-inside{min-height:525px;position:relative;border:1px solid #bbaa89;background:radial-gradient(circle,#fbf4e8,#e9deca);overflow:hidden;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:25px 19px 45px}
+.tablet-inside:before,.tablet-inside:after{content:'';position:absolute;pointer-events:none;width:25px;height:25px;border-color:#a28b61}.tablet-inside:before{top:12px;left:12px;border-top:2px solid;border-left:2px solid}.tablet-inside:after{bottom:12px;right:12px;border-bottom:2px solid;border-right:2px solid}
+#diagram{width:100%;display:flex;justify-content:center;align-items:center}#diagram svg{width:100%;height:438px;max-width:100%;overflow:visible}
+.grid-line{stroke:#ac9979;stroke-width:.035;opacity:.15}.piece{cursor:pointer;transition:opacity .2s}.piece polygon{stroke:#3c3931;stroke-width:2.4px;vector-effect:non-scaling-stroke;stroke-linejoin:round;fill-opacity:.95}.piece path{stroke:#3c3931;stroke-width:1.8px;vector-effect:non-scaling-stroke;fill:none}
+.piece:hover polygon,.piece.selected polygon{stroke-width:4px}.piece.dimmed{opacity:.28}
+.labels{pointer-events:none;transition:opacity .4s}.labels text.measure{font:700 2.1px 'DM Sans',sans-serif;fill:#302c25;stroke:#fbf4e7;stroke-width:1px;paint-order:stroke;stroke-linejoin:round}.labels text.goal{font:italic 700 2.5px Georgia,serif;fill:#fff4dc}.labels .goal-circle{fill:#304841;stroke:#fff2d6;stroke-width:.28px}
+.labels.hidden-labels{opacity:0}.labels.waiting{opacity:0}
+#diagram svg.animating .piece{animation:drop-in 1.07s cubic-bezier(.2,.7,.33,1.05) both;animation-delay:var(--delay);transform-box:fill-box;transform-origin:center;pointer-events:none}
+@keyframes drop-in{0%{opacity:0;transform:translateY(-225px) rotate(var(--angle))}63%{opacity:1;transform:translateY(12px) rotate(-2deg)}83%{transform:translateY(-5px) rotate(1deg)}100%{opacity:1;transform:translateY(0) rotate(0)}}
+.diagram-caption{position:absolute;bottom:13px;left:15px;right:15px;display:flex;justify-content:space-between;gap:10px;color:#837763;font-size:9px;letter-spacing:.07em}
+.skip{position:absolute;z-index:2;right:18px;top:17px;padding:10px 15px;background:#f8f1df;border:1px solid #b5a07c;font-size:10px;letter-spacing:.1em;color:#504332}
+.side{background:#f6eedd;border:1px solid #cbbba1;box-shadow:inset 0 0 0 6px #f2e6d0;padding:35px 30px 25px;display:flex;flex-direction:column;min-height:525px}
+.side .kicker{color:#997c51;font-size:10px;letter-spacing:.12em;font-weight:700}.side .rule{height:1px;width:45px;background:#c7b58f;margin:23px 0}
+.side h2{font:500 28px/1.35 'Cinzel',serif;margin:0 0 15px}.side .description{font-size:13px;color:#776d5e;line-height:1.85;margin:0 0 23px}
+.facts{display:flex;justify-content:space-between;border-top:1px solid #ddd0b7;border-bottom:1px solid #ddd0b7;padding:17px 0;margin-bottom:24px}
+.facts div{display:flex;flex-direction:column;gap:5px;flex:1}.facts span{font-size:9px;color:#8d8069;letter-spacing:.1em}.facts strong{font:25px 'Cinzel',serif;color:#4a554b}
+.inspector{padding:20px;background:#e9ddc6;border:1px solid #d5c5a8;min-height:155px}.inspector .kicker{font-size:9px}.inspector h3{font:600 15px 'Cinzel',serif;margin:10px 0}.inspector p{font-size:12px;line-height:1.8;color:#756a5b;margin:0}.inspector .hint{margin-top:9px;color:#987946;font-size:10px}
+.inspector button{border:0;background:transparent;padding:12px 0 0;font-weight:700;font-size:10px;letter-spacing:.1em;color:#91754b}
+.side-bottom{margin-top:auto;padding-top:25px;color:#8a7e6b;font-size:11px;line-height:1.5}.side-bottom strong{color:#6d806c;font-size:9px;letter-spacing:.13em}
+.challenge-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:25px 0;color:#99896a;letter-spacing:.13em;font:10px 'Cinzel',serif}
+.challenge-bottom button{border:0;background:transparent;color:#856d47;font:bold 10px 'DM Sans',sans-serif;letter-spacing:.1em}
+@media(max-width:1090px){.header-note{display:none}.hero h1{font-size:52px}.challenge-layout{grid-template-columns:minmax(0,1.35fr) minmax(270px,.85fr)}.side{padding:27px 22px}#diagram svg{height:375px}.tablet-inside{min-height:450px}}
+@media(max-width:800px){header{height:72px;padding:0 21px}.brand{font-size:13px}.brand .seal{height:34px;width:34px}nav{gap:16px}nav a{font-size:9px}.hero{grid-template-columns:1fr;padding:55px 24px}.hero h1{font-size:clamp(41px,8vw,65px)}.illustration{min-height:320px}.illustration:before{width:310px;height:310px}.illustration svg{max-height:330px}.section{padding:65px 24px}.steps{gap:20px}.challenge-main{padding:32px 18px 65px}.challenge-heading{padding-top:26px}.challenge-layout{grid-template-columns:1fr}.tablet-inside{min-height:425px}#diagram svg{height:380px}.side{min-height:0}footer{padding:30px 23px;flex-direction:column;text-align:center}}
+@media(max-width:520px){header{padding:0 13px}.brand{font-size:10px;gap:6px}.brand .seal{width:28px;height:28px;font-size:20px}nav{gap:10px}nav a{font-size:8px;letter-spacing:.05em}.hero{padding:40px 18px}.hero h1{font-size:41px}.lead{font-size:15px}.actions{align-items:stretch;flex-direction:column}.actions .btn{width:100%}.steps,.cards{grid-template-columns:1fr}.challenge-card{min-height:280px}.card-title{font-size:24px}.tablet{padding:7px}.tablet-inside{padding:10px 5px 38px;min-height:325px}#diagram svg{height:290px}.diagram-caption{font-size:7px}.challenge-main{padding:25px 11px}.challenge-heading h1{font-size:30px}.challenge-bottom{flex-direction:column;text-align:center}.tablet-bar{font-size:8px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;scroll-behavior:auto!important;transition-duration:.01ms!important}#diagram svg.animating .piece{animation:none!important}}
+</style>
+</head>
+<body><div id="app"></div>
+<script type="module">
+const root=document.getElementById('app');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+const p=(x,y)=>({x,y}),d=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y),mid=(a,b)=>p((a.x+b.x)/2,(a.y+b.y)/2);
+const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.x+a.y*b.y;
+function makePuzzle(id,title,epithet,difficulty,description,base,legs,colors){
+ let a=p(0,0),b=p(base[0],0),c=p(base[0],base[1]);
+ const first={id:'I',pts:[a,b,c],right:1,color:colors[0],givens:[{a,b,value:base[0]},{a:b,b:c,value:base[1]}]};
+ const triangles=[first];let previous=first,edge={a,b:c};
+ for(let i=0;i<legs.length;i++){
+  const P=edge.a,Q=edge.b,vec=v(P,Q),len=d(P,Q);
+  const other=previous.pts.find(z=>z!==P&&z!==Q);
+  const sign=cross(vec,v(mid(P,Q),other))>=0?-1:1;
+  const R=p(P.x-sign*vec.y/len*legs[i],P.y+sign*vec.x/len*legs[i]);
+  const t={id:['II','III','IV','V','VI'][i],pts:[P,Q,R],right:0,color:colors[i+1],givens:[{a:P,b:R,value:legs[i]}]};
+  triangles.push(t);previous=t;edge={a:Q,b:R};
+ }
+ const result={id,title,epithet,difficulty,description,triangles,target:edge,solution:d(edge.a,edge.b)};
+ for(const t of triangles){
+  const O=t.pts[t.right],two=t.pts.filter((_,i)=>i!==t.right);
+  if(Math.abs(dot(v(O,two[0]),v(O,two[1])))>1e-8)throw Error('Invalid right angle');
+  for(const g of t.givens)if(Math.abs(d(g.a,g.b)-g.value)>1e-8)throw Error('Invalid labelled length');
+ }
+ return result;
+}
+const puzzles=[
+ makePuzzle('first-fall','The First Fall','THE APPRENTICE','INTRODUCTORY','Three right triangles. One final length. Discover how each measurement becomes the key to another.',[3,4],[12,6],['#d7ae69','#88abb2','#b47763']),
+ makePuzzle('labyrinth','The Geometer’s Labyrinth','THE ARCHITECT','CHALLENGE','Five connected triangles. More turns, more hidden lengths, one final side to uncover.',[6,8],[5,7,9,4],['#d7ae69','#7fa7a1','#b77f70','#909db6','#baa475'])
+];
+let current=puzzles[0],selected=null,animating=false,visible=true,finishTimer=null,screen='home';
+const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav><a href="#home">THE AGORA</a><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
+const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
+function home(gallery=false){
+ screen='home';clearTimeout(finishTimer);
+ root.innerHTML=header()+`<main><section class="hero"><div><div class="eyebrow">— AN ANCIENT PUZZLE · A MODERN CHALLENGE</div><h1>When triangles<br><em>fall into place.</em></h1><p class="lead">In the footsteps of Pythagoras, follow a trail of hidden lengths. Each answer unlocks the next. Can you uncover the final side?</p><div class="actions"><button class="btn primary" data-puzzle="first-fall">BEGIN THE TRIAL &nbsp; →</button><button class="btn plain" data-gallery>EXPLORE THE CHALLENGES ↗</button></div><p class="footnote">✦ &nbsp; RIGHT-ANGLED TRIANGLES. ONE HIDDEN ANSWER.</p></div><div class="illustration"><svg viewBox="0 0 470 430" role="img" aria-label="Decorative arrangement of coloured geometric triangles"><polygon points="75,260 285,260 285,116" fill="#d7ae69" stroke="#433c31" stroke-width="3"/><polygon points="285,116 285,260 402,190" fill="#7fa7a1" stroke="#433c31" stroke-width="3"/><polygon points="75,260 285,260 184,370" fill="#b77f70" stroke="#433c31" stroke-width="3"/><polygon points="134,73 285,116 75,260" fill="#a7a0bb" stroke="#433c31" stroke-width="3"/><g fill="#433c31" font-size="21" font-family="Georgia,serif"><text x="170" y="249">a</text><text x="308" y="222">b</text><text x="194" y="311">c</text><text x="194" y="102">?</text></g><path d="M47 367H425M47 375H425" stroke="#ae9e80"/></svg><span class="illustration-caption">FIG. I — THE BEAUTY OF CONNECTION</span></div></section><div class="meander"></div><section class="section"><div class="section-title"><div class="eyebrow">THE METHOD</div><h2>Three steps to discovery</h2><p>Simple in principle. Surprisingly deep in practice.</p></div><div class="steps"><article><span class="number">I.</span><h3>Watch the fall</h3><p>Right-angled triangles tumble onto a carefully constructed geometric tablet.</p></article><article><span class="number">II.</span><h3>Follow the clues</h3><p>Known lengths lead to unknown lengths. Discover where the chain begins.</p></article><article><span class="number">III.</span><h3>Find the final side</h3><p>Use Pythagoras' theorem to connect the pieces and reach the target.</p></article></div></section><section class="section" id="challenges"><div class="section-title"><div class="eyebrow">CHOOSE YOUR PATH</div><h2>The challenges</h2><p>Two handcrafted piles, each geometrically exact.</p></div><div class="cards">${puzzles.map((x,i)=>`<button class="challenge-card" data-puzzle="${x.id}"><span class="card-index">0${i+1} / ${x.epithet}</span><span class="card-mark" aria-hidden="true">${i?'⌁':'△'}</span><span class="card-title">${x.title}</span><span class="card-description">${x.description}</span><span class="card-footer"><span>${x.triangles.length} TRIANGLES</span><span>${x.difficulty} ↗</span></span></button>`).join('')}</div></section></main>`+footer();
+ bind();if(gallery)requestAnimationFrame(()=>document.getElementById('challenges')?.scrollIntoView({behavior:reduced.matches?'instant':'smooth'}));
+}
+function el(name,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,String(v)));if(text)x.textContent=text;return x;}
+function labelPoint(a,b,cent,offset){const M=mid(a,b),vec=v(a,b),len=d(a,b);let nx=-vec.y/len,ny=vec.x/len;if((M.x-cent.x)*nx+(M.y-cent.y)*ny<0){nx=-nx;ny=-ny;}return p(M.x+offset*nx,M.y+offset*ny);}
+function draw(){
+ const points=current.triangles.flatMap(t=>t.pts),xs=points.map(x=>x.x),ys=points.map(x=>x.y);
+ const minX=Math.min(...xs),minY=Math.min(...ys),maxX=Math.max(...xs),maxY=Math.max(...ys);
+ const pad=Math.max(maxX-minX,maxY-minY)*.28+3;
+ const bounds={x:minX-pad,y:minY-pad,w:maxX-minX+2*pad,h:maxY-minY+2*pad};
+ const center=p(bounds.x+bounds.w/2,bounds.y+bounds.h/2);
+ const svg=el('svg',{viewBox:`${bounds.x} ${bounds.y} ${bounds.w} ${bounds.h}`,role:'img','aria-label':`A pile of ${current.triangles.length} exactly right-angled triangles with known side lengths in centimetres and a target x.`});
+ const grid=el('g',{'aria-hidden':'true'});
+ for(let x=Math.floor(bounds.x/5)*5;x<bounds.x+bounds.w;x+=5)grid.append(el('line',{x1:x,y1:bounds.y,x2:x,y2:bounds.y+bounds.h,class:'grid-line'}));
+ for(let y=Math.floor(bounds.y/5)*5;y<bounds.y+bounds.h;y+=5)grid.append(el('line',{x1:bounds.x,y1:y,x2:bounds.x+bounds.w,y2:y,class:'grid-line'}));
+ svg.append(grid);
+ current.triangles.forEach((t,i)=>{
+  const g=el('g',{class:'piece','data-id':t.id,style:`--delay:${i*340}ms;--angle:${i%2?-11:9}deg`});
+  g.append(el('polygon',{points:t.pts.map(x=>`${x.x},${x.y}`).join(' '),fill:t.color}));
+  const O=t.pts[t.right],two=t.pts.filter((_,j)=>j!==t.right),step=Math.min(d(O,two[0]),d(O,two[1]))*.11;
+  const U=v(O,two[0]),V=v(O,two[1]);const ux=U.x/d(O,two[0])*step,uy=U.y/d(O,two[0])*step,vx=V.x/d(O,two[1])*step,vy=V.y/d(O,two[1])*step;
+  g.append(el('path',{d:`M${O.x+ux} ${O.y+uy}L${O.x+ux+vx} ${O.y+uy+vy}L${O.x+vx} ${O.y+vy}`}));
+  g.append(el('title',{},`Right-angled triangle ${t.id}`));g.addEventListener('click',()=>select(t.id));svg.append(g);
+ });
+ const labels=el('g',{class:'labels waiting'}),placed=[];
+ current.triangles.forEach(t=>t.givens.forEach(s=>{
+  const pos=labelPoint(s.a,s.b,center,1.85);
+  for(let attempt=0;attempt<9;attempt++){
+   if(!placed.some(z=>d(z,pos)<3.5)&&!points.some(z=>d(z,pos)<1.2))break;
+   pos.x+=(attempt%2?1:-1)*1.25;pos.y+=(attempt%2?1:-1)*1.3;
+  }
+  placed.push({...pos});labels.append(el('text',{x:pos.x,y:pos.y,'text-anchor':'middle','dominant-baseline':'middle',class:'measure'},`${s.value} cm`));
+ }));
+ const target=labelPoint(current.target.a,current.target.b,center,2.3);
+ labels.append(el('circle',{cx:target.x,cy:target.y,r:2.35,class:'goal-circle'}));
+ labels.append(el('text',{x:target.x,y:target.y,'text-anchor':'middle','dominant-baseline':'middle',class:'goal'},'x'));
+ svg.append(labels);document.getElementById('diagram').replaceChildren(svg);
+ if(!visible)labels.classList.add('hidden-labels');
+ if(reduced.matches){labels.classList.remove('waiting');animating=false;document.getElementById('skip').hidden=true;updateInspector();return;}
+ animating=true;svg.classList.add('animating');document.getElementById('skip').hidden=false;document.getElementById('replay').disabled=true;
+ updateInspector();clearTimeout(finishTimer);finishTimer=setTimeout(stopAnimation,current.triangles.length*340+1150);
+}
+function stopAnimation(){clearTimeout(finishTimer);animating=false;document.querySelector('#diagram svg')?.classList.remove('animating');document.querySelector('.labels')?.classList.remove('waiting');document.getElementById('skip').hidden=true;document.getElementById('replay').disabled=false;updateInspector();}
+function select(id){if(animating)return;selected=selected===id?null:id;document.querySelectorAll('.piece').forEach(e=>{e.classList.toggle('selected',selected===e.dataset.id);e.classList.toggle('dimmed',!!selected&&selected!==e.dataset.id)});updateInspector();}
+function updateInspector(){
+ const node=document.getElementById('inspector');if(!node)return;
+ const t=current.triangles.find(x=>x.id===selected);
+ if(animating)node.innerHTML='<span class="kicker">THE PILE IS FORMING</span><h3>Watch the geometry settle.</h3><p>Each triangle lands in its mathematically correct position. The measurements appear at the end.</p>';
+ else if(t)node.innerHTML=`<span class="kicker">TRIANGLE ${t.id} · SELECTED</span><h3>Examine this triangle</h3><p>Find the two shorter sides and its hypotenuse. Think about which lengths can be deduced from the shared edges.</p><p class="hint">${t.givens.length?'Given here: '+t.givens.map(g=>g.value+' cm').join(', '):'Look to the neighbouring triangles for shared measurements.'}</p><button id="clear">CLEAR SELECTION ↗</button>`;
+ else node.innerHTML='<span class="kicker">THE GEOMETER’S NOTES</span><h3>Where would you begin?</h3><p>Look for a triangle with two known sides. Each new length can become a clue for the next.</p><p class="hint">TIP · Tap a coloured triangle to examine it.</p>';
+ document.getElementById('clear')?.addEventListener('click',()=>select(selected));
+}
+function openPuzzle(id){
+ const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;current=puzzle;selected=null;visible=true;screen=id;clearTimeout(finishTimer);
+ if(location.hash.slice(1)!==id)history.pushState(null,'','#'+id);
+ const index=puzzles.indexOf(puzzle);
+ root.innerHTML=header()+`<main class="challenge-main"><div class="challenge-heading"><a class="back" href="#puzzles">← ALL CHALLENGES</a><span class="chapter">CHALLENGE 0${index+1} / 0${puzzles.length}</span><h1>${puzzle.title}</h1><p>${puzzle.description}</p></div><div class="challenge-layout"><div class="tablet"><div class="tablet-bar"><span><span class="symbol">✧</span> THE GEOMETER’S TABLET</span><span class="tablet-controls"><button id="replay" class="small-btn" title="Replay animation" aria-label="Replay animation">↻</button><button id="labels-toggle" class="small-btn" title="Show or hide measurements" aria-label="Show or hide measurements" aria-pressed="false">◉</button></span></div><div class="tablet-inside"><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button><div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED</span><span>GEOMETRY DRAWN TO SCALE</span></div></div></div><aside class="side"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><div class="rule"></div><h2>Find the final <em>length.</em></h2><p class="description">The marked side <strong>x</strong> is waiting to be discovered. Use the given measurements and Pythagoras’ theorem to trace the chain.</p><div class="facts"><div><span>TRIANGLES</span><strong>${puzzle.triangles.length}</strong></div><div><span>GIVEN LENGTHS</span><strong>${puzzle.triangles.reduce((n,t)=>n+t.givens.length,0)}</strong></div></div><div class="inspector" id="inspector" aria-live="polite"></div><div class="side-bottom"><strong>✦ PASS A · EXPLORE THE PILE</strong><p>Answer entry, hints and worked solutions are planned for Pass B.</p></div></aside></div><div class="challenge-bottom"><span>ANCIENT WISDOM. FRESH PERSPECTIVES.</span><button data-puzzle="${puzzles.find(x=>x.id!==id).id}">TRY THE OTHER CHALLENGE →</button></div></main>`+footer();
+ bind();document.getElementById('replay').addEventListener('click',()=>{selected=null;draw()});document.getElementById('skip').addEventListener('click',stopAnimation);
+ document.getElementById('labels-toggle').addEventListener('click',e=>{visible=!visible;document.querySelector('.labels')?.classList.toggle('hidden-labels',!visible);e.currentTarget.setAttribute('aria-pressed',String(!visible))});
+ draw();window.scrollTo({top:0,behavior:'instant'});
+}
+function bind(){document.querySelectorAll('[data-puzzle]').forEach(e=>e.addEventListener('click',()=>openPuzzle(e.dataset.puzzle)));document.querySelectorAll('[data-gallery]').forEach(e=>e.addEventListener('click',()=>{history.pushState(null,'','#puzzles');home(true)}));}
+function route(){const id=location.hash.slice(1);if(puzzles.some(x=>x.id===id))openPuzzle(id);else home(id==='puzzles')}
+window.addEventListener('hashchange',route);window.addEventListener('popstate',route);route();
+</script></body></html>
