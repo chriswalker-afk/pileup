@@ -145,10 +145,17 @@ async function sizeAudit(page){
       }
       const a={x:Number(stem.getAttribute("x1")),y:Number(stem.getAttribute("y1"))};
       const e={x:Number(stem.getAttribute("x2")),y:Number(stem.getAttribute("y2"))};
-      const m=centre(side);
+      const s0={x:Number(side.getAttribute("x1")),y:Number(side.getAttribute("y1"))},
+        s1={x:Number(side.getAttribute("x2")),y:Number(side.getAttribute("y2"))};
+      const vx=s1.x-s0.x,vy=s1.y-s0.y,
+        wx=a.x-s0.x,wy=a.y-s0.y,
+        length2=vx*vx+vy*vy;
+      const projection=(wx*vx+wy*vy)/length2;
+      const liesOnSide=Math.abs(vx*wy-vy*wx)<.85*Math.sqrt(length2)&&
+        projection>=-.003&&projection<=1.003;
       const bracket=bracketMap.get(key)?.querySelector(".dimension-bracket-spine");
       const bm=bracket?centre(bracket):null;
-      if(!close(a,m)&&(!bm||!close(a,bm)))
+      if(!liesOnSide&&(!bm||!close(a,bm)))
         tetherErrors.push({key,type:"anchor does not identify its own side"});
       if(!close(a,{x:Number(circle.getAttribute("cx")),
                     y:Number(circle.getAttribute("cy"))}))
