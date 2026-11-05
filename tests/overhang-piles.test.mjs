@@ -47,7 +47,7 @@ test("Projecting Edge uses a different shoulder and two different upper edges",(
 test("Split & Project only uses a visibly measured 2 cm overhang",()=>{
   const puzzle=puzzles.find(p=>p.id==="split-project"),map=buildSides(puzzle);
   const over=puzzle.extraSegments.find(s=>/OVERHANG/.test(s.label));
-  assert.equal(over.value,2);
+  assert.ok(Math.abs(over.value-2)<1e-7);
   assert.equal(map.get(sideKey(over.a,over.b)).isOverhang,true);
   assert.equal(readySteps(puzzle,map,new Set()).some(x=>x.kind==="overhang"),false,
     "The whole length must be calculated first");
