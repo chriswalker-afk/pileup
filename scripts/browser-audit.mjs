@@ -115,13 +115,61 @@ async function sizeAudit(page){
       if(!trace||!spine||caps.length!==2||
         Math.abs(len(spine)-len(trace))>.001)bracketErrors.push(key);
     }
+    // A collision-free chip can still refer to the wrong edge.
+    // Verify the complete correspondence: one visible connector per
+    // chip, attachment at its own measured side (or exact bracket),
+    // and the other endpoint on that chip's physical border.
+    const tetherMap=new Map([...svg.querySelectorAll(".measurement-tether")].map(el=>
+      [el.getAttribute("data-side-key"),el]));
+    const traces=new Map([...svg.querySelectorAll(".side-trace")].map(el=>
+      [el.getAttribute("data-side-key"),el]));
+    const bracketMap=new Map(brackets.map(el=>[el.getAttribute("data-side-key"),el]));
+    const tetherErrors=[];
+    const point=(el,prefix)=>({x:Number(el.getAttribute(prefix+"1")),
+      y:Number(el.getAttribute(prefix+"2"))});
+    const centre=el=>({
+      x:(Number(el.getAttribute("x1"))+Number(el.getAttribute("x2")))/2,
+      y:(Number(el.getAttribute("y1"))+Number(el.getAttribute("y2")))/2
+    });
+    const close=(a,z)=>Math.hypot(a.x-z.x,a.y-z.y)<=.85;
+    for(const chip of svg.querySelectorAll(".side-chip")){
+      const key=chip.getAttribute("data-side-key");
+      const tether=tetherMap.get(key),trace=traces.get(key);
+      const stem=tether?.querySelector(".side-association");
+      const circle=tether?.querySelector(".measurement-anchor");
+      const side=trace?.querySelector(".side-trace-line");
+      const rect=chip.querySelector("rect");
+      if(!stem||!circle||!side||!rect){
+        tetherErrors.push({key,type:"missing exact tether or geometric side"});
+        continue;
+      }
+      const a={x:Number(stem.getAttribute("x1")),y:Number(stem.getAttribute("y1"))};
+      const e={x:Number(stem.getAttribute("x2")),y:Number(stem.getAttribute("y2"))};
+      const m=centre(side);
+      const bracket=bracketMap.get(key)?.querySelector(".dimension-bracket-spine");
+      const bm=bracket?centre(bracket):null;
+      if(!close(a,m)&&(!bm||!close(a,bm)))
+        tetherErrors.push({key,type:"anchor does not identify its own side"});
+      if(!close(a,{x:Number(circle.getAttribute("cx")),
+                    y:Number(circle.getAttribute("cy"))}))
+        tetherErrors.push({key,type:"anchor dot missed tether"});
+      const x=Number(rect.getAttribute("x")),y=Number(rect.getAttribute("y")),
+        w=Number(rect.getAttribute("width")),h=Number(rect.getAttribute("height"));
+      const edge=((Math.abs(e.x-x)<=.85||Math.abs(e.x-(x+w))<=.85)&&
+        e.y>=y-.85&&e.y<=y+h+.85)||
+        ((Math.abs(e.y-y)<=.85||Math.abs(e.y-(y+h))<=.85)&&
+        e.x>=x-.85&&e.x<=x+w+.85);
+      if(!edge)tetherErrors.push({key,type:"stem does not end on its own label border"});
+      if(Math.hypot(e.x-a.x,e.y-a.y)<=.8)
+        tetherErrors.push({key,type:"invisible zero-length association"});
+    }
     return {pieces:shape.length,labels:label.length,overlaps,
       clippedLabels:outside(label),clippedPieces:outside(shape),
       widthOverflow:document.documentElement.scrollWidth-innerWidth,
       rectangles:svg.querySelectorAll(".rectangle-piece").length,
       equalTicks:svg.querySelectorAll(".equal-side-tick").length,
       zoomOverlaps,
-      bracketCount:brackets.length,bracketErrors,
+      bracketCount:brackets.length,bracketErrors,tetherErrors,
       longLeaders:svg.querySelectorAll(".dimension-leader").length,
       meanLabelDistance:measured.length?
         Math.round(measured.reduce((n,x)=>n+x,0)/measured.length*10)/10:0};
@@ -194,6 +242,7 @@ try{
         insist(!d.clippedLabels.length,"Clipped measurements",d);
         insist(!d.clippedPieces.length,"Clipped geometry",d);
         insist(!d.overlaps.length,"Overlapping measurement labels",d);
+        insist(!d.tetherErrors.length,"Ambiguous or detached measurement labels",d);
         insist(!d.bracketErrors.length,
           "Whole/part dimension bracket does not span its actual length",d);
         insist(Number.isFinite(d.meanLabelDistance),
@@ -217,6 +266,45 @@ try{
           await snap(page,"architecture-"+id+"-"+name);
         return d;
       });
+    }
+    // Crowded diagrams must let students isolate a small triangle
+    // with a single tap; manual All Labels must override that choice.
+    if(name==="desktop"||name==="phone"){
+      for(const id of ["great-pile","nine-muses","marble-terrace","acropolis","great-interlock"]){
+        await run(name+" / "+id+" small triangle label isolation",async()=>{
+          await open(page,id);
+          const outcome=await page.evaluate(()=>{
+            const get=()=>document.querySelector("#diagram svg");
+            const startingUnknowns=get().querySelectorAll(".side-chip.unknown").length;
+            const shapes=[...get().querySelectorAll(".piece")].map(n=>n.dataset.id);
+            let focused=null;
+            for(const id of shapes){
+              const piece=[...get().querySelectorAll(".piece")].find(n=>n.dataset.id===id);
+              piece?.dispatchEvent(new MouseEvent("click",{bubbles:true}));
+              if(get().classList.contains("compact-label-focus")){
+                focused=id;break;
+              }
+            }
+            const active=get().querySelectorAll(".side-chip.is-emphasized").length;
+            return {startingUnknowns,focused,active,
+              focusedState:get().classList.contains("label-focus-active"),
+              pressed:document.querySelector("#label-focus-toggle")?.getAttribute("aria-pressed")};
+          });
+          insist(outcome.focused&&outcome.focusedState&&outcome.pressed==="true",
+            "Selecting a compact face should isolate its labels",outcome);
+          insist(outcome.active===1,
+            "Exactly one investigated side should be emphasised",outcome);
+          await page.locator("#label-focus-toggle").click();
+          const after=await page.evaluate(()=>{
+            const svg=document.querySelector("#diagram svg");
+            return {pressed:document.querySelector("#label-focus-toggle")?.getAttribute("aria-pressed"),
+              focused:svg.classList.contains("label-focus-active")};
+          });
+          insist(after.pressed==="false"&&!after.focused,
+            "Student's explicit All Labels choice must override automatic isolation",after);
+          return {id,...outcome,manualOverride:after};
+        });
+      }
     }
     if(name==="desktop"||name==="phone"){
       for(const id of ["nine-muses","acropolis"]){
