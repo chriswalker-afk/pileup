@@ -127,7 +127,7 @@ test("the two new framed structures do not simply append a rectangle",()=>{
   assert.ok(Math.abs(area(m.rectangles[0]))>40);
   assert.ok(a.rectangles.every(r=>Math.abs(area(r))>40));
   assert.equal(a.rectangles.length,2);
-  assert.equal(a.equalSideGroups?.length||0,0);
+  assert.equal(a.equalSideGroups.length,2);
   const highSpan=a.lengthRelations[0];
   const whole=highSpan.whole;
   assert.ok(near(Math.hypot(whole.a.x-whole.b.x,whole.a.y-whole.b.y),12));
