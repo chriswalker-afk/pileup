@@ -97,7 +97,9 @@ function padRect(page){
     };
     const el=document.querySelector("#inspector");
     return {parchment:a(".ws-root"),canvas:a(".ws-ink-frame"),
-      actions:a(".panel-actions"),scrollHeight:el.scrollHeight,
+      actions:a(".panel-actions"),mount:a(".working-pad-mount"),
+      body:a(".ws-body"),inspector:a("#inspector"),
+      scrollTop:el.scrollTop,scrollHeight:el.scrollHeight,
       clientHeight:el.clientHeight,overflow:getComputedStyle(el).overflowY};
   });
 }
@@ -107,6 +109,7 @@ try{
     await run(name+" / homepage visual integrity",async()=>{
       await page.goto(base+"/#home",{waitUntil:"domcontentloaded"});
       await page.waitForSelector(".home-challenge-card");
+      if(["desktop","phone","small-phone"].includes(name))await snap(page,"homepage-"+name);
       const data=await page.evaluate(()=>{
         const cards=[...document.querySelectorAll(".home-challenge-card")];
         const flawed=[];
@@ -120,14 +123,23 @@ try{
           if(a.left<r.left-2||a.right>r.right+2||p.right>r.right+2||
             b.bottom>r.bottom+2||hit)flawed.push(i+1);
         }
+        const first=cards[0];
+        const boxes={};
+        for(const [k,e] of Object.entries({
+          card:first,title:first.querySelector(".home-card-title"),
+          preview:first.querySelector(".mini-pile"),bottom:first.querySelector(".home-card-bottom")
+        })){
+          const r=e.getBoundingClientRect();
+          boxes[k]={left:Math.round(r.left),top:Math.round(r.top),
+            right:Math.round(r.right),bottom:Math.round(r.bottom)};
+        }
         return {cards:cards.length,preview:document.querySelectorAll(".mini-pile").length,
           hero:!!document.querySelector(".hero-fall-svg"),
-          sideways:document.documentElement.scrollWidth-innerWidth,flawed};
+          sideways:document.documentElement.scrollWidth-innerWidth,flawed,firstBoxes:boxes};
       });
       insist(data.cards===9&&data.preview===9&&data.hero,"Missing home artwork",data);
       insist(data.sideways<=1,"Homepage horizontal overflow",data);
       insist(!data.flawed.length,"Homepage clipped card content",data);
-      if(name==="desktop"||name==="phone")await snap(page,"homepage-"+name);
       return data;
     });
     await page.goto(base+"/",{waitUntil:"domcontentloaded"});
@@ -157,6 +169,7 @@ try{
       for(const large of [false,true]){
         if(large)await page.locator(".ws-resize-pad").click();
         const d=await padRect(page);
+        if(name==="short-laptop")await snap(page,"short-laptop-pad-"+(large?"large":"regular"));
         insist(d.canvas&&d.parchment&&d.actions,"Missing drawing controls",d);
         insist(d.parchment.bottom>=d.canvas.bottom-1,
           "Canvas extends outside parchment",d);
