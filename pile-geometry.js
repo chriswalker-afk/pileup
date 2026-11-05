@@ -1,5 +1,10 @@
-import { makeSplitPile, makeCrownPile } from "./pile-variants.js";
-import { makeRectangleChallenge } from "./advanced-piles.js";
+import { makeSplitPile } from "./pile-variants.js";
+import {
+  makeCantileverChallenge,makeSuspendedProjectChallenge,
+  makeForkAndRejoinChallenge,makeBridgeChallenge,
+  makeTerracedMusesChallenge,makePlatformTerraceChallenge,
+  makeTwinPlinthAcropolis
+} from "./distinct-piles.js";
 import { assertFullyVisiblePuzzle } from "./pile-visibility.js";
 
 /**
@@ -82,80 +87,71 @@ export function makeOverhangPile({
   return puzzle;
 }
 
+/**
+ * Nine structurally distinct puzzle families. Only the gentle single
+ * rise and the shared-side Twin Paths retain their original geometry.
+ * The remaining seven have independent, authored support architectures.
+ */
 export const puzzles=[
-  makeOverhangPile({
+  Object.assign(makeOverhangPile({
     id:"first-fall",title:"The First Fall",epithet:"THE APPRENTICE",
     difficulty:"INTRODUCTORY",
-    description:"Three stacked triangles. Find the hypotenuse, subtract an inset overhang and discover the final length.",
+    description:"Start with one stable foundation. Discover the hypotenuse, remove the inset overhang and climb to a final roof.",
     base:[16,12],overhang:5,upperHypotenuse:17,legs:[6],
-    colors:["#d6b06c","#7da7a9","#c48670"],
+    colors:["#d6b06c","#7da7a9","#c48670"]
+  }),{
+    topology:"single-rise-inset",
+    architecture:{family:"single rising spine",summary:"One introductory stack with an inset",
+      features:["one grounded base","inset subtraction","rising roof"]}
   }),
-  makeOverhangPile({
+  makeCantileverChallenge({
     id:"projecting-edge",title:"The Projecting Edge",epithet:"THE MASON",
     difficulty:"DEVELOPING",
-    description:"Four triangles. An upper side projects beyond its support, and the final answer is an exact surd.",
-    base:[16,12],overhang:4,overhangMode:"extension",upperHypotenuse:26,legs:[24,7],
-    colors:["#d6b06c","#79a9a0","#b77d6b","#9e9ab9"],
+    description:"A cantilever reaches beyond its support. Two different upper arms grow from its edges: which length unlocks the final tip?"
   }),
-  makeSplitPile({
+  Object.assign(makeSplitPile({
     id:"twin-paths",title:"Twin Paths",epithet:"THE SURVEYORS",
     difficulty:"INTERMEDIATE",
-    description:"One long side is shared by two shorter sides. Follow two independent calculations, then combine their results.",
+    description:"Two smaller roofs share one long sloping side. Follow independent routes and matching marks to reconstruct its length.",
     base:[15,8],sectionLengths:[12,5],legLengths:[5,12],
     hypotenuseGivens:[13,13],equalHypotenuses:true,
     colors:["#d6b06c","#89a8ad","#b78a70"],
     extensions:true,
-    tags:["Two starting points","Matching side marks","Perimeter & area"]
+    tags:["Shared full side","Two upper pieces","Matching side marks"]
+  }),{
+    topology:"single-base-two-part-cover",
+    architecture:{family:"split full side",summary:"Two upper sections exactly cover one diagonal",
+      features:["one ground base","two upper roofs","matching ticks"]}
   }),
-  makeSplitPile({
+  makeSuspendedProjectChallenge({
     id:"split-project",title:"Split & Project",epithet:"THE BUILDERS",
     difficulty:"ADVANCED",
-    description:"Two smaller sides cover one long diagonal—but one projects beyond the end. Can you reconstruct the hidden length?",
-    base:[20,15],sectionLengths:[12,15],legLengths:[5,8],
-    hypotenuseGivens:[13,17],finalExtension:2,
-    colors:["#d6b06c","#8caeaa","#bb8573"],
-    extensions:true,
-    tags:["Two-side overlap","Projecting overhang","Perimeter & area"]
+    description:"Two grounded piers hold a long projecting beam over an open gap. Subtract ground spans, match lengths and add the overhang."
   }),
-  makeOverhangPile({
+  makeForkAndRejoinChallenge({
     id:"labyrinth",title:"The Geometer’s Labyrinth",epithet:"THE ARCHITECT",
     difficulty:"EXPERT",
-    description:"Five stacked triangles. Trace a projecting overhang through several linked applications of Pythagoras.",
-    base:[16,12],overhang:4,overhangMode:"extension",upperHypotenuse:26,legs:[8,6,9],
-    colors:["#d6b06c","#7aa9a2","#bb8373","#979fc1","#aa9983"]
+    description:"Two different calculation paths rise around a triangular opening. Their results rejoin to support one final roof."
   }),
-  makeCrownPile({
+  makeBridgeChallenge({
     id:"great-pile",title:"The Great Pile Up",epithet:"THE MASTER GEOMETER",
     difficulty:"MASTER CHALLENGE",
-    description:"A long side bridges two smaller triangle sides, before an upper chain leads to one final surd.",
-    colors:["#d6b06c","#7aa9a2","#c18a78","#979fc1","#b1a07c"],
-    tags:["Two-side bridge","Branches converge","Exact surds"]
+    description:"Two separate abutments support a long beam above an open bay. Calculate through its asymmetric rising roof."
   }),
-  makeOverhangPile({
+  makeTerracedMusesChallenge({
     id:"nine-muses",title:"The Nine Muses",epithet:"THE ACADEMY",
     difficulty:"MASTER CHALLENGE",
-    description:"Nine right triangles weave around a projecting edge. Follow the long chain through increasingly complex exact lengths.",
-    base:[16,12],overhang:4,overhangMode:"extension",upperHypotenuse:26,
-    legs:[8,6,9,5,4,7,3],
-    colors:["#d6b06c","#7aa9a2","#bb8373","#979fc1","#aa9983","#8bac91","#c5a5a0","#a29bba","#bcac7c"],
-    tags:["9 right triangles","Long chain","Overhang","Exact surds"]
+    description:"Three independent foundations carry twin terraces. Matching lengths reconnect the two ridges beneath a final crown."
   }),
-  makeRectangleChallenge({
+  makePlatformTerraceChallenge({
     id:"marble-terrace",title:"The Marble Terrace",epithet:"THE MASTER BUILDER",
     difficulty:"MASTER CHALLENGE",
-    description:"Eight right triangles climb from a rectangle. First use its diagonal to unlock the missing roof length.",
-    firstSteps:[{at:"b",leg:5},{at:"a",leg:5},{at:"a",leg:5},
-      {at:"b",leg:6},{at:"b",leg:6},{at:"a",leg:6}],
-    tags:["8 right triangles","1 rectangle","Diagonal reasoning"]
+    description:"A broad rectangle is the foundation. Its diagonal reveals a split rooftop carrying two staggered towers."
   }),
-  makeRectangleChallenge({
+  makeTwinPlinthAcropolis({
     id:"acropolis",title:"The Acropolis",epithet:"THE GRAND ARCHITECT",
     difficulty:"GRAND CHALLENGE",
-    description:"Ten right triangles and two rectangles. Each diagonal unlocks a new section of the structure.",
-    firstSteps:[{at:"b",leg:5},{at:"a",leg:5},{at:"a",leg:5}],
-    second:{depth:4,edge:"left",at:"b",leg:5,
-      steps:[{at:"a",leg:4},{at:"a",leg:4},{at:"b",leg:4},{at:"b",leg:4}]},
-    tags:["10 right triangles","2 rectangles","Two diagonals","Extended chain"]
+    description:"Two separate stone plinths flank an open bay. Solve both diagonals and unite their widths in the crowning bridge."
   })
 ];
 
@@ -163,9 +159,8 @@ export const puzzles=[
 for(const puzzle of puzzles){
   assertFullyVisiblePuzzle(puzzle);
   if(!puzzle.tags){
-    puzzle.tags=puzzle.id==="first-fall"?["Overhang","Missing shorter side"] :
-      puzzle.id==="projecting-edge"?["Projecting overhang","Exact value"] :
-      ["Long chain","Exact surds"];
+    puzzle.tags=puzzle.id==="first-fall"?["Inset overhang","First calculation"]:
+      ["Independent supports","Exact lengths"];
   }
   puzzle.topology=puzzle.topology||(puzzle.lengthRelations?.length>1?"split-and-overhang":
     puzzle.equalSideGroups?.length?"equal-sides":
