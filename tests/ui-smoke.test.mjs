@@ -232,6 +232,20 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     assert.match(home,/id="home" class="home-compact"/);
     assert.match(home,/9 CHALLENGES/);
     assert.ok(!home.includes("The six trials"));
+    // Visuals use genuine authored puzzle geometry, not one repeated
+    // ornamental icon or placeholder reused on every challenge card.
+    assert.equal((home.match(/<svg class="mini-pile"/g)||[]).length,puzzles.length);
+    assert.equal((home.match(/class="mini-shape"/g)||[]).length,
+      puzzles.reduce((total,p)=>total+p.triangles.length+(p.rectangles?.length||0),0));
+    assert.equal((home.match(/class="mini-rectangle-diagonal"/g)||[]).length,
+      puzzles.reduce((total,p)=>total+(p.rectangles||[]).reduce((s,r)=>s+(r.diagonals?.length||0),0),0));
+    assert.match(home,/<svg class="hero-fall-svg"[^>]*aria-hidden="true"/);
+    assert.equal((home.match(/class="hero-falling-piece"/g)||[]).length,3,
+      "Hero artwork should be assembled from the three real First Fall triangles");
+    assert.equal((home.match(/class="hero-right-angle"/g)||[]).length,3);
+    assert.match(home,/class="hero-goal"/);
+    assert.ok(!home.includes("home-art-symbol"),
+      "Replace the old placeholder triangle with the geometric tableau");
 
     location.hash="#puzzles";show();
     const catalogue=nodes.get("app")?.innerHTML||"";

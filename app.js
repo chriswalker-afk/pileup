@@ -66,23 +66,99 @@ function setWorkingFocused(wide){
 
 const header=()=>'<header><a class="brand" href="#home" aria-label="Pythagoras Pile Up home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav aria-label="Main navigation"><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
+/**
+ * A small graphic of the ACTUAL problem, not a generic triangular
+ * icon. Colour blocks, true overhangs, and rectangle diagonals allow
+ * each of the nine challenges to have its own visual identity.
+ */
 function miniPreview(puzzle){
   const shapes=[...puzzle.triangles,...(puzzle.rectangles||[])];
   const points=shapes.flatMap(t=>t.pts);
-  const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x));
-  const height=Math.max(...points.map(p=>p.y));
-  const factor=Math.min(123/(right-left),72/height);
-  const px=p=>({
-    x:80+(p.x-(left+right)/2)*factor,
-    y:86-p.y*factor
+  const minX=Math.min(...points.map(p=>p.x)),maxX=Math.max(...points.map(p=>p.x));
+  const minY=Math.min(...points.map(p=>p.y)),maxY=Math.max(...points.map(p=>p.y));
+  const spanX=Math.max(0.01,maxX-minX),spanY=Math.max(.01,maxY-minY);
+  const scale=Math.min(125/spanX,74/spanY);
+  const midX=(minX+maxX)/2,baseY=88;
+  const pos=p=>({
+    x:80+(p.x-midX)*scale,
+    y:baseY-(p.y-minY)*scale
   });
-  const figures=shapes.map(t=>
-    '<polygon fill="'+t.color+'" points="'+t.pts.map(point=>{
-      const v=px(point);return v.x.toFixed(1)+','+v.y.toFixed(1);
-    }).join(' ')+'"/>').join('');
-  return '<svg class="mini-pile" aria-hidden="true" viewBox="0 0 160 105" focusable="false">'+
-    '<line class="mini-floor" x1="12" y1="88" x2="148" y2="88"/>'+
-    figures+'</svg>';
+  const vertex=p=>{const v=pos(p);return v.x.toFixed(1)+","+v.y.toFixed(1);};
+  const content=shapes.map(shape=>{
+    const outline='<polygon class="mini-shape" fill="'+shape.color+
+      '" points="'+shape.pts.map(vertex).join(" ")+'"/>';
+    const diagonals=(shape.diagonals||[]).map(d=>{
+      const a=pos(d.a),b=pos(d.b);
+      return '<path class="mini-rectangle-diagonal" d="M'+a.x.toFixed(1)+" "+a.y.toFixed(1)+
+        " L"+b.x.toFixed(1)+" "+b.y.toFixed(1)+'"/>';
+    }).join("");
+    return outline+diagonals;
+  }).join("");
+  return '<svg class="mini-pile" aria-hidden="true" focusable="false" viewBox="0 0 160 105">'+
+    '<circle class="mini-geometry-ring" cx="80" cy="48" r="39"/>'+
+    '<path class="mini-geometry-guide" d="M14 49H146 M80 8V96"/>'+
+    '<path class="mini-floor" d="M13 89H147"/>'+
+    content+
+    '<path class="mini-plinth" d="M26 93H134"/>'+
+    '</svg>';
+}
+
+/**
+ * A hero engraving built from the opening puzzle's REAL triangles.
+ * The sequence is decorative; the interactive fall continues to live
+ * on the challenge page, with its own Replay and Skip controls.
+ */
+function homeHeroIllustration(){
+  const puzzle=puzzles[0],scale=9.15,originX=117,floorY=221;
+  const pos=p=>({
+    x:originX+p.x*scale,
+    y:floorY-p.y*scale
+  });
+  const vertex=p=>{const v=pos(p);return v.x.toFixed(1)+","+v.y.toFixed(1);};
+  const pieces=puzzle.triangles.map((triangle,index)=>{
+    const corners=triangle.pts.map(pos);
+    const right=triangle.right,corner=corners[right];
+    const near=corners[(right+1)%3],far=corners[(right+2)%3];
+    const a={x:near.x-corner.x,y:near.y-corner.y};
+    const b={x:far.x-corner.x,y:far.y-corner.y};
+    const al=Math.hypot(a.x,a.y),bl=Math.hypot(b.x,b.y),k=8;
+    const u={x:a.x/al*k,y:a.y/al*k},v={x:b.x/bl*k,y:b.y/bl*k};
+    const d='M'+(corner.x+u.x).toFixed(1)+" "+(corner.y+u.y).toFixed(1)+
+      ' L'+(corner.x+u.x+v.x).toFixed(1)+" "+(corner.y+u.y+v.y).toFixed(1)+
+      ' L'+(corner.x+v.x).toFixed(1)+" "+(corner.y+v.y).toFixed(1);
+    const centre={
+      x:corners.reduce((s,q)=>s+q.x,0)/3,
+      y:corners.reduce((s,q)=>s+q.y,0)/3
+    };
+    return '<g class="hero-falling-piece" style="--hero-index:'+index+'">'+
+      '<polygon points="'+triangle.pts.map(vertex).join(" ")+'" fill="'+triangle.color+'"/>'+
+      '<path class="hero-right-angle" d="'+d+'"/>'+
+      '<text class="hero-number" x="'+centre.x.toFixed(1)+'" y="'+centre.y.toFixed(1)+'">'+
+        triangle.id+'</text></g>';
+  }).join("");
+  const targetA=pos(puzzle.target.a),targetB=pos(puzzle.target.b);
+  const x=targetA.x+19,y=(targetA.y+targetB.y)/2;
+  return '<svg class="hero-fall-svg" viewBox="0 0 390 260" aria-hidden="true" focusable="false">'+
+    '<g class="hero-guides">'+
+      '<circle cx="191" cy="128" r="90"/><circle cx="191" cy="128" r="75"/>'+
+      '<circle cx="191" cy="128" r="5"/>'+
+      '<path d="M191 16V240 M53 128H329"/>'+
+      '<path d="M115 42A118 118 0 0 1 290 93" stroke-dasharray="3 7"/>'+
+      '<path d="M93 177A116 116 0 0 0 284 211" stroke-dasharray="3 7"/>'+
+    '</g>'+
+    '<path class="hero-fine-grid" d="M75 59H312 M75 94H312 M75 164H312 M75 199H312 M97 38V226 M148 38V226 M239 38V226 M289 38V226"/>'+
+    '<g class="hero-stars"><path d="M70 62V75 M64 68H77"/>'+
+      '<path d="M310 137V151 M303 144H317"/>'+
+      '<circle cx="317" cy="53" r="2"/><circle cx="76" cy="185" r="2"/></g>'+
+    '<path class="hero-plinth" d="M64 222H328 M87 228H308 M109 234H283"/>'+
+    pieces+
+    '<g class="hero-goal"><path d="M'+(targetA.x+6).toFixed(1)+' '+targetA.y.toFixed(1)+
+      ' H'+(x+5).toFixed(1)+' V'+targetB.y.toFixed(1)+' H'+(targetB.x+6).toFixed(1)+'"/>'+
+      '<circle cx="'+(x+6).toFixed(1)+'" cy="'+y.toFixed(1)+'" r="13"/>'+
+      '<text x="'+(x+6).toFixed(1)+'" y="'+(y+5).toFixed(1)+'">x</text></g>'+
+    '<text class="hero-engraving-caption" x="195" y="254" text-anchor="middle">'+
+      'GEOMETRY  ·  REASONING  ·  DISCOVERY</text>'+
+    '</svg>';
 }
 function home(gallery=false){
   disposeWorking();disposeWorking=()=>{};
@@ -95,9 +171,7 @@ function home(gallery=false){
         <h1 id="home-heading">When triangles <em>fall into place.</em></h1>
         <p class="home-lead">Discover hidden lengths in a pile of right-angled triangles. Each answer becomes the clue to another.</p>
         <div class="home-story-art" aria-hidden="true">
-          <span class="home-art-ring"></span>
-          <span class="home-art-symbol">△</span>
-          <span class="home-art-caption">GEOMETRY · REASONING · DISCOVERY</span>
+          ${homeHeroIllustration()}
         </div>
       </div>
       <div class="home-story-bottom">

@@ -1,0 +1,194 @@
+/* GRAPHICS PASS A — real geometry, refined Greek engraving, no wasted space.
+   Art is pure SVG/CSS: no external image requests, layout shifts or
+   interference with the interactive diagram and the student's working. */
+
+/* Shared architectural line. Applied on every page, not just Home. */
+body[data-view] header,
+body[data-view] footer { position:relative; }
+body[data-view] header::after {
+  content:"";position:absolute;z-index:0;pointer-events:none;
+  left:clamp(18px,3vw,45px);right:clamp(18px,3vw,45px);bottom:0;
+  height:7px;opacity:.36;background:url("./assets/greek-key.svg") repeat-x 0 0 / 64px 12px;
+}
+body[data-view] footer::before {
+  content:"";position:absolute;z-index:0;pointer-events:none;
+  left:clamp(18px,3vw,45px);right:clamp(18px,3vw,45px);top:0;
+  height:7px;opacity:.27;background:url("./assets/greek-key.svg") repeat-x 0 0 / 64px 12px;
+}
+.brand .seal {position:relative;flex:0 0 auto;}
+.brand .seal::after {
+  content:"";position:absolute;inset:4px;pointer-events:none;
+  border:1px solid #ab895348;border-radius:50%;
+}
+.header-note::before {
+  content:"✧";font:14px Georgia,serif;color:#ad9165;
+  margin-right:8px;vertical-align:-1px;
+}
+
+/* Engraved geometric tableau replaces the lone △ in the hero. */
+.home-story {position:relative;overflow:hidden;}
+.home-story::after {
+  content:"";position:absolute;right:11px;top:11px;width:13px;height:13px;
+  border-top:1px solid #b9a783;border-right:1px solid #b9a783;pointer-events:none;
+}
+.home-story-art {
+  display:flex!important;align-items:center;justify-content:center;
+  height:clamp(135px,25vh,235px)!important;min-height:90px;
+  flex:0 1 auto;position:relative;margin:7px 0 9px;
+}
+.home-story-art .hero-fall-svg {
+  display:block;position:relative;flex:none;
+  width:100%;max-width:380px;height:100%;overflow:visible;
+  filter:drop-shadow(0 7px 6px #614a2620);
+}
+.hero-fall-svg .hero-guides {fill:none;stroke:#a68a59;stroke-width:1;
+  stroke-opacity:.47;pointer-events:none}
+.hero-fall-svg .hero-fine-grid{fill:none;stroke:#b49c74;stroke-width:.65;
+  stroke-opacity:.16;pointer-events:none}
+.hero-fall-svg .hero-stars{fill:#ae8c55;fill-opacity:.42;
+  stroke:#ae8c55;stroke-width:1.1;stroke-opacity:.43;pointer-events:none}
+.hero-fall-svg .hero-plinth{stroke:#8f7752;stroke-width:2.25;stroke-linecap:round;
+  opacity:.74;fill:none}
+.hero-fall-svg .hero-plinth+path{stroke-width:1}
+.hero-fall-svg .hero-falling-piece {
+  --hero-index:0;transform-box:fill-box;transform-origin:center;
+  animation:hero-triangle-land 1.15s cubic-bezier(.2,.7,.3,1) both;
+  animation-delay:calc(var(--hero-index) * 180ms);
+}
+.hero-fall-svg .hero-falling-piece polygon{
+  stroke:#544c3e;stroke-width:2.1;stroke-linejoin:round;fill-opacity:.88;
+}
+.hero-fall-svg .hero-right-angle{fill:none;stroke:#454b42;stroke-width:1.7;
+  stroke-linecap:square;stroke-linejoin:miter}
+.hero-fall-svg .hero-number{font:600 12px 'Cinzel',Georgia,serif;
+  fill:#3f433d;fill-opacity:.75;text-anchor:middle;dominant-baseline:central}
+.hero-fall-svg .hero-goal {
+  animation:hero-measure-appear .5s ease 1.55s both;
+}
+.hero-fall-svg .hero-goal path{fill:none;stroke:#a28755;stroke-width:1.35;
+  stroke-dasharray:3 3;stroke-linejoin:round}
+.hero-fall-svg .hero-goal circle{fill:#345249;stroke:#efe4cb;stroke-width:2.1}
+.hero-fall-svg .hero-goal text{fill:#fff2d6;text-anchor:middle;
+  font:bold italic 18px Georgia,serif}
+.hero-fall-svg .hero-engraving-caption{fill:#887454;
+  font:500 8px 'Cinzel',Georgia,serif;letter-spacing:1.25px}
+@keyframes hero-triangle-land {
+  0%{opacity:0;transform:translateY(-55px) rotate(-8deg)}
+  72%{opacity:1;transform:translateY(4px) rotate(1deg)}
+  100%{opacity:1;transform:translateY(0) rotate(0)}
+}
+@keyframes hero-measure-appear {
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Nine different thumbnails, all based on exact puzzle geometry.
+   Three-column card layout survives even when the viewport is short. */
+.home-challenge-card {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(60px,34%);
+  grid-template-rows:min-content minmax(0,1fr) min-content;
+  gap:3px 7px!important;
+  align-items:stretch;overflow:hidden;
+  padding:clamp(7px,.9vw,12px)!important;
+}
+.home-challenge-card .home-card-number {
+  grid-column:1 / -1;grid-row:1;
+  align-self:start;margin:0;white-space:nowrap;
+}
+.home-challenge-card .home-card-copy {
+  grid-column:1;grid-row:2;
+  display:flex;flex-direction:column;justify-content:center;
+  gap:3px;min-width:0;width:100%;max-width:none!important;
+  margin:0!important;align-self:center;
+}
+.home-challenge-card .home-card-title {
+  font-size:clamp(12px,1.12vw,16px);
+  line-height:1.22;overflow-wrap:break-word;
+}
+.home-challenge-card .home-card-desc {
+  font-size:clamp(9px,.78vw,10px);line-height:1.38;
+  -webkit-line-clamp:2;max-width:100%;
+}
+.home-challenge-card .mini-pile {
+  display:block!important;position:relative!important;
+  grid-column:2;grid-row:2;
+  left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+  justify-self:stretch;align-self:center;
+  width:100%!important;height:clamp(52px,8vh,89px)!important;
+  min-width:0;min-height:50px;max-height:92px;
+  pointer-events:none;opacity:1;
+  transform:none;
+  filter:drop-shadow(0 2px 2px #5a49371e);
+}
+.home-challenge-card .mini-geometry-ring {fill:none;stroke:#bcaa87;
+  stroke-width:.75;stroke-opacity:.36}
+.home-challenge-card .mini-geometry-guide{fill:none;stroke:#bbaa8a;
+  stroke-width:.7;stroke-opacity:.17;stroke-dasharray:3 4}
+.home-challenge-card .mini-shape{
+  stroke:#4e4a3f;stroke-width:1.65;stroke-linejoin:round;fill-opacity:.91;
+}
+.home-challenge-card .mini-rectangle-diagonal{fill:none;stroke:#71634e;
+  stroke-width:1.7;stroke-dasharray:4 3}
+.home-challenge-card .mini-plinth{fill:none;stroke:#b09b78;stroke-width:1;
+  stroke-linecap:round;opacity:.62}
+.home-challenge-card .home-card-bottom{
+  display:flex;grid-column:1 / -1;grid-row:3;
+  position:relative!important;left:auto!important;right:auto!important;
+  top:auto!important;bottom:auto!important;align-self:end;
+  margin-top:2px;font-size:8px;gap:4px;line-height:1.15;
+}
+.home-challenge-card:focus-visible .mini-pile,
+.home-challenge-card:hover .mini-pile{
+  opacity:1;
+  transform:translateY(-2px);
+}
+.home-puzzle-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+.home-library-heading h2{position:relative;}
+.home-library-heading h2::after{content:"✧";font-size:.4em;color:#b99a65;
+  vertical-align:6px;margin-left:12px}
+
+@media (min-width:900px) and (max-width:1230px) {
+  .home-challenge-card{grid-template-columns:minmax(0,1fr) minmax(54px,36%);}
+  .home-challenge-card .mini-pile{display:block!important;height:clamp(50px,7.5vh,72px)!important;}
+  .home-challenge-card .home-card-copy{margin:0!important;max-width:none!important;}
+  .home-challenge-card .home-card-title{font-size:clamp(11px,1.04vw,14px);}
+  .home-story-art{height:clamp(125px,20vh,180px)!important;}
+}
+@media (min-width:900px) and (max-height:760px) {
+  .home-challenge-card .mini-pile{display:block!important;height:clamp(47px,7.6vh,68px)!important;}
+  .home-challenge-card .home-card-title{font-size:clamp(11px,1.02vw,14px);}
+  .home-story-art{display:flex!important;height:clamp(100px,18vh,158px)!important;}
+  .home-card-desc{-webkit-line-clamp:1;}
+}
+@media (min-width:900px) and (max-height:630px) {
+  .home-compact{padding-top:9px;padding-bottom:9px;}
+  .home-story{padding:12px;}
+  .home-story h1{font-size:clamp(27px,2.8vw,35px);margin:6px 0 9px;}
+  .home-story .home-lead{font-size:10px;line-height:1.45;}
+  .home-story-art{display:flex!important;height:clamp(86px,16vh,115px)!important;margin:0;}
+  .home-steps{padding:8px 0;}
+  .home-card-desc{display:none!important;}
+  .home-challenge-card .mini-pile{height:49px!important;}
+  .home-challenge-card .home-card-title{font-size:clamp(11px,1vw,13px);}
+  .home-challenge-card .home-card-bottom{font-size:7.5px;}
+}
+@media (max-width:899px) {
+  .home-story-art{display:flex!important;height:clamp(170px,29vh,240px)!important;margin:10px 0;}
+  .home-challenge-card{grid-template-columns:minmax(0,1fr) minmax(100px,34%);min-height:152px!important;}
+  .home-challenge-card .mini-pile{height:clamp(76px,12vh,102px)!important;}
+  .home-challenge-card .home-card-title{font-size:clamp(13px,2vw,17px);}
+}
+@media (max-width:560px) {
+  .home-challenge-card{grid-template-columns:minmax(0,1fr) minmax(105px,36%);min-height:148px!important;}
+  .home-challenge-card .home-card-desc{display:-webkit-box;-webkit-line-clamp:2;}
+  .home-challenge-card .home-card-title{font-size:15px;}
+  .home-challenge-card .mini-pile{height:90px!important;}
+  .home-story-art{height:165px!important;}
+  .header-note::before{display:none;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .hero-fall-svg .hero-falling-piece,
+  .hero-fall-svg .hero-goal{animation:none!important;opacity:1!important;transform:none!important;}
+  .home-challenge-card .mini-pile{transition:none!important;}
+}
