@@ -1,6 +1,6 @@
 # Pythagoras Pile Up
 
-An Ancient Greek-style mathematical puzzle website where nine genuinely different triangle-and-rectangle structures fall into place. Explore bridges, overhangs, forks, open gaps and real platforms; discover hidden lengths using Pythagoras and exact geometric relationships.
+An Ancient Greek-style mathematical puzzle website where ten genuinely different triangle-and-rectangle structures fall into place. Explore bridges, overhangs, forks, open gaps and real platforms; discover hidden lengths using Pythagoras and exact geometric relationships.
 
 ## Website
 
@@ -38,7 +38,7 @@ npm run check
 - `pass-b.css` — student-solving UI styles
 - `app.js` — frontend geometry, interactions, progress and animations
 - `puzzle-engine.js` — dependency graph, equal-length marks, valid answer evaluation and worked steps
-- `pile-geometry.js` — nine structurally distinct puzzles with exact mathematical givens
+- `pile-geometry.js` — ten structurally distinct puzzles with exact mathematical givens
 - `distinct-piles.js` — deliberately authored cantilevers, split foundations, bridges, forks, terraces and twin plinths
 - `pile-variants.js` — precise split-edge and bridging arrangements
 - `pass-c.css` — collection preview and extension styling
@@ -48,7 +48,7 @@ npm run check
 - `tests/` — automated checks
 - `.github/workflows/` — GitHub Pages and validation workflows
 
-The library contains **nine distinct geometries**: a first rising spine, two-arm cantilever, shared-side puzzle, split foundation with an overhanging beam, fork-and-rejoin arch, open bridge, triple-base terrace, rectangle platform and two-plinth Acropolis. Exact targets and the current QA standard are in [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md). Historical six-puzzle answer lists are archived.
+The library contains **ten distinct geometries**: a first rising spine, two-arm cantilever, shared-side puzzle, split foundation with an overhanging beam, fork-and-rejoin arch, open bridge, triple-base terrace, rectangle platform and two-plinth Acropolis, and the interlocked thirteen-triangle masterpiece. Exact targets and the current QA standard are in [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md). Historical six-puzzle answer lists are archived.
 
 ## Credits
 
@@ -56,7 +56,7 @@ Inspired by the Pythagoras Pile Up classroom activity at [Great Maths Teaching I
 
 ## Working and layouts
 
-The homepage shows all nine puzzles beside the introduction on a typical desktop screen, with one-column cards on phones. Individual puzzle screens keep the tablet and working panel visible simultaneously, with internal scrolling for longer workings. On phones and narrow tablets the layout stacks to preserve legibility.
+The homepage shows all ten puzzles beside the introduction on a typical desktop screen, with one-column cards on phones. Individual puzzle screens keep the tablet and working panel visible simultaneously, with internal scrolling for longer workings. On phones and narrow tablets the layout stacks to preserve legibility.
 
 Each side has **maths lines** (MathLive input with roots, fractions and powers) and a **drawing pad** (pen, stroke eraser, undo, clear). Work is stored locally per side in the browser. The old free-text textarea has been replaced; previously saved text is migrated to maths lines when possible. MathLive is loaded from a pinned CDN version, with a basic LaTeX input fallback if the CDN is unavailable.
 
@@ -88,7 +88,7 @@ In **Draw** mode, the yellow parchment grows to contain the entire freehand canv
 
 ## Graphics — Pass A
 
-The homepage includes an animated Ancient Greek-style geometric engraving **drawn from the actual First Fall triangles** and a miniature picture of **each of the nine real puzzle arrangements**. The gallery diagrams remain visible at compact laptop widths rather than disappearing. A lightweight Greek-key SVG frieze ties together the header and footer across pages. Decorative animation respects reduced-motion settings, independently of the interactive puzzle's falling animation.
+The homepage includes an animated Ancient Greek-style geometric engraving **drawn from the actual First Fall triangles** and a miniature picture of **each of the ten real puzzle arrangements**. The gallery diagrams remain visible at compact laptop widths rather than disappearing. A lightweight Greek-key SVG frieze ties together the header and footer across pages. Decorative animation respects reduced-motion settings, independently of the interactive puzzle's falling animation.
 
 See [GRAPHICS_PASS_A.md](GRAPHICS_PASS_A.md) for the design decisions, test coverage and visual review checklist.
 
@@ -102,13 +102,13 @@ A completed pile now reveals an Ancient Greek laurel-and-Pythagoras seal, with t
 
 ## Browser release audit (5 November 2026)
 
-The site includes a real-Chromium browser audit across **five screen sizes**, testing all **nine puzzles**, the homepage, drawing pad, autoplay, exact-answer completion, saved working and reduced-motion settings. The audit found and fixed the mobile challenge-gallery column bug, short-laptop drawing parchment overflow, and completion-wreath/title overlap.
+The site includes a real-Chromium browser audit across **five screen sizes**, testing all **ten puzzles**, the homepage, drawing pad, autoplay, exact-answer completion, saved working and reduced-motion settings. The audit found and fixed the mobile challenge-gallery column bug, short-laptop drawing parchment overflow, and completion-wreath/title overlap.
 
 **Final verified result: 62 of 62 browser checks passed**, in addition to `npm run check`. See [Release audit and review notes](RELEASE_AUDIT_2026-11-05.md) for a full coverage matrix, fixes, screenshots and remaining iOS/stylus test limitations.
 
 ## Zooming into diagrams
 
-All nine puzzles have **− / + / FIT** controls in the tablet, with a percentage readout from 100% to 400%. Drag a magnified image to move around it, use Ctrl/Command + wheel to zoom near the mouse, or focus the SVG and use arrow keys to pan. Magnification is preserved while working through a puzzle, but resets to the complete fitted view when starting another challenge. Zoom uses SVG viewBox, leaving geometry, side selection, animations and the student working area intact. See [Diagram zoom controls](DIAGRAM_ZOOM.md) for shortcuts and testing.
+All ten puzzles have **− / + / FIT** controls in the tablet, with a percentage readout from 100% to 400%. Drag a magnified image to move around it, use Ctrl/Command + wheel to zoom near the mouse, or focus the SVG and use arrow keys to pan. Magnification is preserved while working through a puzzle, but resets to the complete fitted view when starting another challenge. Zoom uses SVG viewBox, leaving geometry, side selection, animations and the student working area intact. See [Diagram zoom controls](DIAGRAM_ZOOM.md) for shortcuts and testing.
 
 ## Label clarity — Pass A
 
@@ -118,6 +118,6 @@ Hover or focus a measurement to see a temporary trace of its **exact side and en
 
 The diagram now places given, target and unknown measurements using a proximity-aware layout that avoids overlapping chips and discourages crossing leader lines. On mathematically defined straight-line relationships, **solid whole-length brackets** and **lighter dashed partial-length brackets** show precisely which section is being measured. Permanent connector lines appear only for distant callouts; Pass A's Focus, exact-side trace and Locate controls remain. Read [Label Clarity Pass B](LABEL_CLARITY_PASS_B.md) for the design, testing and review checklist.
 
-## Nine different puzzle architectures (2026)
+## Ten different puzzle architectures (2026)
 
-Seven of the nine constructions have been substantially redrawn to make their supports and solving routes less repetitive. First Fall and Twin Paths retain their original mathematics; the other seven now have distinct cantilever, two-base, forked, bridge, terrace or plinth structures. All nine use physically connected non-overlapping shapes and complete exact solutions. The older browser-local progress for redesigned puzzles is preserved separately, while the two unchanged challenges keep their saved work. See [Current architecture and exact target values](PUZZLE_ARCHITECTURE_2026.md).
+Seven of the original nine constructions were substantially redrawn to make their supports and solving routes less repetitive. First Fall and Twin Paths retain their original mathematics; the other seven now have distinct cantilever, two-base, forked, bridge, terrace or plinth structures. All ten use physically connected non-overlapping shapes and complete exact solutions. The older browser-local progress for redesigned puzzles is preserved separately, while the two unchanged challenges keep their saved work. The tenth, [The Great Interlock](THE_GREAT_INTERLOCK.md), adds thirteen dense right triangles and two mathematically indispensable floor supports, with a final 24 cm horizontal roof. See [Current architecture and exact target values](PUZZLE_ARCHITECTURE_2026.md).
