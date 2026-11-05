@@ -198,13 +198,16 @@ try{
           "Whole/part dimension bracket does not span its actual length",d);
         insist(Number.isFinite(d.meanLabelDistance),
           "Computed label distances must be finite",d);
-        if(["twin-paths","split-project","first-fall","projecting-edge"].includes(id)){
+        if(["twin-paths","split-project","first-fall","projecting-edge","nine-muses","acropolis"].includes(id)){
           insist(d.bracketCount>0,
             "Whole/partial straight-line lengths are missing their brackets",d);
         }
         insist(!d.zoomOverlaps.length,"Zoom controls cover a label at 100%",d);
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
-        if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
+        if(id==="acropolis"){
+          insist(d.rectangles===2,"Two rectangles missing",d);
+          insist(d.equalTicks===10,"Two real rectangle equal-side groups are not marked",d);
+        }
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
         if(id==="great-interlock")insist(d.pieces===13&&d.rectangles===0,
           "The thirteen-triangle original interlock is incomplete",d);
@@ -214,6 +217,24 @@ try{
           await snap(page,"architecture-"+id+"-"+name);
         return d;
       });
+    }
+    if(name==="desktop"||name==="phone"){
+      for(const id of ["nine-muses","acropolis"]){
+        await run(name+" / "+id+" unknowns reveal when a shape is selected",async()=>{
+          await open(page,id);
+          const data=await page.evaluate(()=>{
+            const count=()=>document.querySelectorAll("#diagram .side-chip.unknown").length;
+            const before=count();
+            const shape=document.querySelector('#diagram .piece[data-id="VII"]');
+            if(!shape)return {before,after:before,hasPiece:false};
+            shape.dispatchEvent(new MouseEvent("click",{bubbles:true}));
+            return {before,after:count(),hasPiece:true};
+          });
+          insist(data.hasPiece&&data.after>data.before,
+            "Dense diagrams should reveal missing sides on selection",data);
+          return data;
+        });
+      }
     }
     await run(name+" / zoom, pan, side selection and Fit",async()=>{
       await open(page,"acropolis");
@@ -249,6 +270,10 @@ try{
       }));
       insist(first.scale==="125%"&&first.width<data.original.width,
         "Zoom + did not magnify SVG",first);
+      // Dense puzzles intentionally hide question marks until a face
+      // is selected. First select through the visible side list; then
+      // test that its revealed chip remains clickable while zoomed.
+      await page.locator("#side-select").selectOption({index:1});
       const clickable=await page.locator("#diagram svg").evaluate(svg=>{
         const bounds=svg.getBoundingClientRect();
         const safe=[...svg.querySelectorAll(".side-chip.unknown:not(.overhang)")];
@@ -386,9 +411,9 @@ try{
       }));
       insist(highlighted.focused&&highlighted.muted>0&&highlighted.strong>=3&&
         highlighted.traces===1,"Focus view does not isolate the active shape",highlighted);
-      // Acropolis has rectangles but no authored straight-line
-      // whole/part relation. Bracket-focus behaviour is checked
-      // separately on a split-side challenge below.
+      // Acropolis now has a real 2 cm whole/part relation and two
+      // rectangle tick-mark groups. Exact bracket-focus behaviour
+      // is also checked on Twin Paths below.
       await page.locator("#diagram-zoom-in").click();
       await page.locator("#diagram-zoom-in").click();
       await page.locator("#diagram-zoom-in").click();
@@ -416,10 +441,11 @@ try{
       await page.locator("#label-focus-toggle").click();
       insist(await svg.locator(".side-chip.focus-muted").count()===0,
         "All Labels does not restore every measurement");
+      const beforeReplay=await svg.locator(".side-chip").count();
       await page.locator("#replay").click();
       if(await page.locator("#skip").isVisible())await page.locator("#skip").click();
-      insist(await svg.locator(".side-chip").count()===all,
-        "Replay/Skip changed the measurement count after Focus view");
+      insist(await svg.locator(".side-chip").count()===beforeReplay,
+        "Replay/Skip changed the revealed measurements for the selected shape");
       await open(page,"twin-paths");
       await page.locator("#side-select").selectOption({index:1});
       await page.locator("#label-focus-toggle").click();

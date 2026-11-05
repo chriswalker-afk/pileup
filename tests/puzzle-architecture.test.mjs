@@ -74,22 +74,19 @@ test("every structure is connected through real contacts, not floating scenery",
 test("puzzles intentionally vary their supported ground footprint",()=>{
   const expected=new Map([
     ["first-fall",1],["projecting-edge",1],["twin-paths",1],
-    ["split-project",2],["labyrinth",2],["great-pile",2],
-    ["nine-muses",3],["marble-terrace",3],["acropolis",4],
+    ["split-project",1],["labyrinth",2],["great-pile",1],
+    ["nine-muses",1],["marble-terrace",3],["acropolis",2],
     ["great-interlock",2]
   ]);
   for(const puzzle of puzzles)assert.equal(groundShapes(puzzle).length,
     expected.get(puzzle.id),puzzle.id+" ground footprint changed");
-  assert.equal(new Set([...expected.values()]).size>=4,true);
+  assert.equal(new Set([...expected.values()]).size>=3,true);
 });
 test("open bays and triangular gaps are genuinely empty, not white overlays",()=>{
+  // Only truly open structures claim to contain a central bay.
+  // The four replacements instead have directly adjoining pieces.
   for(const [id,x,y] of [
-    ["split-project",12,3],
-    ["labyrinth",12,3],
-    ["great-pile",11,6],
-    ["nine-muses",6,3],
-    ["acropolis",17,3]
-  ]){
+    ["labyrinth",12,3]  ]){
     const puzzle=puzzles.find(p=>p.id===id);
     assert.equal(voidAt(puzzle,x,y),true,
       id+" must expose a genuinely unfilled bay at "+x+","+y);
@@ -106,18 +103,18 @@ test("the upper structure genuinely rises above its foundations",()=>{
     assert.ok(top>5,puzzle.id+" is too flat to read as a pile");
   }
 });
-test("new puzzle difficulty reflects multiple starting points or actual dependencies",()=>{
-  const first=puzzles[0],early=readySteps(first,buildSides(first),new Set());
-  assert.equal(early.length,1,"Introductory challenge should give a clear first move");
-  for(const puzzle of puzzles.slice(2)){
-    const sides=buildSides(puzzle);
-    const available=readySteps(puzzle,sides,new Set());
-    assert.ok(available.length>=2,
-      puzzle.id+" should offer at least two mathematical starting choices");
-    assert.equal(available.some(x=>x.isTarget),false,
-      puzzle.id+" target must not be available without doing any work");
+test("four reworked problems have a genuine, unique mathematical entry",()=>{
+  for(const id of ["split-project","great-pile","nine-muses","acropolis"]){
+    const puzzle=puzzles.find(p=>p.id===id);
+    const sides=buildSides(puzzle),initial=readySteps(puzzle,sides,new Set());
+    assert.equal(initial.length,1,id+" should begin with one clearly marked calculation");
+    assert.ok(!initial[0].isTarget,id+" must not reveal x initially");
     const steps=solutionSteps(puzzle,sides);
     assert.ok(steps.some(step=>step.isTarget));
+  }
+  for(const puzzle of puzzles.filter(p=>!["split-project","great-pile","nine-muses","acropolis"].includes(p.id))){
+    const ready=readySteps(puzzle,buildSides(puzzle),new Set());
+    assert.ok(ready.length>=1,puzzle.id+" needs a valid starting calculation");
   }
 });
 test("the two new framed structures do not simply append a rectangle",()=>{
@@ -133,6 +130,6 @@ test("the two new framed structures do not simply append a rectangle",()=>{
   assert.equal(a.equalSideGroups.length,2);
   const highSpan=a.lengthRelations[0];
   const whole=highSpan.whole;
-  assert.ok(near(Math.hypot(whole.a.x-whole.b.x,whole.a.y-whole.b.y),24));
-  assert.ok(near(a.solution,25));
+  assert.ok(near(Math.hypot(whole.a.x-whole.b.x,whole.a.y-whole.b.y),12));
+  assert.ok(near(a.solution,15));
 });

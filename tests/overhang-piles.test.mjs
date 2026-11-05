@@ -44,16 +44,16 @@ test("Projecting Edge uses a different shoulder and two different upper edges",(
   assert.notEqual(shared(III)[0],shared(IV)[0]);
 });
 
-test("Split & Project has a measured foundation, but only its projection is an overhang",()=>{
-  const split=puzzles.find(p=>p.id==="split-project"),map=buildSides(split);
-  const over=split.extraSegments.find(s=>/OVERHANG/.test(s.label));
-  const floor=split.extraSegments.find(s=>/FOUNDATION/.test(s.label));
+test("Split & Project only uses a visibly measured 2 cm overhang",()=>{
+  const puzzle=puzzles.find(p=>p.id==="split-project"),map=buildSides(puzzle);
+  const over=puzzle.extraSegments.find(s=>/OVERHANG/.test(s.label));
+  assert.ok(Math.abs(over.value-2)<1e-7);
   assert.equal(map.get(sideKey(over.a,over.b)).isOverhang,true);
-  assert.equal(map.get(sideKey(floor.a,floor.b)).isOverhang,false);
-  assert.ok(readySteps(split,map,new Set()).some(x=>x.kind==="overhang"));
-  assert.equal(solutionSteps(split,map).some(x=>x.isTarget),true);
+  assert.equal(readySteps(puzzle,map,new Set()).some(x=>x.kind==="overhang"),false,
+    "The whole length must be calculated first");
+  assert.ok(solutionSteps(puzzle,map).some(x=>x.kind==="overhang"&&x.answer==="11"));
+  assert.ok(solutionSteps(puzzle,map).some(x=>x.isTarget&&x.answer==="√157"));
 });
-
 test("Real overhang input is validated against geometry",()=>{
   const p=makeOverhangPile({
     id:"test",title:"test",epithet:"test",difficulty:"test",description:"test",
