@@ -61,6 +61,9 @@ export function makeRectangleChallenge({
    givens:[{a:P,b:Q,value:5},{a:P,b:R,value:13}]};
  const rect1={id:"R1",pts:[Q,U,V,R],color:"#d7cfb7",
    diagonals:[{a:Q,b:V}],givens:[{a:Q,b:V,value:15}],
+   // Bottom and far-right are duplicate opposite sides, so avoid
+   // cluttering the pile with redundant question marks.
+   suppressLabels:[{a:Q,b:U},{a:U,b:V}],
    rightAngles:true};
  const roof=attach(rect1,[R,V],"b",12,"II",palette[1]);
  const triangles=[base,roof],rectangles=[rect1],fallOrder=["I","R1","II"];
