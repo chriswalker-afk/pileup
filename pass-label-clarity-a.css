@@ -126,3 +126,25 @@ body[data-view="puzzle"] .clarity-locate:focus-visible{
   #diagram svg .side-chip,
   #diagram svg .piece.focus-piece-muted {transition:none!important}
 }
+
+
+/* Short laptops reserve a narrow, single-line selector heading.
+   The mode button is inset into that existing line, instead of
+   increasing the inspector's minimum height and covering the hint. */
+@media(min-width:900px){
+  body[data-view="puzzle"] .clarity-field{gap:3px}
+  body[data-view="puzzle"] .clarity-selector-heading {
+    height:15px;min-height:15px;
+    position:relative;align-items:start;
+  }
+  body[data-view="puzzle"] .clarity-selector-heading label {
+    line-height:13px;max-width:calc(100% - 86px);
+    align-self:start;
+  }
+  body[data-view="puzzle"] .clarity-focus-toggle {
+    position:absolute;right:0;top:-4px;
+    height:21px;min-height:21px;
+    padding:1px 5px;
+    font-size:8px;
+  }
+}
