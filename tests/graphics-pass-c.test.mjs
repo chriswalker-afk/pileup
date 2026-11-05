@@ -46,6 +46,10 @@ test("screen readers receive concise, meaningful status without reannouncing the
   assert.match(css,/\.screenreader-only\s*\{/);
   assert.match(app,/aria-labelledby="completion-heading" aria-describedby="completion-subtitle"/);
   assert.match(app,/dialog\.querySelector\("#completion-review"\)\?\.focus/);
+  assert.match(app,/id="worked-solution-heading" tabindex="-1"/);
+  assert.match(app,/panel\.querySelector\("#worked-solution-heading"\)\?\.focus/);
+  assert.match(app,/class="hint-content" role="status" aria-live="polite"/);
+  assert.match(app,/clue\.setAttribute\("aria-live","polite"\)/);
 });
 
 test("modal stays scrollable and useful on narrow and short screens",()=>{
@@ -56,6 +60,8 @@ test("modal stays scrollable and useful on narrow and short screens",()=>{
   assert.match(css,/@media\(max-height:630px\)/);
   assert.match(css,/\.completion-controls button\{min-height:44px/);
   assert.match(css,/\.completion-dialog button:focus-visible/);
+  assert.match(css,/#diagram svg \.side-chip:focus-visible rect/);
+  assert.match(css,/body\[data-view="puzzle"\] \.side button:focus-visible/);
   assert.match(css,/\.completion-overline/);
   assert.match(css,/\.completion-inner \.completion-answer/);
   for(const id of ["completion-review","completion-extra","completion-other","completion-close"]){
