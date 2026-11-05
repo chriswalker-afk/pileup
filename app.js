@@ -7,6 +7,7 @@ const p=(x,y)=>({x,y}),d=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y),mid=(a,b)=>p((a.x+b.
 const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.x+a.y*b.y;
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
 let sideMap=buildSides(current),solved=new Set(),notes={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
+let extensionMode=false,extensionGrades={};
 const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav><a href="#home">THE AGORA</a><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
 function home(gallery=false){
@@ -21,11 +22,11 @@ function escapeHtml(text){
 }
 function saveProgress(){
   try{localStorage.setItem("pileup-pass-b-v2-"+current.id,JSON.stringify({
-    solved:[...solved],notes,hintLevels,hintsUsed
+    solved:[...solved],notes,hintLevels,hintsUsed,extensionGrades
   }));}catch(_){}
 }
 function loadProgress(){
-  solved=new Set();notes={};hintLevels={};hintsUsed=0;
+  solved=new Set();notes={};hintLevels={};hintsUsed=0;extensionGrades={};
   try{
     const saved=JSON.parse(localStorage.getItem("pileup-pass-b-v2-"+current.id)||"null");
     if(!saved || typeof saved!=="object")return;
@@ -43,6 +44,9 @@ function loadProgress(){
       }
     }
     hintsUsed=Math.max(0,Number(saved.hintsUsed)||0);
+    if(saved.extensionGrades && typeof saved.extensionGrades==="object"){
+      for(const item of current.extensions||[])if(saved.extensionGrades[item.id]===true)extensionGrades[item.id]=true;
+    }
   }catch(_){}
 }
 function stepsRemaining(){
@@ -157,6 +161,27 @@ function renderDiagram(animate=false,forceMotion=false){
     });
     svg.append(group);
   });
+  // Matching tick marks indicate equal lengths, not extra given values.
+  // Their geometry is drawn on the actual side (above the hit targets
+  // and below the labels), so students see the mathematical convention.
+  for(const [groupIndex,group] of (current.equalSideGroups||[]).entries()){
+    for(const descriptor of group){
+      const side=sideMap.get(sideKey(descriptor.a,descriptor.b));
+      if(!side)continue;
+      const endpoints=toSide(side),dx=endpoints.b.x-endpoints.a.x,dy=endpoints.b.y-endpoints.a.y;
+      const L=Math.hypot(dx,dy),nx=-dy/L,ny=dx/L,tx=dx/L,ty=dy/L;
+      const ticks=Math.min(3,groupIndex+2);
+      for(let j=0;j<ticks;j++){
+        const shift=(j-(ticks-1)/2)*8;
+        const cx=(endpoints.a.x+endpoints.b.x)/2+tx*shift;
+        const cy=(endpoints.a.y+endpoints.b.y)/2+ty*shift;
+        svg.append(el("line",{
+          x1:cx-nx*8,y1:cy-ny*8,x2:cx+nx*8,y2:cy+ny*8,
+          class:"equal-side-tick"
+        }));
+      }
+    }
+  }
   if(selectedSide){
     const side=sideMap.get(selectedSide),ends=toSide(side);
     svg.append(el("line",{x1:ends.a.x,y1:ends.a.y,x2:ends.b.x,y2:ends.b.y,class:"active-side"}));
@@ -199,9 +224,13 @@ function renderDiagram(animate=false,forceMotion=false){
     point:xy({x:t.pts.reduce((sum,z)=>sum+z.x,0)/3,y:t.pts.reduce((sum,z)=>sum+z.y,0)/3})
   }));
   const first=current.triangles[0];
-  const fullLineKey=sideKey(current.lengthRelations[0].whole.a,current.lengthRelations[0].whole.b);
-  const partialLineKey=sideKey(current.lengthRelations[0].parts[0].a,current.lengthRelations[0].parts[0].b);
-  const overlapKeys=new Set([fullLineKey,partialLineKey]);
+  // A long edge may align with two or more independently owned edges.
+  // Track every piece of each straight-line relation, not just the first.
+  const overlapKeys=new Set();
+  for(const rel of current.lengthRelations||[]){
+    overlapKeys.add(sideKey(rel.whole.a,rel.whole.b));
+    for(const part of rel.parts)overlapKeys.add(sideKey(part.a,part.b));
+  }
   function positioning(side,labelWidth){
     const ends=toSide(side),dx=ends.b.x-ends.a.x,dy=ends.b.y-ends.a.y;
     const length=Math.hypot(dx,dy),mx=(ends.a.x+ends.b.x)/2,my=(ends.a.y+ends.b.y)/2;
@@ -258,9 +287,7 @@ function renderDiagram(animate=false,forceMotion=false){
       const nx=chosen.nx,ny=chosen.ny,dx=nx*13,dy=ny*13;
       const start={x:ends.a.x+dx,y:ends.a.y+dy},stop={x:ends.b.x+dx,y:ends.b.y+dy};
       group.append(el("line",{x1:start.x,y1:start.y,x2:stop.x,y2:stop.y,class:"overhang-bracket"}));
-      const ex=(stop.x-start.x)/Math.hypot(stop.x-start.x,stop.y-start.y);
-      const ey=(stop.y-start.y)/Math.hypot(stop.x-start.x,stop.y-start.y);
-      for(const pt of [start,stop]){
+            for(const pt of [start,stop]){
         group.append(el("line",{x1:pt.x-nx*5,y1:pt.y-ny*5,x2:pt.x+nx*5,y2:pt.y+ny*5,class:"overhang-bracket"}));
       }
     }
@@ -348,17 +375,35 @@ function hintText(side,level){
   if(!step)return "Every missing side has been discovered.";
   const isSelected=step.sideKey===side.key;
   const known=step.known.map(key=>exactLength(sideMap.get(key).length)+" cm");
-  if(step.kind==="overhang"){
+  if(step.kind==="equal"){
     if(!isSelected){
-      if(level===1)return "Find the complete straight side, then look carefully at the small labelled overhang.";
-      if(level===2)return "The complete side and the extra overhang measure "+known.join(" and ")+".";
-      if(level===3)return "Use lengths along a straight line: "+step.equation+".";
-      return "Subtract the overhang to find the shorter shared side: "+step.answer+" cm.";
+      if(level===1)return "Look for the identical tick marks on two different sides.";
+      if(level===2)return "Both marked sides have the same length. One of them is already known.";
+      if(level===3)return step.equation+".";
+      return "The side with matching tick marks is "+step.answer+" cm.";
     }
-    if(level===1)return "The shorter side and labelled overhang lie along one straight line.";
-    if(level===2)return "The two known lengths are "+known.join(" and ")+". Think about which one is the whole.";
-    if(level===3)return step.equation+". No Pythagoras is needed in this step.";
-    return "The missing straight-line part is "+step.answer+" cm. Enter it to continue.";
+    if(level===1)return "The small matching strokes on two edges tell you something about their lengths.";
+    if(level===2)return "Find the other side with identical tick marks. Its value is "+known[0]+".";
+    if(level===3)return step.equation+".";
+    return "This side is "+step.answer+" cm. Enter it above.";
+  }
+  if(step.kind==="split"||step.kind==="overhang"){
+    const split=step.kind==="split";
+    const action=step.equation.includes("−")?"subtract":"add";
+    if(!isSelected){
+      if(level===1)return split ?
+        "One long side lies along two smaller triangle sides. Both smaller lengths matter." :
+        "Look for the short labelled overhang at the end of a straight side.";
+      if(level===2)return "The available straight-line lengths are "+known.join(" and ")+".";
+      if(level===3)return step.equation+".";
+      return "Use the lengths on the same straight line to find "+step.answer+" cm.";
+    }
+    if(level===1)return split ?
+      "The shared side is made from two consecutive shorter edges." :
+      "The projecting or inset section and the other edge lie on one straight line.";
+    if(level===2)return "The known sections measure "+known.join(" and ")+". Decide which side is the whole.";
+    if(level===3)return "Use straight-line lengths: "+step.equation+". You must "+action+".";
+    return "This section measures "+step.answer+" cm. Enter it to continue.";
   }
   if(!isSelected){
     if(level===1)return "Begin with triangle "+step.triangleId+". It currently has two known side lengths.";
@@ -374,9 +419,10 @@ function hintText(side,level){
 
 function incorrectFeedback(side,value){
   const step=readySteps(current,sideMap,solved).find(st=>st.sideKey===side.key);
-  if(step?.kind==="overhang"){
-    return "Check the straight line: complete length = shorter part + labelled overhang. You may need to subtract.";
+  if(step?.kind==="overhang"||step?.kind==="split"){
+    return "Check the straight line: decide which lengths form the complete section, and whether you need to add or subtract.";
   }
+  if(step?.kind==="equal")return "Matching tick marks represent equal lengths. Look for the known matching side.";
   if(step){
     const known=step.known.map(key=>sideMap.get(key).length);
     if(step.isHypotenuse){
