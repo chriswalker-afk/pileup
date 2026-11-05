@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check app.js && node --check puzzle-engine.js && node --check pile-geometry.js && node --check pile-variants.js && node --check pile-visibility.js && node --check rectangle-math.js && node --check advanced-piles.js && node --check working-space.js && node --check diagram-zoom.js && node --check label-clarity.js && npm test"
+    "check": "node --check app.js && node --check puzzle-engine.js && node --check pile-geometry.js && node --check pile-variants.js && node --check pile-visibility.js && node --check rectangle-math.js && node --check advanced-piles.js && node --check working-space.js && node --check diagram-zoom.js && node --check label-clarity.js && node --check label-layout.js && npm test"
   }
 }
