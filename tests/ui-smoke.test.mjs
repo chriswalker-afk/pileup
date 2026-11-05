@@ -60,7 +60,7 @@ class FakeNode {
   close(){this.open=false;}
 }
 
-test("all six puzzles mount with bounded labels and falling animations",async()=>{
+test("all nine puzzles mount with bounded labels and falling animations",async()=>{
   const oldGlobals={};
   const names=["document","window","location","history","localStorage","matchMedia","requestAnimationFrame","cancelAnimationFrame","setTimeout","clearTimeout"];
   for(const name of names)oldGlobals[name]=globalThis[name];
@@ -112,7 +112,9 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
         const svg=nodes.get("diagram")?.firstChild;
         assert.ok(svg,"No SVG mounted for "+puzzle.id);
         const pieces=svg.querySelectorAll(".piece");
-        assert.equal(pieces.length,puzzle.triangles.length);
+        assert.equal(pieces.length,puzzle.triangles.length+(puzzle.rectangles?.length||0));
+        assert.equal(svg.querySelectorAll(".rectangle-piece").length,puzzle.rectangles?.length||0);
+        assert.equal(svg.querySelectorAll(".rectangle-diagonal").length,(puzzle.rectangles||[]).reduce((n,r)=>n+(r.diagonals?.length||0),0));
         const measurements=svg.querySelector(".side-labels");
         assert.ok(measurements,"Every puzzle needs a measurements layer");
         assert.ok(measurements.classList.contains("waiting"),
@@ -183,14 +185,14 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
         cases++;
       }
     }
-    assert.equal(cases,24);
-    // The desktop home screen should put all six challenges beside
+    assert.equal(cases,36);
+    // The desktop home screen should put all nine challenges beside
     // the introduction rather than below a full-page hero.
     location.hash="#home";show();
     const home=nodes.get("app")?.innerHTML||"";
     assert.match(home,/class="home-compact"/);
     assert.match(home,/class="home-puzzle-grid"/);
-    assert.equal((home.match(/class="challenge-card home-challenge-card"/g)||[]).length,6);
+    assert.equal((home.match(/class="challenge-card home-challenge-card"/g)||[]).length,9);
     assert.ok(!home.includes("Three steps to discovery"));
   }finally{
     for(const name of names){
