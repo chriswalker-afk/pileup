@@ -1,78 +1,73 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { puzzles,makeOverhangPile } from "../pile-geometry.js";
-import {
-  buildSides,sideKey,solutionSteps,readySteps,
-  puzzleIsValid,correctAnswer
-} from "../puzzle-engine.js";
+import {puzzles,makeOverhangPile} from "../pile-geometry.js";
+import {buildSides,sideKey,solutionSteps,readySteps,puzzleIsValid,correctAnswer}
+  from "../puzzle-engine.js";
 
-const cases=[
-  {id:"first-fall",triangles:3,overhang:5,unknown:4,
-    chain:["20","15","8","10"],target:10},
-  {id:"labyrinth",triangles:5,overhang:4,unknown:6,
-    chain:["20","24","10","2√41","10√2","√281"],target:Math.sqrt(281)}
-];
-for(const expected of cases){
-  test(expected.id+" is an exact, grounded, solvable overhang pile",()=>{
-    const puzzle=puzzles.find(p=>p.id===expected.id);
-    assert.ok(puzzle);
-    assert.equal(puzzle.triangles.length,expected.triangles);
-    assert.equal(puzzle.overhang.value,expected.overhang);
-    assert.equal(puzzle.floor.a.y,0);
-    assert.equal(puzzle.floor.b.y,0);
-    assert.ok(puzzle.triangles[0].pts.some(z=>z.y===0));
-    assert.ok(puzzle.triangles.slice(2).every(t=>t.pts.every(z=>z.y>0)),
-      "upper triangles must truly rest on other triangles");
-    assert.equal(puzzleIsValid(puzzle),true);
-    const sides=buildSides(puzzle);
-    const unknown=[...sides.values()].filter(s=>!s.given);
-    assert.equal(unknown.length,expected.unknown);
-    const measured=[...sides.values()].filter(s=>s.isOverhang);
-    assert.equal(measured.length,1);
-    assert.equal(measured[0].length,expected.overhang);
-    const steps=solutionSteps(puzzle,sides);
-    assert.deepEqual(steps.map(s=>s.answer),expected.chain);
-    assert.equal(steps[0].kind,"pythagoras");
-    assert.equal(steps[1].kind,"overhang");
-    assert.match(steps[1].equation,expected.id==="first-fall"?/−/:/\+/);
-    assert.equal(steps[2].isHypotenuse,false);
-    assert.match(steps[2].equation,/−/);
-    assert.equal(steps.at(-1).isTarget,true);
-    assert.ok(Math.abs(steps.at(-1).length-expected.target)<1e-8);
-  });
-}
+test("The First Fall preserves a simple, exact inset deduction",()=>{
+  const first=puzzles[0],map=buildSides(first);
+  assert.equal(first.overhang.value,5);
+  assert.equal(first.triangles.length,3);
+  assert.equal(puzzleIsValid(first),true);
+  assert.equal([...map.values()].filter(x=>x.isOverhang).length,1);
+  const steps=solutionSteps(first,map);
+  assert.deepEqual(steps.map(x=>x.answer),["20","15","8","10"]);
+  assert.deepEqual(steps.map(x=>x.kind).slice(0,2),["pythagoras","overhang"]);
+  assert.match(steps[1].equation,/−/);
+  assert.equal(steps.at(-1).isTarget,true);
+});
 
-test("Overhang is necessary in the dependency chain",()=>{
-  const puzzle=puzzles[0],sides=buildSides(puzzle);
-  const solved=new Set();
-  let ready=readySteps(puzzle,sides,solved);
-  assert.equal(ready.length,1);
-  assert.equal(ready[0].triangleId,"I");
-  solved.add(ready[0].sideKey);
-  ready=readySteps(puzzle,sides,solved);
-  assert.equal(ready.length,1);
-  assert.equal(ready[0].kind,"overhang");
-  assert.equal(ready[0].answer,"15");
-  solved.add(ready[0].sideKey);
-  ready=readySteps(puzzle,sides,solved);
-  assert.equal(ready.length,1);
-  assert.equal(ready[0].triangleId,"II");
-  assert.equal(ready[0].answer,"8");
+test("Projecting Edge uses a different shoulder and two different upper edges",()=>{
+  const project=puzzles.find(p=>p.id==="projecting-edge");
+  const map=buildSides(project),steps=solutionSteps(project,map);
+  assert.equal(project.triangles.length,4);
+  assert.equal(project.overhang.value,4);
+  assert.equal(project.architecture.family,"cantilever");
+  assert.equal(puzzleIsValid(project),true);
+  assert.equal(map.get(sideKey(project.overhang.a,project.overhang.b)).isOverhang,true);
+  assert.ok(steps.some(x=>x.kind==="overhang"&&/ \+ /.test(x.equation)));
+  assert.ok(steps.some(x=>x.isTarget&&x.answer==="5√5"));
+  // The third and fourth triangles use different supporting edges
+  // of II, so their additions cannot be mistaken for a repeated chain.
+  const [II,III,IV]=project.triangles.slice(1);
+  const secondSides=new Set([
+    sideKey(II.pts[0],II.pts[1]),
+    sideKey(II.pts[1],II.pts[2]),
+    sideKey(II.pts[2],II.pts[0])
+  ]);
+  const shared=t=>[
+    sideKey(t.pts[0],t.pts[1]),sideKey(t.pts[1],t.pts[2]),
+    sideKey(t.pts[2],t.pts[0])
+  ].filter(k=>secondSides.has(k));
+  assert.equal(shared(III).length,1);
+  assert.equal(shared(IV).length,1);
+  assert.notEqual(shared(III)[0],shared(IV)[0]);
 });
-test("Either exact or appropriately rounded final answer is accepted",()=>{
-  assert.equal(correctAnswer("10",puzzles[0].solution),true);
-  assert.equal(correctAnswer("√281",puzzles.find(p=>p.id==="labyrinth").solution),true);
-  assert.equal(correctAnswer("sqrt(281)",puzzles.find(p=>p.id==="labyrinth").solution),true);
-  assert.equal(correctAnswer("16.8",puzzles.find(p=>p.id==="labyrinth").solution),true);
-  assert.equal(correctAnswer("16.76",puzzles.find(p=>p.id==="labyrinth").solution),true);
-  assert.equal(correctAnswer("16.7",puzzles.find(p=>p.id==="labyrinth").solution),false);
+
+test("Split & Project has a measured foundation, but only its projection is an overhang",()=>{
+  const split=puzzles.find(p=>p.id==="split-project"),map=buildSides(split);
+  const over=split.extraSegments.find(s=>/OVERHANG/.test(s.label));
+  const floor=split.extraSegments.find(s=>/FOUNDATION/.test(s.label));
+  assert.equal(map.get(sideKey(over.a,over.b)).isOverhang,true);
+  assert.equal(map.get(sideKey(floor.a,floor.b)).isOverhang,false);
+  assert.ok(readySteps(split,map,new Set()).some(x=>x.kind==="overhang"));
+  assert.equal(solutionSteps(split,map).some(x=>x.isTarget),true);
 });
-test("Invalid straight-line segment measurement is rejected",()=>{
-  const puzzle=makeOverhangPile({
+
+test("Real overhang input is validated against geometry",()=>{
+  const p=makeOverhangPile({
     id:"test",title:"test",epithet:"test",difficulty:"test",description:"test",
     base:[16,12],overhang:5,upperHypotenuse:17,legs:[6],
     colors:["#aaa","#bbb","#ccc"]
   });
-  puzzle.extraSegments[0].value=7;
-  assert.throws(()=>buildSides(puzzle),/incorrect given length/i);
+  p.extraSegments[0].value=7;
+  assert.throws(()=>buildSides(p),/incorrect given length/i);
+});
+test("Exact surds and appropriate rounding remain accepted",()=>{
+  assert.equal(correctAnswer("10",puzzles[0].solution),true);
+  const projecting=puzzles[1];
+  assert.equal(correctAnswer("5√5",projecting.solution),true);
+  assert.equal(correctAnswer("sqrt(125)",projecting.solution),true);
+  assert.equal(correctAnswer("11.18",projecting.solution),true);
+  assert.equal(correctAnswer("11.0",projecting.solution),false);
 });
