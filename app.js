@@ -72,8 +72,10 @@ function setDiagramZoom(next){
     const box=zoomViewBox(next);
     svg.setAttribute("viewBox",[box.x,box.y,box.width,box.height].join(" "));
     svg.classList.toggle("diagram-is-zoomed",next.scale>1.001);
-    svg.setAttribute("aria-label",
-      svg.getAttribute("data-base-label")+
+    const baseDescription="A pile of "+current.triangles.length+" right-angled triangles"+
+      (current.rectangles?.length?" and "+current.rectangles.length+" rectangles":"")+
+      " resting on a stone floor. Select a marked side or shape to investigate.";
+    svg.setAttribute("aria-label",baseDescription+
       (next.scale>1.001?" Diagram magnified to "+Math.round(next.scale*100)+
         " percent. Drag to pan, or focus the diagram and use arrow keys.":""));
   }
