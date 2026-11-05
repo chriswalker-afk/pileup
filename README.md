@@ -126,3 +126,7 @@ Seven of the original nine constructions were substantially redrawn to make thei
 ## Dependency-first repair of challenges 4, 6, 7 and 9
 
 The previously balanced/open-bridge constructions were replaced after classroom review with new fully connected folded, zigzag, cascading and consecutive-platform silhouettes. Each one has a single clear mathematical start and a traceable chain to x, without relying on unmarked equality of detached sides. Two real opposite-side matching-mark groups appear on the Acropolis rectangles. The four revised puzzles use a new version of their browser-local progress key; other challenges are not affected. See [worked routes and QA checks](DEPENDENCY_REDESIGN_2026.md).
+
+## Diagram readability after the four-puzzle redesign
+
+[Diagram Readability Pass D](LABEL_READABILITY_PASS_D.md) checks every measurement's **exact side attachment**, including dense clusters of small right triangles. Visible measurements have fine anchored connectors to their own segments; crowded unknowns reveal when a piece is selected, which also activates a focused local view. Givens and x stay visible. **All Labels** genuinely reveals postponed unknowns and respects the student's explicit preference. The automated browser audit verifies attachment geometry on every challenge, in addition to label collisions and responsive layout.
