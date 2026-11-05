@@ -11,7 +11,7 @@ function makeChain(base, legs) {
   let first = { id: "I", pts: [a,b,c], right: 1,
     givens: [{a,b,value:base[0]}, {a:b,b:c,value:base[1]}] };
   const triangles = [first];
-  let previous = first, edge = {a:b,b:c};
+  let previous = first, edge = {a,b:c};
   for (let i=0;i<legs.length;i++) {
     let P=edge.a,Q=edge.b, dx=Q.x-P.x,dy=Q.y-P.y;
     const length = Math.hypot(dx,dy);
