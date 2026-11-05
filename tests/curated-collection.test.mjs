@@ -16,17 +16,18 @@ const expected=[
   ["great-pile",5,0,"√230","open-bridge-rising-peak"],
   ["nine-muses",9,0,"√274","three-foundation-twin-terrace"],
   ["marble-terrace",8,1,"2√38","rectangle-platform-stepped-ridges"],
-  ["acropolis",10,2,"25","two-plinths-grand-arch"]
+  ["acropolis",10,2,"25","two-plinths-grand-arch"],
+  ["great-interlock",13,0,"24","dense-interlocking-two-foundations"]
 ];
 const EPS=1e-7;
 const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const near=(a,b)=>Math.abs(a-b)<EPS;
 const pointKey=p=>p.x.toFixed(6)+","+p.y.toFixed(6);
-test("nine authored puzzle identities are distinct, not renamed chains",()=>{
+test("ten authored puzzle identities are distinct, not renamed chains",()=>{
   assert.deepEqual(puzzles.map(p=>p.id),expected.map(x=>x[0]));
-  assert.equal(new Set(puzzles.map(p=>p.id)).size,9);
-  assert.equal(new Set(puzzles.map(p=>p.topology)).size,9);
-  assert.equal(new Set(puzzles.map(p=>p.architecture?.family)).size,9);
+  assert.equal(new Set(puzzles.map(p=>p.id)).size,expected.length);
+  assert.equal(new Set(puzzles.map(p=>p.topology)).size,expected.length);
+  assert.equal(new Set(puzzles.map(p=>p.architecture?.family)).size,expected.length);
   for(const puzzle of puzzles){
     assert.ok(puzzle.tags.length>=2,puzzle.id+" tags");
     assert.ok(puzzle.architecture.summary);

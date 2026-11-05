@@ -5,6 +5,7 @@ import {
   makeTerracedMusesChallenge,makePlatformTerraceChallenge,
   makeTwinPlinthAcropolis
 } from "./distinct-piles.js";
+import { makeGreatInterlock } from "./interlocking-pile.js";
 import { assertFullyVisiblePuzzle } from "./pile-visibility.js";
 
 /**
@@ -88,9 +89,9 @@ export function makeOverhangPile({
 }
 
 /**
- * Nine structurally distinct puzzle families. Only the gentle single
+ * Ten structurally distinct puzzle families. Only the gentle single
  * rise and the shared-side Twin Paths retain their original geometry.
- * The remaining seven have independent, authored support architectures.
+ * The remaining eight have independent, authored support architectures.
  */
 export const puzzles=[
   Object.assign(makeOverhangPile({
@@ -152,6 +153,11 @@ export const puzzles=[
     id:"acropolis",title:"The Acropolis",epithet:"THE GRAND ARCHITECT",
     difficulty:"GRAND CHALLENGE",
     description:"Two separate stone plinths flank an open bay. Solve both diagonals and unite their widths in the crowning bridge."
+  }),
+  makeGreatInterlock({
+    id:"great-interlock",title:"The Great Interlock",epithet:"THE MASTERPIECE",
+    difficulty:"GRAND CHALLENGE",
+    description:"Thirteen triangles meet at unusual angles. Start from two distant foundations, follow the short offsets and reunited diagonals, then discover the long horizontal roof."
   })
 ];
 

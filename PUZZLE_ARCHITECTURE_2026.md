@@ -1,4 +1,4 @@
-# Puzzle Architecture Pass — Nine Distinct Structures
+# Puzzle Architecture Pass — Ten Distinct Structures
 
 Current puzzle reference: 5 November 2026. This document supersedes the earlier six-puzzle and advanced-puzzle answer lists.
 
@@ -15,10 +15,11 @@ Current puzzle reference: 5 November 2026. This document supersedes the earlier 
 | 07 | The Nine Muses | 9 triangles | Three ground foundations, two terraces and a high crown | Separate roof routes joined by matching lengths | **√274 cm** |
 | 08 | The Marble Terrace | 8 triangles + 1 rectangle | One broad rectangle platform with two staggered ridges | Diagonal gives a 12 cm roof; split into 4 and 8 | **2√38 cm** |
 | 09 | The Acropolis | 10 triangles + 2 rectangles | Two independent plinths and a high horizontal bridge | Both diagonal results give two 12 cm halves, then 7–24–25 | **25 cm** |
+| 10 | The Great Interlock | 13 triangles | Dense alternating wedges, two real floor supports, twin inset offsets and one broad canopy | Two independent roots unlock 10 + 15 = 25, then 7–24–25 | **24 cm** |
 
 ## Key design principles
 
-**Variety:** no two puzzles use the same topology identifier or foundation arrangement. First Fall and Twin Paths remain intentionally unchanged; seven other puzzles have genuinely new coordinates, relationships and silhouettes.
+**Variety:** no two puzzles use the same topology identifier or foundation arrangement. First Fall and Twin Paths remain intentionally unchanged; eight other puzzles have genuinely new coordinates, relationships and silhouettes.
 
 **Grounded, upward-growing pieces:** all filled shapes are authentic right triangles/rectangles. Some puzzles have multiple ground edges; some sit at supported corners, and gaps beneath beams are truly empty. No coloured shape may obscure another's interior.
 
@@ -42,6 +43,10 @@ Current puzzle reference: 5 November 2026. This document supersedes the earlier 
 
 New architecture tests check connected physical contacts, multiple ground footprints, true open bays, upward growth, nontrivial starting choices and unique topology names. Existing visibility and Pythagoras tests verify every corner and result. Rectangle tests specifically prove the Acropolis final side is unobtainable when either diagonal calculation is withheld.
 
-The permanent browser audit checks all nine puzzle SVGs, interaction, saved working, zoom and handwriting at five screen sizes, and archives screenshots as GitHub Actions artifacts.
+The permanent browser audit checks all ten puzzle SVGs, interaction, saved working, zoom and handwriting at five screen sizes, and archives screenshots as GitHub Actions artifacts.
 
 Historical PASS_C.md and earlier geometry notes describe the previous puzzle generation; this document and the current code are authoritative for these nine revised problems.
+
+## Tenth challenge: reference-inspired interlocking composition
+
+[The Great Interlock](THE_GREAT_INTERLOCK.md) is an original 13-triangle construction closer to the dense Pythagorean Stack reference. It has a broad horizontal target, two 5 cm offsets, 10 cm and 15 cm upper segments, and two true foundations whose calculations are individually required for x = 24 cm. It does not reuse the source diagram's exact positions or answer.

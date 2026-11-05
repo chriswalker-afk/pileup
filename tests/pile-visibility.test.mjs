@@ -6,8 +6,8 @@ import {
   trianglesCoverEachOther, fitPileInTablet
 } from "../pile-visibility.js";
 
-test("all nine puzzles have visible, non-overlapping triangles and rectangles",()=>{
-  assert.equal(puzzles.length,9);
+test("all ten puzzles have visible, non-overlapping triangles and rectangles",()=>{
+  assert.equal(puzzles.length,10);
   for(const puzzle of puzzles){
     assert.equal(assertFullyVisiblePuzzle(puzzle),true,puzzle.id);
     assert.deepEqual(hiddenTrianglePairs(puzzle),[],puzzle.id);

@@ -13,7 +13,8 @@ import {assertFullyVisiblePuzzle,hiddenShapePairs,fitPileInTablet}
 const advanced=[
   ["nine-muses",9,0,"√274"],
   ["marble-terrace",8,1,"2√38"],
-  ["acropolis",10,2,"25"]
+  ["acropolis",10,2,"25"],
+  ["great-interlock",13,0,"24"]
 ];
 test("the advanced challenges retain their identity and shape counts",()=>{
   assert.deepEqual(puzzles.slice(6).map(p=>p.id),advanced.map(x=>x[0]));

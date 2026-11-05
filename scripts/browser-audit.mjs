@@ -5,7 +5,8 @@ const base=process.env.AUDIT_URL||"http://127.0.0.1:4173";
 const directory="audit-artifacts";
 mkdirSync(directory,{recursive:true});
 const puzzles=["first-fall","projecting-edge","twin-paths","split-project",
-  "labyrinth","great-pile","nine-muses","marble-terrace","acropolis"];
+  "labyrinth","great-pile","nine-muses","marble-terrace","acropolis",
+  "great-interlock"];
 const screens=[["desktop",1366,768],["short-laptop",1024,640],
   ["tablet",768,1024],["phone",390,844],["small-phone",320,568]];
 const reports=[],errors=[];
@@ -176,7 +177,7 @@ try{
           hero:!!document.querySelector(".hero-fall-svg"),
           sideways:document.documentElement.scrollWidth-innerWidth,flawed,firstBoxes:boxes};
       });
-      insist(data.cards===9&&data.preview===9&&data.hero,"Missing home artwork",data);
+      insist(data.cards===puzzles.length&&data.preview===puzzles.length&&data.hero,"Missing home artwork",data);
       insist(data.sideways<=1,"Homepage horizontal overflow",data);
       insist(!data.flawed.length,"Homepage clipped card content",data);
       return data;
@@ -205,6 +206,8 @@ try{
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
         if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
+        if(id==="great-interlock")insist(d.pieces===13&&d.rectangles===0,
+          "The thirteen-triangle original interlock is incomplete",d);
         // Each rewritten silhouette is visually audited at both
         // desktop and phone size; do not rely only on overlap counts.
         if(["desktop","phone"].includes(name))
