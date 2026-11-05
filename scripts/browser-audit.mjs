@@ -233,6 +233,15 @@ try{
     const modal=primary.page.locator("#completion-modal");
     insist(await modal.evaluate(el=>el.open),"Correct target did not complete puzzle");
     insist(await modal.locator(".completion-laurel").count()===1,"Laurel missing");
+    const spacing=await modal.evaluate(el=>{
+      const b=selector=>el.querySelector(selector).getBoundingClientRect();
+      const crest=b(".completion-crest"),laurel=b(".completion-laurel"),title=b("h2");
+      return {crestBottom:crest.bottom,laurelBottom:laurel.bottom,titleTop:title.top};
+    });
+    insist(spacing.crestBottom<=spacing.titleTop-1,
+      "Completion crest overlaps the solved heading",spacing);
+    insist(spacing.laurelBottom<=spacing.crestBottom+1,
+      "Laurel SVG spills beyond the reserved crest region",spacing);
     for(const id of ["completion-review","completion-other","completion-close"])
       insist(await modal.locator("#"+id).isVisible(),"Completion action missing: "+id);
     await snap(primary.page,"solved-modal-desktop");
@@ -240,6 +249,31 @@ try{
     insist(await primary.page.locator("#worked-solution-heading").isVisible(),
       "Full solution button failed");
     return result;
+  });
+  await run("intermediate solution: hint preserves working and confirms only the new length",async()=>{
+    await open(primary.page,"first-fall");
+    if(await primary.page.locator("#skip").isVisible())
+      await primary.page.locator("#skip").click();
+    const step=await primary.page.evaluate(async()=>{
+      const {puzzles}=await import("./pile-geometry.js");
+      const {solutionSteps}=await import("./puzzle-engine.js");
+      return solutionSteps(puzzles.find(p=>p.id==="first-fall"))[0];
+    });
+    insist(step?.sideKey && step.answer,"Missing first solvable length",step);
+    await primary.page.selectOption("#side-select",step.sideKey);
+    const math=primary.page.locator(".ws-math-fallback, math-field.ws-math-field").first();
+    await math.fill("a^2+b^2=c^2");
+    await primary.page.locator("#hint-next").click();
+    insist((await primary.page.locator(".ws-math-fallback, math-field.ws-math-field")
+      .first().inputValue()).includes("c^2"),"Hint destroyed mathematical working");
+    await primary.page.locator("#answer-input").fill(step.answer);
+    await primary.page.locator("#answer-form button[type=submit]").click();
+    insist(await primary.page.locator(".side-chip.just-discovered").count()===1,
+      "Newly discovered side not highlighted exactly once");
+    const announcement=await primary.page.locator("#progress-announcement").innerText();
+    insist(announcement.includes("Length discovered"),
+      "Accessible progress announcement missing",announcement);
+    return {answer:step.answer,announcement};
   });
   await run("scratchpad saves handwriting and maths across refresh",async()=>{
     await open(primary.page,"first-fall");
@@ -284,6 +318,47 @@ try{
     await reduce.page.locator("#skip").click();
   });
   await reduce.context.close();
+  for(const [name,width,height] of [["phone",390,844],["small-phone",320,568]]){
+    const target=await newPage(width,height,true);
+    await run(name+" / responsive completion dialog and reachable bottom actions",async()=>{
+      await open(target.page,"first-fall");
+      const result=await target.page.evaluate(async()=>{
+        const {puzzles}=await import("./pile-geometry.js");
+        const {exactLength}=await import("./puzzle-engine.js");
+        return {length:exactLength(puzzles.find(p=>p.id==="first-fall").solution),
+          key:[...document.querySelector("#side-select").options]
+            .find(x=>x.textContent.includes("Target x"))?.value};
+      });
+      insist(result.key,"Missing target side",result);
+      await target.page.selectOption("#side-select",result.key);
+      await target.page.locator("#answer-input").fill(result.length);
+      await target.page.locator("#answer-form button[type=submit]").click();
+      const modal=target.page.locator("#completion-modal");
+      insist(await modal.evaluate(el=>el.open),"Phone completion dialog did not open");
+      const geometry=await modal.evaluate(el=>{
+        const crest=el.querySelector(".completion-crest").getBoundingClientRect();
+        const laurel=el.querySelector(".completion-laurel").getBoundingClientRect();
+        const title=el.querySelector("h2").getBoundingClientRect();
+        return {crestBottom:crest.bottom,laurelBottom:laurel.bottom,titleTop:title.top};
+      });
+      insist(geometry.crestBottom<=geometry.titleTop-1,
+        "Laurel container overlaps completion title on phone",geometry);
+      insist(geometry.laurelBottom<=geometry.crestBottom+1,
+        "Laurel spills out of container on phone",geometry);
+      await modal.evaluate(el=>el.scrollTop=el.scrollHeight);
+      const reach=await modal.evaluate(el=>{
+        const dialog=el.getBoundingClientRect();
+        const button=el.querySelector("#completion-close").getBoundingClientRect();
+        return {bottom:button.bottom,visibleBottom:Math.min(dialog.bottom,innerHeight),
+          top:button.top,dialogTop:dialog.top};
+      });
+      insist(reach.bottom<=reach.visibleBottom+2&&reach.top>=reach.dialogTop-2,
+        "Completion close button cannot be reached by scrolling",reach);
+      await snap(target.page,"completion-"+name);
+      return {result,geometry,reach};
+    });
+    await target.context.close();
+  }
 }finally{
   await browser.close();
 }
