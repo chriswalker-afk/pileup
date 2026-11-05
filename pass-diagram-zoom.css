@@ -80,8 +80,10 @@
 #diagram svg.diagram-is-zoomed.zoom-panning .piece{
   cursor:grabbing;
 }
-/* Zooming does not change opacity or transform a single triangle:
-   only the outer SVG viewBox changes and all hit targets still align. */
+/* Geometric zoom changes the SVG viewBox. Each label chip and its
+   accurate measurement tether receives the inverse scale about the
+   side anchor, preserving its CSS-pixel size and its hit target.
+   Triangles retain normal magnification and all side hits still align. */
 @media(max-width:520px){
   .tablet-inside .diagram-zoom-controls{
     right:7px;
