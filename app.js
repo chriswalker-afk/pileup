@@ -380,6 +380,11 @@ function escapeHtml(text){
  * Unchanged First Fall and Twin Paths retain their progress.
  */
 function progressKey(){
+  // The four re-authored puzzles now use different side coordinates,
+  // givens and answers. Never mark new lengths solved using old data.
+  // Preserve the previous version in localStorage for reversibility.
+  if(["split-project","great-pile","nine-muses","acropolis"].includes(current.id))
+    return "pileup-architecture-v2-"+current.id;
   const unchanged=current.id==="first-fall"||current.id==="twin-paths";
   return (unchanged?"pileup-pass-b-v2-":"pileup-architecture-v1-")+current.id;
 }
