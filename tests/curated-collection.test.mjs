@@ -12,7 +12,7 @@ const expected=[
   ["twin-paths",3,["12","13","5","17","15"]],
   ["split-project",3,["12","15","13","25","20"]],
   ["labyrinth",5,["20","24","10","2√41","10√2","√281"]],
-  ["great-pile",5,["12","5","17","15","5√13","5√14"]]
+  ["great-pile",5,["17","5","12","13","√205","√230"]]
 ];
 
 test("Six different authored challenges are available",()=>{
@@ -115,10 +115,16 @@ test("The split-edge extension values agree with the geometry",()=>{
     assert.ok(Math.abs(rawPerimeter-2*supportShared-perimeter)<1e-7);
   }
 });
-test("Bridge puzzle introduces an edge owned by multiple triangles",()=>{
+test("The master pile preserves both support branches without obscuring any face",()=>{
   const puzzle=puzzles.find(p=>p.id==="great-pile"),sides=buildSides(puzzle);
   const support=sides.get(sideKey(puzzle.spanHighlight.whole.a,puzzle.spanHighlight.whole.b));
   assert.ok(support.triangleIds.includes("I"));
-  assert.ok(support.triangleIds.includes("IV"));
-  assert.equal(puzzle.extensions,undefined); // Avoid treating overlapping polygons as additive areas.
+  const upperShared=puzzle.triangles[1].pts.filter((_,i)=>i!==puzzle.triangles[1].right);
+  const elevatedSide=sides.get(sideKey(upperShared[0],upperShared[1]));
+  assert.ok(elevatedSide.triangleIds.includes("II"));
+  assert.ok(elevatedSide.triangleIds.includes("IV"));
+  const initial=readySteps(puzzle,sides,new Set());
+  assert.ok(initial.some(step=>step.answer==="17"));
+  assert.ok(initial.some(step=>step.answer==="5"));
+  assert.equal(puzzle.extensions,undefined); // No misleading area question for the master structure.
 });
