@@ -179,3 +179,28 @@ body[data-view="puzzle"] #inspector .panel-actions {
     height: clamp(365px, 48dvh, 505px);
   }
 }
+
+/* Real-browser audit fix: at 1024 x 640 the ink canvas could grow
+   80px beyond the flex-allocated mount and cover solution controls.
+   Put the inspector in normal document flow only in Draw mode.
+   Maths mode keeps its taller flexible lines editor. */
+@media (min-width:900px) {
+  body[data-view="puzzle"] #inspector.ws-drawing-inspector {
+    display:block!important;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+  body[data-view="puzzle"] #inspector.ws-drawing-inspector
+    .working-pad-mount.ws-drawing-host {
+    display:block!important;
+    width:100%;
+    height:auto!important;
+    margin-top:6px;
+    margin-bottom:8px;
+  }
+  body[data-view="puzzle"] #inspector.ws-drawing-inspector .panel-actions {
+    display:flex;
+    position:static;
+    margin-top:8px;
+  }
+}
