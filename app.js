@@ -91,7 +91,8 @@ function chooseSide(key){
  * labels and right-angle markers therefore stay small and legible. */
 let pieceAnimations=[];
 let fallRequest=0;
-function renderDiagram(animate=false){
+function renderDiagram(animate=false,forceMotion=false){
+  const shouldAnimate=animate&&(!reduced.matches||forceMotion);
   clearTimeout(finishTimer);
   pieceAnimations.forEach(animation=>{try{animation.cancel()}catch(_){}});
   pieceAnimations=[];
@@ -180,7 +181,7 @@ function renderDiagram(animate=false){
     svg.append(hit);
   }
 
-  const labels=el("g",{class:"side-labels"+(animate&&!reduced.matches?" waiting":"")});
+  const labels=el("g",{class:"side-labels"+(shouldAnimate?" waiting":"")});
   const occupied=[];
   const actualW=canvas.getBoundingClientRect().width||780;
   const actualH=Math.min(490,Math.max(340,actualW*590/960));
@@ -291,8 +292,9 @@ function renderDiagram(animate=false){
   if(!visible)labels.classList.add("hidden-labels");
   svg.append(labels);
   canvas.replaceChildren(svg);
-  if(animate&&!reduced.matches){
+  if(shouldAnimate){
     animating=true;
+    if(forceMotion)svg.classList.add("manual-motion");
     svg.classList.add("ready-to-fall");
     document.getElementById("skip").hidden=false;
     document.getElementById("replay").disabled=true;
@@ -556,7 +558,7 @@ function openPuzzle(id){
       <button class="completion-close" id="completion-close">RETURN TO THE PILE</button></div>
     </dialog>`+footer();
   bind();
-  document.getElementById("replay").addEventListener("click",()=>renderDiagram(true));
+  document.getElementById("replay").addEventListener("click",()=>renderDiagram(true,true));
   document.getElementById("skip").addEventListener("click",stopAnimation);
   document.getElementById("labels-toggle").addEventListener("click",event=>{
     visible=!visible;
