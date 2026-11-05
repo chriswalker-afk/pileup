@@ -1,130 +1,129 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { puzzles } from "../pile-geometry.js";
+import {puzzles} from "../pile-geometry.js";
 import {
-  buildSides, sideKey, readySteps, solutionSteps, puzzleIsValid,
-  exactLength, correctAnswer
+  buildSides,sideKey,readySteps,solutionSteps,puzzleIsValid,
+  exactLength,correctAnswer
 } from "../puzzle-engine.js";
+import {hiddenShapePairs,fitPileInTablet} from "../pile-visibility.js";
 
 const expected=[
-  ["first-fall",3,["20","15","8","10"]],
-  ["projecting-edge",4,["20","24","10","26","5√29"]],
-  ["twin-paths",3,["12","13","5","17","15"]],
-  ["split-project",3,["12","15","13","25","20"]],
-  ["labyrinth",5,["20","24","10","2√41","10√2","√281"]],
-  ["great-pile",5,["17","5","12","13","√205","√230"]]
+  ["first-fall",3,0,"10","single-rise-inset"],
+  ["projecting-edge",4,0,"5√5","cantilever-with-two-arms"],
+  ["twin-paths",3,0,"15","single-base-two-part-cover"],
+  ["split-project",3,0,"17","split-foundations-cantilever"],
+  ["labyrinth",5,0,"15","forked-arch-rejoining-roof"],
+  ["great-pile",5,0,"√230","open-bridge-rising-peak"],
+  ["nine-muses",9,0,"√274","three-foundation-twin-terrace"],
+  ["marble-terrace",8,1,"2√38","rectangle-platform-stepped-ridges"],
+  ["acropolis",10,2,"25","two-plinths-grand-arch"]
 ];
-
-test("The original six authored challenges remain unchanged",()=>{
-  assert.equal(puzzles.length,9);
-  assert.deepEqual(puzzles.slice(0,expected.length).map(p=>p.id),expected.map(p=>p[0]));
-  assert.ok(puzzles.every(p=>Array.isArray(p.tags)&&p.tags.length>0));
-  assert.equal(new Set(puzzles.map(p=>p.id)).size,puzzles.length);
-});
-for(const [id,n,chain] of expected){
-  test(id+": exact geometry and fully solvable dependency chain",()=>{
-    const puzzle=puzzles.find(p=>p.id===id);
-    assert.ok(puzzle);
-    assert.equal(puzzle.triangles.length,n);
-    assert.equal(puzzleIsValid(puzzle),true);
-    assert.equal(puzzle.floor.a.y,0);
-    assert.equal(puzzle.floor.b.y,0);
-    assert.ok(puzzle.triangles.every(t=>t.pts.every(vertex=>vertex.y>=-1e-8)));
-    const sides=buildSides(puzzle);
-    const steps=solutionSteps(puzzle,sides);
-    assert.deepEqual(steps.map(s=>s.answer),chain);
-    assert.ok(steps.at(-1)?.isTarget);
-    assert.equal(steps.at(-1).answer,exactLength(puzzle.solution));
-    assert.equal(steps.length,[...sides.values()].filter(s=>!s.given).length);
-    assert.equal(correctAnswer(steps.at(-1).answer,puzzle.solution),true);
-  });
-}
-const mag=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
-const wedge=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
-function onSegment(p,a,b){
-  if(Math.abs(wedge(a,b,p))>1e-7)return false;
-  const f=(p.x-a.x)*(b.x-a.x)+(p.y-a.y)*(b.y-a.y);
-  return f>=-1e-7&&f<=mag(a,b)**2+1e-7;
-}
-for(const id of ["twin-paths","split-project","great-pile"]){
-  test(id+": one long edge spans TWO independently owned triangle edges",()=>{
-    const puzzle=puzzles.find(p=>p.id===id);
-    const whole=puzzle.spanHighlight.whole;
-    const parts=puzzle.spanHighlight.parts;
-    assert.equal(parts.length,2);
-    assert.ok(parts.every(part=>onSegment(part.a,whole.a,whole.b)));
-    // The projecting part can extend past the end of the long edge.
-    assert.ok(parts.every(part=>Math.abs(wedge(whole.a,whole.b,part.b))<1e-7));
-    assert.ok(mag(parts[0].a,parts[0].b)>1);
-    assert.ok(mag(parts[1].a,parts[1].b)>1);
-    assert.equal(sideKey(parts[0].b,parts[1].a).split("|").length,2);
-    // The two supporting edges belong to different triangles.
-    const sideMap=buildSides(puzzle);
-    const owners=parts.map(part=>sideMap.get(sideKey(part.a,part.b)).triangleIds);
-    assert.ok(owners[0].includes("II"));
-    assert.ok(owners[1].includes("III"));
-  });
-}
-test("Matching tick marks are a real mathematical dependency, not decoration",()=>{
-  const puzzle=puzzles.find(p=>p.id==="twin-paths");
-  assert.equal(puzzle.equalSideGroups.length,1);
-  const sides=buildSides(puzzle);
-  const matching=puzzle.equalSideGroups[0].map(desc=>sides.get(sideKey(desc.a,desc.b)));
-  assert.ok(Math.abs(matching[0].length-matching[1].length)<1e-8);
-  assert.equal(matching[0].given,true);
-  assert.equal(matching[1].given,false);
-  const initial=readySteps(puzzle,sides,new Set());
-  assert.ok(initial.some(step=>step.kind==="equal"&&step.answer==="13"));
-  assert.ok(initial.some(step=>step.kind==="pythagoras"&&step.answer==="12"));
-  assert.ok(initial.length>=2);
-});
-test("Branching project challenge has two independent mathematical starting points",()=>{
-  const puzzle=puzzles.find(p=>p.id==="split-project");
-  const initial=readySteps(puzzle,buildSides(puzzle),new Set());
-  assert.equal(initial.filter(step=>step.kind==="pythagoras").length,2);
-  assert.ok(initial.some(step=>step.answer==="12"));
-  assert.ok(initial.some(step=>step.answer==="15"));
-});
-test("Projected and inset overhangs represent different straight-line operations",()=>{
-  const first=solutionSteps(puzzles[0]).find(step=>step.kind==="overhang");
-  const second=solutionSteps(puzzles[1]).find(step=>step.kind==="overhang");
-  assert.match(first.equation,/−/);
-  assert.match(second.equation,/\+/);
-  assert.ok(puzzles[3].extraSegments[0].label.includes("OVERHANG"));
-});
-function triArea(t){
-  const [a,b,c]=t.pts;
-  return Math.abs(wedge(a,b,c))/2;
-}
-test("The split-edge extension values agree with the geometry",()=>{
-  for(const [id,perimeter,area,supportShared] of [
-    ["twin-paths",66,120,17],
-    ["split-project",80,240,25]
-  ]){
-    const puzzle=puzzles.find(p=>p.id===id);
-    assert.equal(puzzle.triangles.length,3);
-    const items=puzzle.extensions;
-    assert.equal(items.find(x=>x.id==="perimeter").value,perimeter);
-    assert.equal(items.find(x=>x.id==="area").value,area);
-    const areaSum=puzzle.triangles.reduce((s,t)=>s+triArea(t),0);
-    assert.ok(Math.abs(areaSum-area)<1e-8);
-    const rawPerimeter=puzzle.triangles.reduce((sum,t)=>{
-      const [a,b,c]=t.pts;
-      return sum+mag(a,b)+mag(b,c)+mag(c,a);
-    },0);
-    assert.ok(Math.abs(rawPerimeter-2*supportShared-perimeter)<1e-7);
+const EPS=1e-7;
+const d=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const near=(a,b)=>Math.abs(a-b)<EPS;
+const pointKey=p=>p.x.toFixed(6)+","+p.y.toFixed(6);
+test("nine authored puzzle identities are distinct, not renamed chains",()=>{
+  assert.deepEqual(puzzles.map(p=>p.id),expected.map(x=>x[0]));
+  assert.equal(new Set(puzzles.map(p=>p.id)).size,9);
+  assert.equal(new Set(puzzles.map(p=>p.topology)).size,9);
+  assert.equal(new Set(puzzles.map(p=>p.architecture?.family)).size,9);
+  for(const puzzle of puzzles){
+    assert.ok(puzzle.tags.length>=2,puzzle.id+" tags");
+    assert.ok(puzzle.architecture.summary);
+    assert.ok(puzzle.architecture.features.length>=3);
+    assert.ok(!/Long chain/i.test(puzzle.tags.join(" ")),puzzle.id);
   }
 });
-test("The master pile preserves both support branches without obscuring any face",()=>{
-  const puzzle=puzzles.find(p=>p.id==="great-pile"),sides=buildSides(puzzle);
-  const support=sides.get(sideKey(puzzle.spanHighlight.whole.a,puzzle.spanHighlight.whole.b));
-  assert.ok(support.triangleIds.includes("I"));
-  const upperShared=puzzle.triangles[1].pts.filter((_,i)=>i!==puzzle.triangles[1].right);
-  const elevatedSide=sides.get(sideKey(upperShared[0],upperShared[1]));
-  assert.ok(elevatedSide.triangleIds.includes("II"));
-  assert.ok(elevatedSide.triangleIds.includes("IV"));
-  const initial=readySteps(puzzle,sides,new Set());
-  assert.ok(initial.some(step=>step.answer==="17"));
-  assert.ok(initial.some(step=>step.answer==="5"));
-  assert.equal(puzzle.extensions,undefined); // No misleading area question for the master structure.
+for(const [id,count,rectangleCount,result,topology] of expected){
+  test(id+": exact right triangles, complete deductions and uncropped silhouette",()=>{
+    const puzzle=puzzles.find(p=>p.id===id);
+    assert.equal(puzzle.triangles.length,count);
+    assert.equal(puzzle.rectangles?.length||0,rectangleCount);
+    assert.equal(puzzle.topology,topology);
+    assert.equal(puzzleIsValid(puzzle),true);
+    assert.deepEqual(hiddenShapePairs(puzzle),[]);
+    assert.equal(exactLength(puzzle.solution),result);
+    const map=buildSides(puzzle);
+    const steps=solutionSteps(puzzle,map);
+    assert.equal(steps.length,[...map.values()].filter(s=>!s.given).length);
+    assert.ok(steps.some(s=>s.isTarget&&s.answer===result),"No supported target "+id);
+    assert.equal(correctAnswer(result,puzzle.solution),true);
+    const fitted=fitPileInTablet(puzzle);
+    for(const shape of [...puzzle.triangles,...puzzle.rectangles||[]]){
+      for(const pt of shape.pts){
+        const xy=fitted.xy(pt);
+        assert.ok(xy.x>=60&&xy.x<=900&&xy.y>=65&&xy.y<=518.01,
+          id+" would clip a shape");
+      }
+    }
+  });
+}
+test("The First Fall remains a gentle, 4-step introductory path",()=>{
+  const p=puzzles[0];
+  assert.deepEqual(solutionSteps(p).map(s=>s.answer),["20","15","8","10"]);
+  assert.equal(p.overhang.value,5);
+  assert.equal(p.architecture.family,"single rising spine");
+});
+test("Twin Paths retains real matching ticks and both starting calculations",()=>{
+  const p=puzzles[2],s=buildSides(p);
+  assert.equal(p.equalSideGroups.length,1);
+  const [a,b]=p.equalSideGroups[0].map(d=>s.get(sideKey(d.a,d.b)));
+  assert.ok(near(a.length,b.length));
+  assert.ok(a.given&&!b.given);
+  const ready=readySteps(p,s,new Set());
+  assert.ok(ready.some(x=>x.kind==="equal"&&x.answer==="13"));
+  assert.ok(ready.some(x=>x.kind==="pythagoras"&&x.answer==="12"));
+  assert.equal(p.extensions.find(x=>x.id==="perimeter").value,66);
+  assert.equal(p.extensions.find(x=>x.id==="area").value,120);
+});
+test("Split & Project has two real floor piers and a measurable 3cm projection",()=>{
+  const p=puzzles[3],s=buildSides(p);
+  assert.equal(p.triangles.filter(t=>t.pts.some(x=>near(x.y,0))).length,2);
+  const projected=p.extraSegments.find(x=>/OVERHANG/.test(x.label));
+  const foundation=p.extraSegments.find(x=>/FOUNDATION/.test(x.label));
+  assert.equal(projected.value,3);
+  assert.equal(foundation.value,27);
+  assert.ok(s.get(sideKey(projected.a,projected.b)).isOverhang);
+  assert.ok(!s.get(sideKey(foundation.a,foundation.b)).isOverhang);
+  assert.equal(p.lengthRelations.length,3);
+  assert.equal(p.equalSideGroups.length,1);
+  const steps=solutionSteps(p,s);
+  assert.ok(steps.some(x=>x.kind==="equal"));
+  assert.ok(steps.some(x=>x.kind==="overhang"));
+  assert.ok(steps.find(x=>x.isTarget));
+});
+test("Labyrinth really re-joins two individually calculable branches",()=>{
+  const p=puzzles[4],map=buildSides(p),rel=p.lengthRelations[0];
+  const whole=map.get(sideKey(rel.whole.a,rel.whole.b));
+  assert.ok(near(whole.length,12));
+  assert.deepEqual(rel.parts.map(s=>Math.round(d(s.a,s.b))).sort((a,b)=>a-b),[5,7]);
+  assert.equal(p.triangles.filter(t=>t.pts.some(z=>near(z.y,0))).length,4);
+  const initial=readySteps(p,map,new Set());
+  assert.ok(initial.filter(x=>x.kind==="pythagoras").length>=2);
+});
+test("The Great Pile Up leaves a genuine open bridge under its upper beam",()=>{
+  const p=puzzles[5],pieces=p.triangles;
+  assert.equal(pieces.filter(t=>t.pts.some(z=>near(z.y,0))).length,2);
+  // The support tips share an elevation but there is no filled
+  // polygon beneath their connecting bridge in the middle bay.
+  const left=pieces[0].pts[2],right=pieces[1].pts[2];
+  assert.ok(near(left.y,right.y)&&right.x-left.x>10);
+  assert.ok(pieces[2].pts.some(z=>pointKey(z)===pointKey(left)));
+  assert.ok(pieces[2].pts.some(z=>pointKey(z)===pointKey(right)));
+  assert.equal(p.extensions,undefined);
+});
+test("The Nine Muses has three ground pieces and two joined roof terraces",()=>{
+  const p=puzzles[6];
+  assert.equal(p.triangles.filter(t=>t.pts.some(z=>near(z.y,0))).length,3);
+  assert.equal(p.equalSideGroups.length,2);
+  assert.ok(p.triangles[8].pts.some(x=>x.y>30));
+});
+test("Both rectangle puzzles are architecturally different from each other",()=>{
+  const marble=puzzles[7],acropolis=puzzles[8];
+  assert.equal(marble.rectangles[0].pts.filter(z=>near(z.y,0)).length,2);
+  assert.equal(acropolis.rectangles.length,2);
+  assert.equal(marble.lengthRelations.length,1);
+  assert.equal(acropolis.lengthRelations.length,1);
+  assert.ok(marble.triangles.length!==acropolis.triangles.length);
+  assert.notEqual(marble.topology,acropolis.topology);
 });
