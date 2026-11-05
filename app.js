@@ -373,9 +373,19 @@ function labelPoint(a,b,cent,offset){const M=mid(a,b),vec=v(a,b),len=d(a,b);let 
 function escapeHtml(text){
   return String(text).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 }
+/**
+ * Changing a puzzle's shape invalidates side keys and previously
+ * discovered answers. Keep the legacy saved copy intact, but start
+ * a separate namespace for the seven redesigned structures.
+ * Unchanged First Fall and Twin Paths retain their progress.
+ */
+function progressKey(){
+  const unchanged=current.id==="first-fall"||current.id==="twin-paths";
+  return (unchanged?"pileup-pass-b-v2-":"pileup-architecture-v1-")+current.id;
+}
 function saveProgress(){
   try{
-    localStorage.setItem("pileup-pass-b-v2-"+current.id,JSON.stringify({
+    localStorage.setItem(progressKey(),JSON.stringify({
       solved:[...solved],workingBySide,hintLevels,hintsUsed,extensionGrades
     }));
     return true;
@@ -388,7 +398,7 @@ function saveProgress(){
 function loadProgress(){
   solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};
   try{
-    const saved=JSON.parse(localStorage.getItem("pileup-pass-b-v2-"+current.id)||"null");
+    const saved=JSON.parse(localStorage.getItem(progressKey())||"null");
     if(!saved || typeof saved!=="object")return;
     if(Array.isArray(saved.solved))for(const key of saved.solved){
       if(sideMap.has(key) && !sideMap.get(key).given)solved.add(key);
