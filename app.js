@@ -684,7 +684,10 @@ function renderDiagram(animate=false,forceMotion=false){
   // initially obscures the geometry. Show givens and x, then disclose
   // unknown labels on the selected face (or once discovered). All
   // sides remain selectable through SVG hit targets and the side list.
-  const quietDense=["great-interlock","nine-muses","acropolis"].includes(current.id);
+  // Authentic worksheet-style first view for all six-or-more-piece
+  // piles: givens and x are always visible; intermediate unknowns
+  // appear when their particular triangle is investigated.
+  const quietDense=pieces.length>=6;
   // All Labels is an explicit opt-in to show *every* measurement,
   // including postponed question marks. Returning to Focus View
   // restores the low-clutter state without losing student work.
