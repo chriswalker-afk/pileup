@@ -1203,7 +1203,7 @@ function openPuzzle(id){
   if(document.body?.dataset)document.body.dataset.view="puzzle";
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
   current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;extensionMode=false;screen=id;clearTimeout(finishTimer);
-  focusLabels=false;focusedShapeId=null;previewSideKey=null;
+  focusLabels=false;focusUserChoice=false;focusedShapeId=null;previewSideKey=null;
   pendingDiscoveredKey=null;
   loadProgress();
   if(location.hash.slice(1)!==id)history.pushState(null,"","#"+id);
