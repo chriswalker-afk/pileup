@@ -2,7 +2,8 @@ import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTr
 import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
-import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures } from "./diagram-zoom.js";
+import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures,
+  fixedAnnotationTransform } from "./diagram-zoom.js";
 import { labelsForShape, centreSideAtZoom } from "./label-clarity.js";
 import {layoutMeasurements, classifyRelationSides, dimensionBracket, labelTether} from "./label-layout.js";
 import {crowdedUnknownKeys,compactFace} from "./label-density.js";
@@ -131,12 +132,32 @@ function refreshZoomControls(){
   if(plus)plus.disabled=scale>=3.999;
   if(fit)fit.disabled=scale<=1.001;
 }
+/**
+ * Only the pieces and mathematical geometry magnify. Label chips,
+ * their precise attachment dots and leaders are counter-scaled around
+ * the physical side they annotate, so they stay the same CSS-pixel
+ * size AND distance from that side at 125–400% zoom.
+ *
+ * This is a cheap transform update rather than a diagram redraw: it
+ * also works during pinch, pan, Locate, Replay and restoring progress.
+ */
+function syncFixedSizeAnnotations(svg,scale){
+  for(const node of svg.querySelectorAll(".side-chip, .measurement-tether")){
+    const x=Number(node.getAttribute("data-zoom-anchor-x"));
+    const y=Number(node.getAttribute("data-zoom-anchor-y"));
+    if(!Number.isFinite(x)||!Number.isFinite(y))continue;
+    const transform=fixedAnnotationTransform({x,y},scale);
+    if(transform)node.setAttribute("transform",transform);
+    else node.removeAttribute("transform");
+  }
+}
 function setDiagramZoom(next){
   zoomState=next;
   const svg=document.querySelector("#diagram svg");
   if(svg){
     const box=zoomViewBox(next);
     svg.setAttribute("viewBox",[box.x,box.y,box.width,box.height].join(" "));
+    syncFixedSizeAnnotations(svg,next.scale);
     svg.classList.toggle("diagram-is-zoomed",next.scale>1.001);
     const baseDescription="A pile of "+current.triangles.length+" right-angled triangles"+
       (current.rectangles?.length?" and "+current.rectangles.length+" rectangles":"")+
@@ -766,10 +787,18 @@ function renderDiagram(animate=false,forceMotion=false){
     // The fine anchor dot and connection remain clear without hover,
     // while hover/focus/selection illuminate this precise relationship.
     const tether=labelTether(info,chosen,bracket?.mid||null);
+    // Both groups must share the SAME inverse-zoom anchor. The label
+    // and connector then stay attached at every magnification.
+    for(const annotation of [group]){
+      annotation.setAttribute("data-zoom-anchor-x",tether.anchor.x);
+      annotation.setAttribute("data-zoom-anchor-y",tether.anchor.y);
+    }
     const attach=el("g",{
       class:"measurement-tether"+(side.isTarget?" tether-target":""),
       "data-side-key":side.key
     });
+    attach.setAttribute("data-zoom-anchor-x",tether.anchor.x);
+    attach.setAttribute("data-zoom-anchor-y",tether.anchor.y);
     attach.append(el("line",{
       x1:tether.anchor.x,y1:tether.anchor.y,
       x2:tether.end.x,y2:tether.end.y,
