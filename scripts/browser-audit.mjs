@@ -250,6 +250,8 @@ try{
       });
       insist(retained.width<960 && retained.readout!=="100%",
         "Side selection reset the student's zoom",retained);
+      if(name==="desktop"||name==="phone")
+        await snap(page,"zoomed-acropolis-"+name);
       // When the diagram itself is focused, arrow keys pan it without
       // hijacking regular keyboard use in the answer fields.
       await page.locator("#diagram svg").focus();
