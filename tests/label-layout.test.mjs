@@ -137,10 +137,13 @@ test("all ten authored piles stay bounded and collision-free at classroom widths
       for(const item of p.values()){
         const desc=descriptors.find(d=>d.key===item.key);
         assert.ok(desc,"No matching side for "+item.key);
-        const midpoint={x:(desc.ends.a.x+desc.ends.b.x)/2,
-          y:(desc.ends.a.y+desc.ends.b.y)/2};
-        near(item.tether.anchor.x,midpoint.x);
-        near(item.tether.anchor.y,midpoint.y);
+        const a=desc.ends.a,b=desc.ends.b,anchor=item.tether.anchor;
+        const dx=b.x-a.x,dy=b.y-a.y,apx=anchor.x-a.x,apy=anchor.y-a.y;
+        assert.ok(Math.abs(dx*apy-dy*apx)<1e-4,
+          "The stem's anchor must lie ON its exact geometric side");
+        const length2=dx*dx+dy*dy,projection=(apx*dx+apy*dy)/length2;
+        assert.ok(projection>=-1e-6&&projection<=1+1e-6,
+          "The anchor extends past its own measured side");
         assert.ok(item.tether.length>1,
           "Missing visible association for "+puzzle.id+" at "+availableWidth+"px");
         const e=item.tether.end,r=item.rect;
