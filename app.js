@@ -213,7 +213,7 @@ function renderDiagram(animate=false,forceMotion=false){
   const toSide=side=>({a:xy(side.a),b:xy(side.b)});
   const canvas=document.getElementById("diagram");
   const svg=el("svg",{viewBox:"0 0 "+W+" "+H,role:"img",
-    "aria-label":"A pile of "+current.triangles.length+" right-angled triangles resting on a stone floor. Select a labelled side or triangle to investigate."});
+    "aria-label":"A pile of "+current.triangles.length+" right-angled triangles"+(current.rectangles?.length?" and "+current.rectangles.length+" rectangles":"")+" resting on a stone floor. Select a marked side or shape to investigate."});
   const defs=el("defs");
   const grad=el("linearGradient",{id:"floor-light",x1:"0",y1:"0",x2:"0",y2:"1"});
   grad.append(el("stop",{offset:"0%",'stop-color':"#d6c4a5"}),el("stop",{offset:"100%",'stop-color':"#bca987"}));
@@ -516,6 +516,20 @@ function hintText(side,level){
   if(!step)return "Every missing side has been discovered.";
   const isSelected=step.sideKey===side.key;
   const known=step.known.map(key=>exactLength(sideMap.get(key).length)+" cm");
+  if(step.kind==="rectangle-opposite"){
+    if(level===1)return "Opposite edges of a rectangle are equal in length.";
+    if(level===2)return "Look at rectangle "+step.triangleId+
+      ". A parallel side measures "+known[0]+".";
+    if(level===3)return step.equation+".";
+    return "The missing rectangle edge is "+step.answer+" cm.";
+  }
+  if(step.kind==="rectangle-diagonal"){
+    if(level===1)return "A rectangle's diagonal divides it into two right-angled triangles.";
+    if(level===2)return "Use the diagonal and side lengths "+known.join(" and ")+
+      ". Decide whether to add or subtract squares.";
+    if(level===3)return step.equation+".";
+    return "This rectangle length is "+step.answer+" cm.";
+  }
   if(step.kind==="equal"){
     if(!isSelected){
       if(level===1)return "Look for the identical tick marks on two different sides.";
@@ -564,6 +578,8 @@ function incorrectFeedback(side,value){
     return "Check the straight line: decide which lengths form the complete section, and whether you need to add or subtract.";
   }
   if(step?.kind==="equal")return "Matching tick marks represent equal lengths. Look for the known matching side.";
+  if(step?.kind==="rectangle-opposite")return "Opposite sides of a rectangle are equal. Check the matching length.";
+  if(step?.kind==="rectangle-diagonal")return "Use the diagonal as the hypotenuse of a right triangle inside the rectangle.";
   if(step){
     const known=step.known.map(key=>sideMap.get(key).length);
     if(step.isHypotenuse){
@@ -595,8 +611,17 @@ function renderInspector(){
       <p class="solution-disclaimer">One valid order is shown. Shared edges may be solved by different routes.</p>
       <ol class="review-list">
         ${all.map((step,index)=>`<li class="review-item">
-          <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · ${step.kind==="pythagoras"?"TRIANGLE "+step.triangleId:step.kind==="equal"?"EQUAL MARKS":step.kind==="split"?"SHARED LONG SIDE":"OVERHANG"}</span><span>LOCATE ↗</span></button>
-          <p class="step-narrative">${step.kind==="equal"?"Matching ticks mean these two lengths are equal.":step.kind==="split"?"Combine the two shorter edges along one long side.":step.kind==="overhang"?(step.equation.includes("−")?"Subtract the overhang from the longer edge.":"Add the projecting overhang to the supporting side."):"Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
+          <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · ${step.kind==="pythagoras"?"TRIANGLE "+step.triangleId:
+            step.kind==="rectangle-diagonal"?"RECTANGLE DIAGONAL":
+            step.kind==="rectangle-opposite"?"RECTANGLE · EQUAL SIDES":
+            step.kind==="equal"?"EQUAL MARKS":
+            step.kind==="split"?"SHARED LONG SIDE":"OVERHANG"}</span><span>LOCATE ↗</span></button>
+          <p class="step-narrative">${step.kind==="rectangle-diagonal"?"Use the right triangle inside the rectangle.":
+            step.kind==="rectangle-opposite"?"Opposite sides of a rectangle are equal.":
+            step.kind==="equal"?"Matching ticks mean these two lengths are equal.":
+            step.kind==="split"?"Combine the two shorter edges along one long side.":
+            step.kind==="overhang"?(step.equation.includes("−")?"Subtract the overhang from the longer edge.":"Add the projecting overhang to the supporting side."):
+            "Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
           <p class="step-equation">${escapeHtml(step.equation)}</p>
           <p class="step-result">${step.isTarget?"x":"s"} = ${step.answer} cm</p>
         </li>`).join("")}
@@ -796,7 +821,7 @@ function openPuzzle(id){
         <span class="tablet-controls"><button id="replay" class="small-btn replay-button" title="Replay the falling triangles" aria-label="Replay the falling triangles">↻ <span>REPLAY FALL</span></button>
         <button id="labels-toggle" class="small-btn" title="Show or hide measurements" aria-label="Show or hide measurements" aria-pressed="false">◉</button></span></div>
       <div class="tablet-inside"><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
-        <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
+        <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED · RECTANGLES HAVE 90° CORNERS</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
       </div></div>
       <aside class="side"><div class="side-topline"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><button id="workspace-size-toggle" type="button" class="workspace-size-toggle" aria-pressed="false" title="Widen the student working panel">↔ More working room</button></div><div class="rule"></div>
         <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
