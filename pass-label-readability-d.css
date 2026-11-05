@@ -67,3 +67,25 @@
 @media (prefers-reduced-motion:reduce){
   #diagram svg .measurement-tether{transition:none!important}
 }
+
+/* Compact clusters get a much quieter background when a piece is
+   selected. Students retain full visibility of the active shape,
+   and can switch to All Labels at any time. */
+#diagram svg.has-compact-triangles .measurement-tether:not(.is-emphasized){
+  opacity:.56;
+}
+#diagram svg.compact-label-focus .side-chip.focus-muted{
+  opacity:.035;
+  pointer-events:none;
+}
+#diagram svg.compact-label-focus .measurement-tether.focus-muted,
+#diagram svg.compact-label-focus .dimension-bracket.focus-muted{
+  opacity:.025;
+}
+#diagram svg.compact-label-focus .piece.focus-piece-muted{
+  opacity:.24;
+}
+#diagram svg.compact-label-focus .side-chip.is-emphasized,
+#diagram svg.compact-label-focus .measurement-tether.is-emphasized{
+  opacity:1;
+}
