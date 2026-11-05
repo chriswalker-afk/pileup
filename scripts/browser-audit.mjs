@@ -72,6 +72,14 @@ async function sizeAudit(page){
         r.top<box.top-1.5||r.bottom>box.bottom+1.5)out.push(i);
       return out;
     },[]);
+    const toolbar=document.querySelector(".diagram-zoom-controls");
+    const zoomRect=toolbar?b(toolbar):null;
+    const zoomOverlaps=zoomRect?label.reduce((out,r,i)=>{
+      const dx=Math.min(r.right,zoomRect.right)-Math.max(r.left,zoomRect.left);
+      const dy=Math.min(r.bottom,zoomRect.bottom)-Math.max(r.top,zoomRect.top);
+      if(dx>3&&dy>3)out.push(i);
+      return out;
+    },[]):[];
     const overlaps=[];
     for(let i=0;i<label.length;i++)for(let j=i+1;j<label.length;j++){
       const dx=Math.min(label[i].right,label[j].right)-
@@ -84,7 +92,8 @@ async function sizeAudit(page){
       clippedLabels:outside(label),clippedPieces:outside(shape),
       widthOverflow:document.documentElement.scrollWidth-innerWidth,
       rectangles:svg.querySelectorAll(".rectangle-piece").length,
-      equalTicks:svg.querySelectorAll(".equal-side-tick").length};
+      equalTicks:svg.querySelectorAll(".equal-side-tick").length,
+      zoomOverlaps};
   });
 }
 function padRect(page){
@@ -154,6 +163,7 @@ try{
         insist(!d.clippedLabels.length,"Clipped measurements",d);
         insist(!d.clippedPieces.length,"Clipped geometry",d);
         insist(!d.overlaps.length,"Overlapping measurement labels",d);
+        insist(!d.zoomOverlaps.length,"Zoom controls cover a label at 100%",d);
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
         if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
@@ -223,6 +233,25 @@ try{
       });
       insist(retained.width<960 && retained.readout!=="100%",
         "Side selection reset the student's zoom",retained);
+      // When the diagram itself is focused, arrow keys pan it without
+      // hijacking regular keyboard use in the answer fields.
+      await page.locator("#diagram svg").focus();
+      const keyBefore=await page.locator("#diagram svg").evaluate(e=>e.viewBox.baseVal.x);
+      await page.keyboard.press("ArrowRight");
+      const keyAfter=await page.locator("#diagram svg").evaluate(e=>e.viewBox.baseVal.x);
+      insist(keyAfter>keyBefore+1,"Keyboard arrow did not pan the enlarged view",
+        {keyBefore,keyAfter});
+      // Ctrl-wheel / trackpad gestures zoom at the pointer rather than
+      // zooming the whole webpage.
+      const keyLevel=await page.locator("#diagram-zoom-level").innerText();
+      const b=await page.locator("#diagram svg").boundingBox();
+      await page.mouse.move(b.x+b.width*.48,b.y+b.height*.46);
+      await page.keyboard.down("Control");
+      await page.mouse.wheel(0,-180);
+      await page.keyboard.up("Control");
+      const wheelLevel=await page.locator("#diagram-zoom-level").innerText();
+      insist(wheelLevel!==keyLevel,"Control-wheel did not magnify the SVG",
+        {keyLevel,wheelLevel});
       await controls.locator("#diagram-zoom-out").click();
       await controls.locator("#diagram-zoom-fit").click();
       const reset=await page.evaluate(()=>{
