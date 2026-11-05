@@ -48,6 +48,7 @@ const p=(x,y)=>({x,y}),d=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y),mid=(a,b)=>p((a.x+b.
 const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.x+a.y*b.y;
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
 let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
+let pendingDiscoveredKey=null;
 let disposeWorking=()=>{};
 let extensionMode=false,extensionGrades={};
 let workingFocused=false;
@@ -76,6 +77,39 @@ const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by t
  * repeating a decorative emoji. The label remains in text for clarity;
  * the SVG is silent to screen readers.
  */
+/**
+ * A purely decorative, scalable completion crest. The leaves are
+ * original geometric SVG shapes; the meaningful achievement stays
+ * in the actual dialog heading and text.
+ */
+function completionLaurel(){
+  const leaves=[];
+  const left=[
+    [56,98,-54],[44,87,-53],[38,75,-40],[35,62,-28],
+    [37,49,-11],[44,38,7],[53,27,24],[64,18,42]
+  ];
+  for(const [x,y,rotation] of left){
+    leaves.push('<ellipse cx="'+x+'" cy="'+y+'" rx="4.8" ry="10" transform="rotate('+
+      rotation+" "+x+" "+y+')"/>');
+    const xr=180-x;
+    leaves.push('<ellipse cx="'+xr+'" cy="'+y+'" rx="4.8" ry="10" transform="rotate('+
+      (-rotation)+" "+xr+" "+y+')"/>');
+  }
+  return '<svg class="completion-laurel" viewBox="0 0 180 130" focusable="false" aria-hidden="true">'+
+    '<g class="completion-laurel-stars"><path d="M90 3V13 M85 8H95 M18 33V43 M13 38H23 M162 33V43 M157 38H167"/>'+
+      '<circle cx="21" cy="80" r="1.7"/><circle cx="159" cy="80" r="1.7"/></g>'+
+    '<g class="completion-laurel-branches">'+
+      '<path class="completion-laurel-stem" d="M89 116C35 106 19 54 64 12"/>'+
+      '<path class="completion-laurel-stem" d="M91 116C145 106 161 54 116 12"/>'+
+      '<g class="completion-laurel-leaves">'+leaves.join("")+'</g>'+
+      '<path class="completion-laurel-ribbon" d="M73 113Q90 104 107 113 M76 118Q90 124 104 118"/>'+
+    '</g>'+
+    '<g class="completion-laurel-seal"><circle cx="90" cy="63" r="27"/>'+
+      '<circle cx="90" cy="63" r="22"/><path d="M75 78L89 46L105 78Z"/>'+
+      '<path d="M82 73H88V67"/><circle cx="90" cy="63" r="2"/></g>'+
+    '</svg>';
+}
+
 function difficultyEmblem(puzzle){
   const tier=String(puzzle.difficulty||"").toUpperCase();
   const shape=tier.includes("GRAND")?"temple":
@@ -341,6 +375,8 @@ function chooseSide(key){
 let pieceAnimations=[];
 let fallRequest=0;
 function renderDiagram(animate=false,forceMotion=false){
+  const discoveredNow=pendingDiscoveredKey;
+  pendingDiscoveredKey=null;
   const shouldAnimate=animate&&(forceMotion||autoFallEnabled());
   clearTimeout(finishTimer);
   pieceAnimations.forEach(animation=>{try{animation.cancel()}catch(_){}});
@@ -581,7 +617,8 @@ function renderDiagram(animate=false,forceMotion=false){
     const classes=["side-chip",side.given?"given":solvedSide?"solved":side.isTarget?"target":"unknown"];
     if(side.isOverhang)classes.push("overhang");
     if(selectedSide===side.key)classes.push("selected");
-    const group=el("g",{class:classes.join(" "),role:"button",tabindex:0,
+    if(discoveredNow===side.key)classes.push("just-discovered");
+    const group=el("g",{class:classes.join(" "),"data-side-key":side.key,role:"button",tabindex:0,
       "aria-label":(side.isOverhang?"Given overhang ":side.isTarget?"Final target ":side.given?"Given ":"Missing length ")+label});
     if(side.isOverhang){
       const ends=toSide(side);
@@ -658,6 +695,11 @@ function renderDiagram(animate=false,forceMotion=false){
     document.getElementById("replay").disabled=false;
   }
   renderInspector();
+  if(discoveredNow){
+    const bar=document.getElementById("progress-fill");
+    bar?.classList.add("progress-advanced");
+    bar?.addEventListener("animationend",()=>bar.classList.remove("progress-advanced"),{once:true});
+  }
 }
 function stopAnimation(){
   clearTimeout(finishTimer);
@@ -769,7 +811,7 @@ function renderInspector(){
   if(solutionOpen){
     const all=solutionSteps(current,sideMap);
     panel.innerHTML=`<span class="kicker">THE GEOMETER’S SCROLL</span>
-      <h3 class="inspect-title">Complete worked solution</h3>
+      <h3 class="inspect-title" id="worked-solution-heading" tabindex="-1">Complete worked solution</h3>
       <p class="solution-disclaimer">One valid order is shown. Shared edges may be solved by different routes.</p>
       <ol class="review-list">
         ${all.map((step,index)=>`<li class="review-item">
@@ -791,7 +833,10 @@ function renderInspector(){
       ${(current.extensions||[]).length?`<div class="worked-extensions"><h4>Compound-shape extensions</h4>${current.extensions.map(item=>
         `<p><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.working)}</span></p>`).join("")}</div>`:""}
       <button class="btn-link" id="return-solving">← RETURN TO THE PILE</button>`;
-    panel.querySelector("#return-solving").addEventListener("click",()=>{solutionOpen=false;renderInspector();});
+    panel.querySelector("#return-solving").addEventListener("click",()=>{
+      solutionOpen=false;renderInspector();
+      panel.querySelector("#side-select")?.focus({preventScroll:true});
+    });
     panel.querySelectorAll("[data-review-side]").forEach(button=>button.addEventListener("click",()=>{
       selectedSide=button.dataset.reviewSide;
       renderDiagram(false);
@@ -818,7 +863,7 @@ function renderInspector(){
     body=`<div class="workspace-brief"><strong>Given: ${exactLength(side.length)} cm</strong><span>Select a missing length to solve it.</span></div>
       <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(solved.has(side.key)){
-    body=`<p class="solved-note"><strong>✓ ${side.isTarget?"x":"Length"} = ${exactLength(side.length)} cm</strong></p>
+    body=`<p class="solved-note solved-engraving"><span class="solved-tick" aria-hidden="true">✓</span><strong>${side.isTarget?"x":"Length"} = ${exactLength(side.length)} cm</strong></p>
       <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else{
     const level=hintLevels[side.key]||0;
@@ -834,7 +879,7 @@ function renderInspector(){
       <div id="answer-feedback" role="status" aria-live="polite"></div>
       <div id="working-pad-mount" class="working-pad-mount"></div>
       <div class="hint-area"><button class="hint-button" id="hint-next" ${level>=4?"disabled":""}>${level?level>=4?"ALL CLUES SHOWN":"REVEAL NEXT CLUE ("+(level+1)+"/4)":"NEED A CLUE? (1/4)"}</button>
-      ${level?`<div class="hint-content"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>`;
+      ${level?`<div class="hint-content" role="status" aria-live="polite" aria-atomic="true"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>`;
   }
   panel.innerHTML=`${choices}
     ${body}
@@ -848,13 +893,17 @@ function renderInspector(){
     if(event.target.value)chooseSide(event.target.value);
     else{selectedSide=null;feedback=null;renderDiagram(false);}
   });
-  panel.querySelector("#solution-toggle").addEventListener("click",()=>{solutionOpen=true;renderInspector();});
+  panel.querySelector("#solution-toggle").addEventListener("click",()=>{
+    solutionOpen=true;renderInspector();
+    panel.querySelector("#worked-solution-heading")?.focus({preventScroll:false});
+  });
   panel.querySelector("#open-extension-panel")?.addEventListener("click",()=>{
     extensionMode=true;selectedSide=null;renderDiagram(false);
   });
   panel.querySelector("#reset-progress").addEventListener("click",()=>{
     if(!window.confirm("Clear solved lengths, maths lines, drawings and hints for this challenge?"))return;
     solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
+    pendingDiscoveredKey=null;
     saveProgress();renderDiagram(false);
   });
   const form=panel.querySelector("#answer-form");
@@ -875,6 +924,9 @@ function renderInspector(){
     if(!clue){
       clue=document.createElement("div");
       clue.className="hint-content";
+      clue.setAttribute("role","status");
+      clue.setAttribute("aria-live","polite");
+      clue.setAttribute("aria-atomic","true");
       area.append(clue);
     }
     clue.innerHTML="<strong>CLUE "+level+" / 4</strong><p>"+
@@ -917,6 +969,7 @@ function renderExtensions(panel){
   });
   panel.querySelector("#extension-solutions").addEventListener("click",()=>{
     solutionOpen=true;renderInspector();
+    panel.querySelector("#worked-solution-heading")?.focus({preventScroll:false});
   });
   panel.querySelectorAll(".extension-form").forEach(form=>{
     form.addEventListener("submit",event=>{
@@ -949,9 +1002,22 @@ function submitAnswer(raw){
   }
   if(correctAnswer(raw,side.length)){
     solved.add(side.key);
-    propagateRectangleSides(current,sideMap,solved);
-    saveProgress();renderDiagram(false);
+    const rectangleSides=propagateRectangleSides(current,sideMap,solved);
+    pendingDiscoveredKey=side.key;
+    saveProgress();
+    renderDiagram(false);
+    // A dedicated live region announces only the meaningful new
+    // result, not a complete re-render of every control and field.
+    const announcement=document.getElementById("progress-announcement");
+    if(announcement){
+      const progressState=progress();
+      announcement.textContent=(side.isTarget?"Final length solved: ":"Length discovered: ")+
+        exactLength(side.length)+" centimetres. "+
+        progressState.done+" of "+progressState.total+" lengths found."+
+        (rectangleSides>0?" Matching rectangle lengths added automatically.":"");
+    }
     if(side.isTarget)showCompletion();
+    else document.getElementById("side-select")?.focus({preventScroll:true});
   }else{
     const box=document.getElementById("answer-feedback");
     box.className="result-feedback bad";
@@ -963,13 +1029,17 @@ function showCompletion(){
   dialog.querySelector("#final-answer").textContent="x = "+exactLength(sideMap.get(sideKey(current.target.a,current.target.b)).length)+" cm";
   dialog.querySelector("#completion-hints").textContent=hintsUsed===0?"Without any hints":hintsUsed+" clues used";
   dialog.querySelector("#completion-extra").hidden=!current.extensions?.length;
-  if(!dialog.open)dialog.showModal();
+  if(!dialog.open){
+    dialog.showModal();
+    dialog.querySelector("#completion-review")?.focus({preventScroll:true});
+  }
 }
 function openPuzzle(id){
   disposeWorking();disposeWorking=()=>{};
   if(document.body?.dataset)document.body.dataset.view="puzzle";
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
   current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;extensionMode=false;screen=id;clearTimeout(finishTimer);
+  pendingDiscoveredKey=null;
   loadProgress();
   if(location.hash.slice(1)!==id)history.pushState(null,"","#"+id);
   const index=puzzles.indexOf(puzzle);
@@ -997,14 +1067,18 @@ function openPuzzle(id){
       <aside class="side"><div class="side-topline"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><button id="workspace-size-toggle" type="button" class="workspace-size-toggle" aria-pressed="false" title="Widen the student working panel">↔ More working room</button></div><div class="rule"></div>
         <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
         <div class="progress-track" aria-label="Number of missing lengths discovered"><span id="progress-fill" style="width:0"></span></div>
-        <div class="inspector" id="inspector" aria-live="polite"></div>
+        <div id="progress-announcement" class="screenreader-only" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div class="inspector" id="inspector"></div>
 
       </aside>
     </div><div class="challenge-bottom"><button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
     </main>
-    <dialog class="completion-dialog" id="completion-modal" aria-labelledby="completion-heading">
-      <div class="completion-inner"><div class="completion-icon">✧</div><h2 id="completion-heading">The pile is solved.</h2>
-      <p>By the wisdom of Pythagoras, you have found the final length.</p>
+    <dialog class="completion-dialog" id="completion-modal" aria-labelledby="completion-heading" aria-describedby="completion-subtitle">
+      <div class="completion-inner">
+      <div class="completion-overline">✦ A GEOMETER'S TRIAL ✦</div>
+      <div class="completion-crest">${completionLaurel()}</div>
+      <h2 id="completion-heading">The pile is solved.</h2>
+      <p class="completion-subtitle" id="completion-subtitle">You have found the final length.</p>
       <div class="completion-answer" id="final-answer"></div>
       <p id="completion-hints"></p><div class="completion-controls">
       <button class="confirm" id="completion-review">REVIEW THE FULL SOLUTION →</button>
@@ -1028,6 +1102,7 @@ function openPuzzle(id){
   document.getElementById("completion-close").addEventListener("click",()=>modal.close());
   document.getElementById("completion-review").addEventListener("click",()=>{
     modal.close();solutionOpen=true;renderInspector();
+    document.getElementById("worked-solution-heading")?.focus({preventScroll:false});
   });
   document.getElementById("completion-extra").addEventListener("click",()=>{
     modal.close();extensionMode=true;solutionOpen=false;selectedSide=null;renderDiagram(false);

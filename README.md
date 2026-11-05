@@ -94,3 +94,7 @@ See [GRAPHICS_PASS_A.md](GRAPHICS_PASS_A.md) for the design decisions, test cove
 ## Graphics — Pass B
 
 Puzzle pages now carry engraved difficulty seals, a Greek-key tablet frame and a faint geometric watermark **only when the drawing pad is empty**. The illustration disappears as soon as drawing starts and returns when the last stroke is removed. Decoration sits behind the interactive diagram and does not capture mouse or touch input. See [Graphics Pass B](GRAPHICS_PASS_B.md) for design and QA notes.
+
+## Graphics — Pass C
+
+A completed pile now reveals an Ancient Greek laurel-and-Pythagoras seal, with the exact final answer and the existing review/extension/next-pile controls. Correct intermediate lengths briefly illuminate their own label, advance the progress meter and announce the new discovery through a concise screen-reader status. Effects respect reduced-motion settings and leave the working area unchanged. See [Graphics Pass C](GRAPHICS_PASS_C.md) for details and an acceptance checklist.
