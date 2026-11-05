@@ -143,6 +143,14 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
       }
     }
     assert.equal(cases,24);
+    // The desktop home screen should put all six challenges beside
+    // the introduction rather than below a full-page hero.
+    location.hash="#home";show();
+    const home=nodes.get("app")?.innerHTML||"";
+    assert.match(home,/class="home-compact"/);
+    assert.match(home,/class="home-puzzle-grid"/);
+    assert.equal((home.match(/class="challenge-card home-challenge-card"/g)||[]).length,6);
+    assert.ok(!home.includes("Three steps to discovery"));
   }finally{
     for(const name of names){
       if(oldGlobals[name]===undefined)delete globalThis[name];
