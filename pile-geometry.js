@@ -24,7 +24,7 @@ function attachOutside(a,b,other,origin,perpendicularLength){
 
 export function makeOverhangPile({
   id,title,epithet,difficulty,description,
-  base,overhang,upperHypotenuse,legs,colors
+  base,overhang,upperHypotenuse,legs,colors,overhangMode="inset"
 }){
   if(legs.length<1 || legs.length!==colors.length-2){
     throw Error("Each upper triangle requires one perpendicular leg and colour.");
@@ -32,7 +32,7 @@ export function makeOverhangPile({
   const P=point(0,0),Q=point(base[0],0),R=point(base[0],base[1]);
   const bottomHypotenuse=length(P,R);
   if(!(overhang>0 && overhang<bottomHypotenuse))throw Error("Invalid overhang.");
-  const partial=bottomHypotenuse-overhang;
+  const partial=bottomHypotenuse+(overhangMode==="extension"?overhang:-overhang);
   if(upperHypotenuse<=partial)throw Error("The upper hypotenuse must be longer than the shared part.");
   const T=point(P.x+(R.x-P.x)*partial/bottomHypotenuse,
                 P.y+(R.y-P.y)*partial/bottomHypotenuse);
@@ -61,7 +61,11 @@ export function makeOverhangPile({
     target:{a:lower,b:upper},floor:{a:P,b:Q},
     overhang:{a:T,b:R,value:overhang},
     extraSegments:[{a:T,b:R,value:overhang,label:"OVERHANG"}],
-    lengthRelations:[{
+    lengthRelations:[overhangMode==="extension" ? {
+      whole:{a:P,b:T},
+      parts:[{a:P,b:R},{a:R,b:T}],
+      label:"STRAIGHT-LINE LENGTH"
+    } : {
       whole:{a:P,b:R},
       parts:[{a:P,b:T},{a:T,b:R}],
       label:"STRAIGHT-LINE LENGTH"
@@ -85,8 +89,8 @@ export const puzzles=[
   makeOverhangPile({
     id:"labyrinth",title:"The Geometer’s Labyrinth",epithet:"THE ARCHITECT",
     difficulty:"CHALLENGE",
-    description:"Five stacked triangles. Use the overhang, subtraction and several linked applications of Pythagoras.",
-    base:[24,18],overhang:6,upperHypotenuse:26,legs:[8,6,9],
+    description:"Five stacked triangles, including a projecting overhang. Combine straight-line lengths and linked Pythagoras calculations.",
+    base:[16,12],overhang:4,overhangMode:"extension",upperHypotenuse:26,legs:[8,6,9],
     colors:["#d6b06c","#7aa9a2","#bb8373","#979fc1","#aa9983"]
   })
 ];
