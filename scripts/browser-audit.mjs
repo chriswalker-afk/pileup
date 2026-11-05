@@ -313,7 +313,7 @@ try{
           });
           insist(after.pressed==="false"&&!after.focused,
             "Student's explicit All Labels choice must override automatic isolation",after);
-          if(["nine-muses","acropolis","great-interlock"].includes(id))
+          if(["great-pile","nine-muses","marble-terrace","acropolis","great-interlock"].includes(id))
             insist(after.unknowns>outcome.focusedUnknowns,
               "All Labels must restore the genuinely postponed question marks",
               {id,outcome,after});
