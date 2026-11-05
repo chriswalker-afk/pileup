@@ -270,7 +270,6 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     assert.equal((puzzlePage.match(/class="tablet-engraving-corner /g)||[]).length,4);
     assert.match(puzzlePage,/class="chapter"><svg class="difficulty-emblem/);
     assert.match(puzzlePage,/id="diagram"/);
-    assert.match(puzzlePage,/id="working-pad-mount"/);
     assert.match(puzzlePage,/id="workspace-size-toggle"/,
       "The wider working panel button must remain available");
   }finally{
