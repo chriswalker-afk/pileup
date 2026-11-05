@@ -197,9 +197,9 @@ try{
           "Whole/part dimension bracket does not span its actual length",d);
         insist(Number.isFinite(d.meanLabelDistance),
           "Computed label distances must be finite",d);
-        if(["twin-paths","split-project","acropolis"].includes(id)){
+        if(["twin-paths","split-project","first-fall","projecting-edge"].includes(id)){
           insist(d.bracketCount>0,
-            "Shared whole/partial lengths are missing dimension brackets",d);
+            "Whole/partial straight-line lengths are missing their brackets",d);
         }
         insist(!d.zoomOverlaps.length,"Zoom controls cover a label at 100%",d);
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
@@ -381,12 +381,9 @@ try{
       }));
       insist(highlighted.focused&&highlighted.muted>0&&highlighted.strong>=3&&
         highlighted.traces===1,"Focus view does not isolate the active shape",highlighted);
-      const bracketFocus=await svg.evaluate(root=>({
-        total:root.querySelectorAll(".dimension-bracket").length,
-        muted:root.querySelectorAll(".dimension-bracket.focus-muted").length
-      }));
-      insist(bracketFocus.total>0&&bracketFocus.muted>0,
-        "Dimension brackets did not dim with unrelated labels",bracketFocus);
+      // Acropolis has rectangles but no authored straight-line
+      // whole/part relation. Bracket-focus behaviour is checked
+      // separately on a split-side challenge below.
       await page.locator("#diagram-zoom-in").click();
       await page.locator("#diagram-zoom-in").click();
       await page.locator("#diagram-zoom-in").click();
@@ -418,7 +415,24 @@ try{
       if(await page.locator("#skip").isVisible())await page.locator("#skip").click();
       insist(await svg.locator(".side-chip").count()===all,
         "Replay/Skip changed the measurement count after Focus view");
-      return {all,preview,highlighted,located};
+      await open(page,"twin-paths");
+      await page.locator("#side-select").selectOption({index:1});
+      await page.locator("#label-focus-toggle").click();
+      const brackets=await page.locator("#diagram svg").evaluate(root=>{
+        const list=[...root.querySelectorAll(".dimension-bracket")];
+        const mismatch=list.flatMap(el=>{
+          const key=el.getAttribute("data-side-key");
+          const chip=[...root.querySelectorAll(".side-chip")].find(x=>x.getAttribute("data-side-key")===key);
+          return chip&&(
+            chip.classList.contains("focus-muted")!==el.classList.contains("focus-muted") ||
+            chip.classList.contains("is-emphasized")!==el.classList.contains("is-emphasized")
+          )?[key]:[];
+        });
+        return {total:list.length,mismatch};
+      });
+      insist(brackets.total>0&&!brackets.mismatch.length,
+        "Split-side dimension brackets do not follow their label Focus state",brackets);
+      return {all,preview,highlighted,located,brackets};
     });
     await run(name+" / drawing containment and working controls",async()=>{
       await open(page,"first-fall");
