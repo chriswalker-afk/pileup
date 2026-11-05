@@ -63,7 +63,7 @@ export function makeRectangleChallenge({
    diagonals:[{a:Q,b:V}],givens:[{a:Q,b:V,value:15}],
    rightAngles:true};
  const roof=attach(rect1,[R,V],"b",12,"II",palette[1]);
- const triangles=[base,roof],rectangles=[rect1];
+ const triangles=[base,roof],rectangles=[rect1],fallOrder=["I","R1","II"];
  let last=roof;
  for(const step of firstSteps){
    const t=attach(last,hypotenuse(last),step.at,step.leg,
