@@ -11,7 +11,7 @@ The fix is *not* to add opaque labels or a forest of arrows. It combines exact, 
 - Every displayed measurement has a fine **tether from its actual side** to the nearest border of its label chip, plus a tiny anchor dot.
 - The connection begins at the segment midpoint, the exact whole/part bracket, or (when a small label obscures the midpoint) another clear point **on that same segment**. It may not jump to an unrelated corner or side.
 - All necessary **givens**, previously calculated lengths and **target x** remain visible.
-- Unknown `?` labels on short sides surrounded by multiple other triangles may be postponed until the student chooses the corresponding face. Dense #7, #9 and #10 continue to use context-first labels.
+- Puzzles with six or more pieces (#6–#10) start like traditional paper puzzles: givens and target `x`, without a crowd of question marks. Selecting a triangle reveals the intermediate unknowns it owns. Smaller puzzles retain their usual visible questions; unusually tight local groups can also defer unknowns.
 - The layout optimisation penalises a side crossed by another label's attachment, and prevents clips, overlapping chips and chips sitting over their own measured line where alternative placement is available.
 - One can still select every length directly through the SVG hit targets or the side chooser; postponed `?` chips do not make a mathematical step inaccessible.
 
