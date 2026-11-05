@@ -76,6 +76,7 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
     createElementNS(_ns,tag){return new FakeNode(tag,width);},
     querySelector(selector){
       if(selector==="#diagram svg")return nodes.get("diagram")?.firstChild ?? null;
+      if(selector===".side-labels")return nodes.get("diagram")?.firstChild?.querySelector(".side-labels") ?? null;
       return new FakeNode(selector,width);
     },
     querySelectorAll(){return [];}
