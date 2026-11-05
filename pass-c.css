@@ -1,0 +1,56 @@
+/* Pass C: a visibly varied ancient Greek puzzle catalogue and extensions. */
+.challenge-card{min-height:334px;gap:0;overflow:hidden}
+.challenge-card .card-title{margin-top:91px}
+.card-tags,.challenge-tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0}
+.card-tags span,.challenge-tags span{
+  background:#ece0c6;color:#806847;border:1px solid #d9c8a8;
+  font:700 9px 'DM Sans',system-ui,sans-serif;letter-spacing:.025em;
+  padding:6px 9px
+}
+.challenge-tags{justify-content:center;margin-top:12px}
+.challenge-tags span{background:#f2e8d2}
+.mini-pile{position:absolute;right:32px;top:33px;width:153px;height:108px;opacity:.95}
+.mini-pile polygon{stroke:#544d41;stroke-width:1.6px;stroke-linejoin:round;fill-opacity:.83}
+.mini-pile .mini-floor{stroke:#ab9471;stroke-width:3px;stroke-linecap:round}
+.mini-pile .mini-tick{stroke:#54452d;stroke-width:2px}
+.mini-pile .mini-overhang{stroke:#b0804d;stroke-width:2px}
+.challenge-card:hover .mini-pile{opacity:1;transform:translateY(-2px);transition:transform .2s}
+.challenge-main .challenge-heading{margin-bottom:27px}
+.challenge-heading .challenge-tags{margin-bottom:0}
+#diagram svg .equal-side-tick{
+  stroke:#373b34;stroke-width:3.3px;stroke-linecap:round;pointer-events:none
+}
+.extension-cta{
+  background:#3d574a;border:1px solid #60745e;
+  color:#fff3db;width:100%;padding:13px;
+  text-align:center;letter-spacing:.065em;font-size:10px;font-weight:700;
+  margin-top:14px;cursor:pointer
+}
+.extension-cta:hover{background:#526a56}
+.extension-task{
+  border:1px solid #c7b18f;background:#f8eedc;
+  margin:15px 0;padding:15px 14px
+}
+.extension-task h4{font:600 15px 'Cinzel',serif;margin:0 0 9px}
+.extension-task p{font-size:12px;line-height:1.65;margin:0 0 12px;color:#655e4e}
+.extension-task form label{display:block;font-size:9px;font-weight:700;letter-spacing:.09em;color:#8e7350;margin-bottom:7px}
+.extension-task form .input-row input{background:#fff9ed;border:1px solid #c7ad86;padding:11px 9px;width:100%;min-width:0}
+.extension-task form .input-row button{padding:9px 11px}
+.extension-progress{font-weight:700;color:#527258;margin:13px 0 6px;font-size:11px}
+.all-extensions-done{color:#3f6950;font-weight:700;line-height:1.6;font-size:12px}
+.worked-extensions{padding:10px 0;border-top:1px solid #c8b692}
+.worked-extensions h4{font:600 16px 'Cinzel',serif;margin:6px 0 15px}
+.worked-extensions p{display:flex;flex-direction:column;gap:5px;font-size:12px;color:#514b3e;line-height:1.7;border-bottom:1px solid #d8c8ac;padding:0 0 10px}
+.worked-extensions p span{font-family:Georgia,serif;color:#3e694e}
+@media(max-width:950px){
+  .mini-pile{width:124px;right:21px}
+  .challenge-card{padding:25px}
+  .challenge-card .card-title{font-size:24px}
+}
+@media(max-width:520px){
+  .mini-pile{width:125px;top:26px;right:25px}
+  .challenge-card{min-height:318px}
+  .challenge-card .card-title{margin-top:93px}
+  .challenge-tags span{font-size:8px}
+  .extension-task{padding:12px}
+}
