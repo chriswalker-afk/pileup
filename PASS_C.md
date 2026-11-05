@@ -25,7 +25,7 @@ All puzzles continue to use the Ancient Greek interface, floor, replayable falli
 | 3 | Twin Paths | 3 triangles; two shorter sides cover one long side, equal-length ticks, independent starting points | 12 → 13 (equal mark) → 5 → 17 → 15 | **15 cm** |
 | 4 | Split & Project | 3 triangles; two shorter sides cover one long side with one extending 2 cm beyond it | 12 → 15 → 13 → 25 → 20 | **20 cm** |
 | 5 | The Geometer's Labyrinth | 5 triangles; long linked chain and surds | 20 → 24 → 10 → 2√41 → 10√2 → √281 | **√281 cm** |
-| 6 | The Great Pile Up | 5 triangles; two independent support calculations, a full spanning/bridging side and exact-surds chain | 12 → 5 → 17 → 15 → 5√13 → 5√14 | **5√14 cm** |
+| 6 | The Great Pile Up | 5 fully visible triangles; two independent support calculations converge before two upper Pythagoras steps | 17 → 5 → 12 → 13 → √205 → √230 | **√230 cm** |
 
 The indicated steps are **one valid order**. Students can find independent sides in a different order; the app checks geometrically correct lengths rather than imposing a fixed step sequence.
 
@@ -43,7 +43,7 @@ An upper support projects **2 cm beyond** the 25 cm supporting diagonal.
 - Exterior perimeter: `20 + 15 + 2 + 13 + 5 + 17 + 8 = 80 cm`
 - Total area: `½(20×15) + ½(12×5) + ½(15×8) = 240 cm²`
 
-Only the two non-overlapping compound shapes above receive perimeter and area extensions. The Great Pile Up deliberately overlaps its polygons; we do **not** offer a misleading simple sum-of-areas extension there.
+Only Twin Paths and Split & Project currently offer perimeter and area extensions. All six piles now use non-overlapping triangle interiors; the master puzzle focuses on the more demanding linked-length chain rather than an extension.
 
 ## What has been implemented
 
@@ -69,7 +69,7 @@ Only the two non-overlapping compound shapes above receive perimeter and area ex
 8. Use progressive hints on each relationship type; the language should distinguish addition, subtraction, equality and Pythagoras.
 9. Enter all answers in exact form where appropriate, or appropriate decimal rounding. Confirm the full worked review accurately names the step kind.
 10. After solving Twin Paths and Split & Project, enter the extension answers and review the complete working. Refresh to check progress persistence.
-11. Confirm that **The Great Pile Up** does not erroneously add overlapping triangle areas as an extension.
+11. Confirm that **all five triangles in The Great Pile Up are fully visible**, including complete outlines. No coloured triangle may cover another's interior.
 
 ## Automated checks
 
@@ -87,3 +87,7 @@ Prioritize:
 - classroom/projector mode and teacher controls,
 - printable worksheet and worked-solution exports,
 - light-touch progress review without requiring accounts.
+
+## Visibility correction and new rule
+
+Following classroom review, the master puzzle was rebuilt so triangles IV and V attach **outside** the preceding hypotenuses. All six puzzles are checked by `assertFullyVisiblePuzzle` and the dedicated viewport/visibility regression tests. A side may share two shorter sections, and a piece may extend beyond its support, but **no triangle may obscure any other triangle's filled interior**. The master puzzle's revised answer chain is `17, 5, 12, 13, √205, √230`.
