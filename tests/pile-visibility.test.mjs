@@ -14,12 +14,12 @@ test("all ten puzzles have visible, non-overlapping triangles and rectangles",()
     assert.deepEqual(hiddenShapePairs(puzzle),[],puzzle.id);
   }
 });
-test("the redesigned master pile has five distinct faces and no overlaps",()=>{
+test("the redesigned master pile has six distinct faces and no overlaps",()=>{
   const master=puzzles.find(p=>p.id==="great-pile");
-  assert.equal(master.triangles.length,5);
+  assert.equal(master.triangles.length,6);
   assert.deepEqual(hiddenTrianglePairs(master),[]);
   const ids=master.triangles.map(t=>t.id);
-  assert.deepEqual(ids,["I","II","III","IV","V"]);
+  assert.deepEqual(ids,["I","II","III","IV","V","VI"]);
 });
 test("shared edges and touching corners are valid; overlapping faces are rejected",()=>{
   const A={id:"I",pts:[{x:0,y:0},{x:4,y:0},{x:4,y:3}]};
