@@ -969,7 +969,7 @@ function renderInspector(){
         aria-pressed="${focusLabels}" title="${focusLabels?"Show every measurement":"Show only measurements belonging to the selected shape"}">
         ${focusLabels?"ALL LABELS":"FOCUS VIEW"}</button></div>
     <div class="clarity-selector-row"><select id="side-select">
-      <option value="">${quietDense?"Select a side…":"Select a marked side…"}</option>
+      <option value="">${["great-interlock","nine-muses","acropolis"].includes(current.id)?"Select a side…":"Select a marked side…"}</option>
       ${unprovided.map((s,i)=>`<option value="${s.key}" ${selectedSide===s.key?"selected":""}>${s.isTarget?"Target x":"Side "+(i+1)+" · triangle "+s.triangleIds.join(" & ")}${solved.has(s.key)?" ✓":""}</option>`).join("")}
     </select>
     <button id="locate-side" type="button" class="clarity-locate"
