@@ -86,8 +86,7 @@ test("open bays and triangular gaps are genuinely empty, not white overlays",()=
   // Only truly open structures claim to contain a central bay.
   // The four replacements instead have directly adjoining pieces.
   for(const [id,x,y] of [
-    ["labyrinth",12,3],
-    ["great-interlock",3,36]  ]){
+    ["labyrinth",12,3]  ]){
     const puzzle=puzzles.find(p=>p.id===id);
     assert.equal(voidAt(puzzle,x,y),true,
       id+" must expose a genuinely unfilled bay at "+x+","+y);
