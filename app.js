@@ -4,6 +4,7 @@ import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
 import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures } from "./diagram-zoom.js";
 import { labelsForShape, centreSideAtZoom } from "./label-clarity.js";
+import {layoutMeasurements, classifyRelationSides, dimensionBracket} from "./label-layout.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -66,7 +67,7 @@ function refreshLabelClarity(){
   const emphasis=previewSideKey||selectedSide;
   svg.classList.toggle("label-focus-enabled",focusLabels);
   svg.classList.toggle("label-focus-active",hasFocus);
-  for(const selector of [".side-chip",".side-trace",".dimension-leader"]){
+  for(const selector of [".side-chip",".side-trace",".dimension-leader",".dimension-bracket"]){
     for(const element of svg.querySelectorAll(selector)){
       const key=element.getAttribute?.("data-side-key");
       if(!key)continue;
@@ -636,7 +637,6 @@ function renderDiagram(animate=false,forceMotion=false){
     }
   }
 
-  const occupied=[];
   const dense=pieces.length>=8;
   const actualW=canvas.getBoundingClientRect().width||780;
   const actualH=Math.min(490,Math.max(340,actualW*590/960));
@@ -644,123 +644,81 @@ function renderDiagram(animate=false,forceMotion=false){
   const fontSize=dense?Math.min(31,Math.max(12,11/ratio)):
     Math.min(31,Math.max(15,12/ratio));
   const boxHeight=fontSize+11;
-  const clash=(pos,width,height)=>occupied.reduce((total,box)=>{
-    const dx=Math.abs(box.x-pos.x),dy=Math.abs(box.y-pos.y);
-    const ox=Math.max(0,(box.w+width)/2+6-dx);
-    const oy=Math.max(0,(box.h+height)/2+5-dy);
-    return total+ox*oy;
-  },0);
   const centroids=pieces.map(t=>({
     id:t.id,
-    point:xy({x:t.pts.reduce((sum,z)=>sum+z.x,0)/3,y:t.pts.reduce((sum,z)=>sum+z.y,0)/3})
+    point:xy({x:t.pts.reduce((sum,z)=>sum+z.x,0)/t.pts.length,
+      y:t.pts.reduce((sum,z)=>sum+z.y,0)/t.pts.length})
   }));
-  const first=current.triangles[0];
-  // A long edge may align with two or more independently owned edges.
-  // Track every piece of each straight-line relation, not just the first.
-  const overlapKeys=new Set();
-  for(const rel of current.lengthRelations||[]){
-    overlapKeys.add(sideKey(rel.whole.a,rel.whole.b));
-    for(const part of rel.parts)overlapKeys.add(sideKey(part.a,part.b));
-  }
-  function positioning(side,labelWidth){
-    const ends=toSide(side),dx=ends.b.x-ends.a.x,dy=ends.b.y-ends.a.y;
-    const length=Math.hypot(dx,dy),mx=(ends.a.x+ends.b.x)/2,my=(ends.a.y+ends.b.y)/2;
-    let nx=-dy/length,ny=dx/length;
-    const own=centroids.find(t=>side.triangleIds.includes(t.id))?.point||centroids[0].point;
-    const inward=((own.x-mx)*nx+(own.y-my)*ny)>0;
-    const isFloor=side.key===sideKey(current.floor.a,current.floor.b);
-    if(isFloor){
-      if(ny>0){nx=-nx;ny=-ny;}
-    }else if(side.isOverhang){
-      const base=centroids[0].point;
-      if(((base.x-mx)*nx+(base.y-my)*ny)<0){nx=-nx;ny=-ny;}
-    }else if(overlapKeys.has(side.key)){
-      if(!inward){nx=-nx;ny=-ny;}
-    }else if(inward){nx=-nx;ny=-ny;}
-    const tx=dx/length,ty=dy/length;
-    let best=null;
-    const inside=pos=>pos.x>=labelWidth/2+23&&pos.x<=W-labelWidth/2-23&&
-      pos.y>=36+boxHeight/2&&pos.y<=floorY-boxHeight/2+1;
-    const assess=(pos,flipped=0,extra=0)=>{
-      if(!inside(pos))return;
-      const collision=clash(pos,labelWidth,boxHeight);
-      const distance=Math.hypot(pos.x-mx,pos.y-my);
-      const penalty=(collision>0?100000+collision*100:0)+
-        distance*.14+flipped*19+extra;
-      if(!best||penalty<best.penalty){
-        best={pos,nx,ny,penalty,needsLeader:distance>50};
-      }
-    };
-    const normalOffsets=[side.isOverhang?26:19,29,40,55,74,95,120,150,188,232];
-    const tangents=[0,-18,18,-35,35,-55,55,-80,80,-112,112,-148,148];
-    // Place measurements alongside their own sides whenever possible.
-    // For dense advanced piles, search both normals and a much wider
-    // tangent range before permitting any rectangle collisions.
-    for(const flip of [1,-1]){
-      for(const d of normalOffsets)for(const t of tangents){
-        assess({
-          x:mx+nx*flip*d+tx*t,
-          y:my+ny*flip*d+ty*t
-        },flip<0?1:0,Math.abs(t)*.04);
-      }
-    }
-    // A compact pile can contain 25+ dimensions. If the local area is
-    // saturated, place a labelled callout in otherwise empty tablet
-    // space, joined by a thin line to its geometric side.
-    if(!best||best.penalty>=100000){
-      for(let y=59;y<=floorY-28;y+=37){
-        for(let x=45;x<=W-45;x+=34){
-          assess({x,y},0,4);
-        }
-      }
-    }
-    return best||{pos:{x:Math.max(labelWidth/2+23,Math.min(W-labelWidth/2-23,mx)),
-      y:Math.max(36+boxHeight/2,Math.min(floorY-boxHeight/2,my))},
-      nx,ny,needsLeader:false};
-  }
+  const relations=classifyRelationSides(current.lengthRelations,sideKey);
   const sides=[...sideMap.values()].filter(side=>!side.suppressLabel);
-  // Given lengths before unknown tags; annotate the overhang clearly.
+  // Reserve the least obstructed spots for givens and target x.
   sides.sort((a,b)=>Number(b.given)-Number(a.given)||
     Number(b.isOverhang)-Number(a.isOverhang)||
-    Number(b.isTarget)-Number(a.isTarget));
-  for(const side of sides){
+    Number(b.isTarget)-Number(a.isTarget)||
+    b.length-a.length);
+  const descriptors=sides.map(side=>{
     const solvedSide=solved.has(side.key);
     const label=side.given||solvedSide?exactLength(side.length)+" cm":side.isTarget?"x":"?";
     const textWidth=label.length*fontSize*.56;
     const width=Math.max(fontSize+12,textWidth+15);
-    const chosen=positioning(side,width);
+    const owner=centroids.find(c=>side.triangleIds.includes(c.id))?.point||
+      centroids[0].point;
+    return {key:side.key,ends:toSide(side),width,height:boxHeight,
+      owner,isFloor:side.key===sideKey(current.floor.a,current.floor.b),
+      isOverhang:side.isOverhang,relationKind:relations.get(side.key)||null,
+      label,solvedSide};
+  });
+  const placements=layoutMeasurements(descriptors,{
+    width:W,floorY,minY:36,marginX:23,
+    shapeEdges:[...sideMap.values()].map(side=>({...toSide(side),key:side.key}))
+  });
+  const byKey=new Map(descriptors.map(item=>[item.key,item]));
+  // Brackets identify the physical extent of whole versus part edges.
+  const brackets=el("g",{class:"measurement-brackets","aria-hidden":"true"});
+  labels.append(brackets);
+  for(const side of sides){
+    const info=byKey.get(side.key);
+    const {solvedSide,label,width}=info;
+    const chosen=placements.get(side.key);
     const pos=chosen.pos;
-    const ends=toSide(side);
+    const ends=info.ends;
     const labelConnector=el("line",{
       x1:(ends.a.x+ends.b.x)/2,y1:(ends.a.y+ends.b.y)/2,
       x2:pos.x,y2:pos.y,
       class:"side-association","data-side-key":side.key
     });
     traces.append(labelConnector);
-    occupied.push({x:pos.x,y:pos.y,w:width,h:boxHeight});
     const classes=["side-chip",side.given?"given":solvedSide?"solved":side.isTarget?"target":"unknown"];
     if(side.isOverhang)classes.push("overhang");
     if(selectedSide===side.key)classes.push("selected");
     if(discoveredNow===side.key)classes.push("just-discovered");
     const group=el("g",{class:classes.join(" "),"data-side-key":side.key,role:"button",tabindex:0,
       "aria-label":(side.isOverhang?"Given overhang ":side.isTarget?"Final target ":side.given?"Given ":"Missing length ")+label});
-    if(side.isOverhang){
-      const ends=toSide(side);
-      const nx=chosen.nx,ny=chosen.ny,dx=nx*13,dy=ny*13;
-      const start={x:ends.a.x+dx,y:ends.a.y+dy},stop={x:ends.b.x+dx,y:ends.b.y+dy};
-      group.append(el("line",{x1:start.x,y1:start.y,x2:stop.x,y2:stop.y,class:"overhang-bracket"}));
-            for(const pt of [start,stop]){
-        group.append(el("line",{x1:pt.x-nx*5,y1:pt.y-ny*5,x2:pt.x+nx*5,y2:pt.y+ny*5,class:"overhang-bracket"}));
+    const relationKind=relations.get(side.key)||(side.isOverhang?"overhang":null);
+    const bracket=relationKind?dimensionBracket(ends.a,ends.b,chosen,relationKind):null;
+    if(bracket){
+      const bracketGroup=el("g",{class:"dimension-bracket dimension-bracket-"+relationKind,
+        "data-side-key":side.key,"aria-hidden":"true"});
+      bracketGroup.append(el("line",{
+        x1:bracket.start.x,y1:bracket.start.y,x2:bracket.end.x,y2:bracket.end.y,
+        class:"dimension-bracket-spine"
+      }));
+      for(const [a,b] of [bracket.capA,bracket.capB]){
+        bracketGroup.append(el("line",{
+          x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"dimension-bracket-cap"
+        }));
       }
+      brackets.append(bracketGroup);
     }
-    if(overlapKeys.has(side.key)||chosen.needsLeader){
-      // Thin leader lines distinguish the whole hypotenuse from its
-      // overlapping shorter section when both are still unknown.
-      const ends=toSide(side);
+    if(chosen.needsLeader){
+      // Only long-distance callouts need permanent leaders. For a
+      // split span, join to its bracket rather than a misleading part.
+      const anchor=bracket?bracket.mid:{
+        x:(ends.a.x+ends.b.x)/2,y:(ends.a.y+ends.b.y)/2
+      };
       labels.append(el("line",{
-        x1:(ends.a.x+ends.b.x)/2,y1:(ends.a.y+ends.b.y)/2,
-        x2:pos.x,y2:pos.y,class:"dimension-leader",
-        "data-side-key":side.key
+        x1:anchor.x,y1:anchor.y,x2:pos.x,y2:pos.y,
+        class:"dimension-leader","data-side-key":side.key
       }));
     }
     group.append(el("rect",{x:pos.x-width/2,y:pos.y-boxHeight/2,width,height:boxHeight,rx:4}));
