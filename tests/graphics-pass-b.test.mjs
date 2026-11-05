@@ -20,7 +20,7 @@ test("new graphical layer uses only local reusable vector artwork",()=>{
 test("five named tier emblems accompany, not replace, difficulty labels",()=>{
   assert.match(app,/function difficultyEmblem\(puzzle\)/);
   for(const tier of ["triangle","double","column","laurel","temple"]){
-    assert.match(app,new RegExp('difficulty-'+tier));
+    assert.match(app,new RegExp(tier+':'));
     assert.match(css,new RegExp('difficulty-'+tier));
   }
   assert.match(app,/aria-hidden="true" focusable="false" viewBox="0 0 36 36"/);
