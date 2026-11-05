@@ -1,52 +1,45 @@
-# Puzzle Architecture Pass — Ten Distinct Structures
+# Puzzle Architecture — Ten Distinct Mathematical Constructions
 
-Current puzzle reference: 5 November 2026. This document supersedes the earlier six-puzzle and advanced-puzzle answer lists.
+Updated 5 November 2026. See [DEPENDENCY_REDESIGN_2026.md](DEPENDENCY_REDESIGN_2026.md) for the dependency-first corrections to challenges 4, 6, 7 and 9.
 
-## Distinct challenges
+Each puzzle uses true, non-overlapping right triangles (and, where specified, actual rectangles). A student must derive the next required side using a shared geometric edge, a visibly marked whole/part relationship, or the diagonal of a rectangle. Coincidentally equal but geometrically separate sides are **not** assumed to be interchangeable.
 
-| # | Challenge | Visible pieces | Architectural idea | Main mathematical reasoning | Final x |
-|---|---|---|---|---|---|
-| 01 | The First Fall | 3 triangles | One simple rising spine and inset | Pythagoras, then subtract an overhang | **10 cm** |
-| 02 | The Projecting Edge | 4 triangles | Wide cantilever and two different upper arms | Add a 4 cm projection, then subtract squares | **5√5 cm** |
-| 03 | Twin Paths | 3 triangles | Two shorter roofs cover one long diagonal | Two starting points and matching tick marks | **15 cm** |
-| 04 | Split & Project | 3 triangles | Two floor piers, an empty bay and projecting beam | Foundation subtraction, equal spans, 3 cm overhang | **17 cm** |
-| 05 | The Geometer's Labyrinth | 5 triangles | Triangular opening with branches meeting at the roof | Find 7 cm and 5 cm along independent paths; add to 12 cm | **15 cm** |
-| 06 | The Great Pile Up | 5 triangles | Open bridge on two supports, then a rising asymmetric roof | Bridge Pythagoras and two further roof deductions | **√230 cm** |
-| 07 | The Nine Muses | 9 triangles | Three ground foundations, two terraces and a high crown | Separate roof routes joined by matching lengths | **√274 cm** |
-| 08 | The Marble Terrace | 8 triangles + 1 rectangle | One broad rectangle platform with two staggered ridges | Diagonal gives a 12 cm roof; split into 4 and 8 | **2√38 cm** |
-| 09 | The Acropolis | 10 triangles + 2 rectangles | Two independent plinths and a high horizontal bridge | Both diagonal results give two 12 cm halves, then 7–24–25 | **25 cm** |
-| 10 | The Great Interlock | 13 triangles | Dense alternating wedges, two real floor supports, twin inset offsets and one broad canopy | Two independent roots unlock 10 + 15 = 25, then 7–24–25 | **24 cm** |
+| # | Puzzle | Faces | Structural identity | Final x |
+|---|---|---|---|---|
+| 01 | The First Fall | 3 triangles | Introductory single rise with inset | **10 cm** |
+| 02 | The Projecting Edge | 4 triangles | Cantilever with two upper arms | **5√5 cm** |
+| 03 | Twin Paths | 3 triangles | Two short roofs share a longer diagonal; tick marks | **15 cm** |
+| 04 | Split & Project | 4 triangles | Compact folded staircase with a 2 cm exposed overhang | **√157 cm** |
+| 05 | The Geometer's Labyrinth | 5 triangles | Two routes rejoin around a genuine triangular opening | **15 cm** |
+| 06 | The Great Pile Up | 6 triangles | Broad, asymmetric zigzag with alternating right-angle deductions | **24 cm** |
+| 07 | The Nine Muses | 9 triangles | Tall left-leaning cascade with one exact 2 cm inset | **√1021 cm** |
+| 08 | The Marble Terrace | 8 triangles + 1 rectangle | A single rectangle is a real ground-level platform | **2√38 cm** |
+| 09 | The Acropolis | 10 triangles + 2 rectangles | Two **successive** rectangular steps, then a leaning canopy | **15 cm** |
+| 10 | The Great Interlock | 13 triangles | Two independent rooted routes through an interlocking crowd | **24 cm** |
 
-## Key design principles
+## Key corrections to the former two-peak puzzles
 
-**Variety:** no two puzzles use the same topology identifier or foundation arrangement. First Fall and Twin Paths remain intentionally unchanged; eight other puzzles have genuinely new coordinates, relationships and silhouettes.
+The former Split & Project, Great Pile Up, Nine Muses and Acropolis were visually connected but depended on visually ambiguous spanning or matching edges. Their entire geometry, targets, givens and dependency routes have now changed.
 
-**Grounded, upward-growing pieces:** all filled shapes are authentic right triangles/rectangles. Some puzzles have multiple ground edges; some sit at supported corners, and gaps beneath beams are truly empty. No coloured shape may obscure another's interior.
+- **4:** One clear start, four connected triangles, a marked 2 cm short segment and a real 13 → 11 subtraction.
+- **6:** One floor foundation and a genuine zigzag: no triangle is suspended across two disconnected tips.
+- **7:** Nine steps climb from one grounded triangle. The 2 cm overhang is an actual subsegment of a 15 cm edge, not a visual approximation.
+- **9:** The first rectangle's diagonal unlocks a connecting triangle, which unlocks the second diagonal. The two platforms are *consecutive* rather than separated by an open bay; both calculations are required.
 
-**Real mathematical dependencies:** all labelled measurements correspond to true geometry. The engine uses Pythagoras, equal ticks, shared straight-line parts and actual rectangle diagonals. The Grand Challenge cannot reach its target without both rectangle-diagonal calculations.
+No special same-length tick inference is required for #4, #6 or #7: required lengths are physically shared edges. #9 shows **two matching-mark groups on the opposite horizontal sides** of the two rectangles; all equalities are mathematically real.
 
-**Readable interface:** all diagrams use the same geometric SVG for homepage miniatures and individual puzzles. Existing Replay, Auto-play, Skip, zoom, Fit, Focus view, Locate, dimension brackets, handwriting, hints, and checking work with the new shapes.
+## Student interface and saved work
 
-**Saved progress:** First Fall and Twin Paths preserve their existing browser-local progress. The seven redesigned puzzles use a new versioned progress key; earlier saved work remains stored separately on the device and is not incorrectly mapped to changed lengths.
+Dense structures #7, #9 and #10 show givens and the target initially, revealing other unknown labels for the selected triangle or once solved. Students can still click any side or use the side dropdown; Zoom, Fit, Focus view, Locate and diagram trace remain available.
 
-## Suggested acceptance review
+The four re-authored puzzles use `pileup-architecture-v2-<id>` as their browser-local progress key, preventing earlier solved lengths from being misapplied. The other six puzzles retain their existing saved-work keys.
 
-1. Compare First Fall and Projecting Edge: the second has a projecting shoulder and two upper arms, not another longer chain.
-2. Compare Twin Paths and Split & Project: one base with two upper pieces versus two grounded piers separated by an open bay.
-3. Compare Labyrinth and Great Pile Up: a triangular arch where branches meet versus a beam over a genuine full gap.
-4. Examine Nine Muses: three foundations, two joined terraces and a final upward crown.
-5. Examine Marble Terrace and Acropolis: one rectangular platform versus two separate plinths whose diagonal results both matter.
-6. On 320–390 px screens, test labels, Focus, Locate and zoom on Acropolis.
-7. Check the new exact answers above, full worked solutions, and correctly delayed labels during Replay.
+## Mathematical and browser quality gates
 
-## Verification
+- Every face has actual right-angle geometry and no polygon interior overlaps.
+- All ten structures remain connected, with real floor support and correctly positioned given/overhang lengths.
+- A new dependency test blocks each individual triangle in #4, #6, #7 and #9; **x must then be unreachable**.
+- For #9, blocking either rectangle-diagonal calculation must also prevent x.
+- The Chrome audit renders all ten puzzles at five viewport widths and checks clipping, measurement-chip overlaps, dimension brackets, saved work, and the existing interaction controls.
 
-New architecture tests check connected physical contacts, multiple ground footprints, true open bays, upward growth, nontrivial starting choices and unique topology names. Existing visibility and Pythagoras tests verify every corner and result. Rectangle tests specifically prove the Acropolis final side is unobtainable when either diagonal calculation is withheld.
-
-The permanent browser audit checks all ten puzzle SVGs, interaction, saved working, zoom and handwriting at five screen sizes, and archives screenshots as GitHub Actions artifacts.
-
-Historical PASS_C.md and earlier geometry notes describe the previous puzzle generation; this document and the current code are authoritative for these nine revised problems.
-
-## Tenth challenge: reference-inspired interlocking composition
-
-[The Great Interlock](THE_GREAT_INTERLOCK.md) is an original 13-triangle construction closer to the dense Pythagorean Stack reference. It has a broad horizontal target, two 5 cm offsets, 10 cm and 15 cm upper segments, and two true foundations whose calculations are individually required for x = 24 cm. It does not reuse the source diagram's exact positions or answer.
+The older geometry and target answers in historical passes were valid for their former versions only; this document describes the current ten-puzzle set.
