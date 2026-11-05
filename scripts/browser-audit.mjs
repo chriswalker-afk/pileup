@@ -198,13 +198,16 @@ try{
           "Whole/part dimension bracket does not span its actual length",d);
         insist(Number.isFinite(d.meanLabelDistance),
           "Computed label distances must be finite",d);
-        if(["twin-paths","split-project","first-fall","projecting-edge"].includes(id)){
+        if(["twin-paths","split-project","first-fall","projecting-edge","nine-muses","acropolis"].includes(id)){
           insist(d.bracketCount>0,
             "Whole/partial straight-line lengths are missing their brackets",d);
         }
         insist(!d.zoomOverlaps.length,"Zoom controls cover a label at 100%",d);
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
-        if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
+        if(id==="acropolis"){
+          insist(d.rectangles===2,"Two rectangles missing",d);
+          insist(d.equalTicks===10,"Two real rectangle equal-side groups are not marked",d);
+        }
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
         if(id==="great-interlock")insist(d.pieces===13&&d.rectangles===0,
           "The thirteen-triangle original interlock is incomplete",d);
@@ -214,6 +217,24 @@ try{
           await snap(page,"architecture-"+id+"-"+name);
         return d;
       });
+    }
+    if(name==="desktop"||name==="phone"){
+      for(const id of ["nine-muses","acropolis"]){
+        await run(name+" / "+id+" unknowns reveal when a shape is selected",async()=>{
+          await open(page,id);
+          const data=await page.evaluate(()=>{
+            const count=()=>document.querySelectorAll("#diagram .side-chip.unknown").length;
+            const before=count();
+            const shape=document.querySelector('#diagram .piece[data-id="VII"]');
+            if(!shape)return {before,after:before,hasPiece:false};
+            shape.dispatchEvent(new MouseEvent("click",{bubbles:true}));
+            return {before,after:count(),hasPiece:true};
+          });
+          insist(data.hasPiece&&data.after>data.before,
+            "Dense diagrams should reveal missing sides on selection",data);
+          return data;
+        });
+      }
     }
     await run(name+" / zoom, pan, side selection and Fit",async()=>{
       await open(page,"acropolis");
