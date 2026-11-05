@@ -1,12 +1,14 @@
 import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTriangle, readySteps, solutionSteps } from "./puzzle-engine.js";
 import { puzzles } from "./pile-geometry.js";
+import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const p=(x,y)=>({x,y}),d=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y),mid=(a,b)=>p((a.x+b.x)/2,(a.y+b.y)/2);
 const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.x+a.y*b.y;
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
-let sideMap=buildSides(current),solved=new Set(),notes={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
+let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
+let disposeWorking=()=>{};
 let extensionMode=false,extensionGrades={};
 const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav><a href="#home">THE AGORA</a><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
@@ -28,6 +30,7 @@ function miniPreview(puzzle){
     figures+'</svg>';
 }
 function home(gallery=false){
+ disposeWorking();disposeWorking=()=>{};
  screen='home';clearTimeout(finishTimer);
  root.innerHTML=header()+`<main><section class="hero"><div><div class="eyebrow">— AN ANCIENT PUZZLE · A MODERN CHALLENGE</div><h1>When triangles<br><em>fall into place.</em></h1><p class="lead">In the footsteps of Pythagoras, follow a trail of hidden lengths. Each answer unlocks the next. Can you uncover the final side?</p><div class="actions"><button class="btn primary" data-puzzle="first-fall">BEGIN THE TRIAL &nbsp; →</button><button class="btn plain" data-gallery>EXPLORE THE CHALLENGES ↗</button></div><p class="footnote">✦ &nbsp; RIGHT-ANGLED TRIANGLES. ONE HIDDEN ANSWER.</p></div><div class="illustration"><svg viewBox="0 0 470 430" role="img" aria-label="Decorative arrangement of coloured geometric triangles"><polygon points="75,260 285,260 285,116" fill="#d7ae69" stroke="#433c31" stroke-width="3"/><polygon points="285,116 285,260 402,190" fill="#7fa7a1" stroke="#433c31" stroke-width="3"/><polygon points="75,260 285,260 184,370" fill="#b77f70" stroke="#433c31" stroke-width="3"/><polygon points="134,73 285,116 75,260" fill="#a7a0bb" stroke="#433c31" stroke-width="3"/><g fill="#433c31" font-size="21" font-family="Georgia,serif"><text x="170" y="249">a</text><text x="308" y="222">b</text><text x="194" y="311">c</text><text x="194" y="102">?</text></g><path d="M47 367H425M47 375H425" stroke="#ae9e80"/></svg><span class="illustration-caption">FIG. I — THE BEAUTY OF CONNECTION</span></div></section><div class="meander"></div><section class="section"><div class="section-title"><div class="eyebrow">THE METHOD</div><h2>Three steps to discovery</h2><p>Simple in principle. Surprisingly deep in practice.</p></div><div class="steps"><article><span class="number">I.</span><h3>Watch the fall</h3><p>Right-angled triangles tumble onto a carefully constructed geometric tablet.</p></article><article><span class="number">II.</span><h3>Follow the clues</h3><p>Known lengths lead to unknown lengths. Discover where the chain begins.</p></article><article><span class="number">III.</span><h3>Find the final side</h3><p>Use Pythagoras' theorem to connect the pieces and reach the target.</p></article></div></section><section class="section" id="challenges"><div class="section-title"><div class="eyebrow">CHOOSE YOUR PATH</div><h2>The challenges</h2><p>Six original piles, each with a different way to connect the mathematics.</p></div><div class="cards">${puzzles.map((x,i)=>`<button class="challenge-card" data-puzzle="${x.id}"><span class="card-index">${String(i+1).padStart(2,"0")} / ${x.epithet}</span>${miniPreview(x)}<span class="card-title">${x.title}</span><span class="card-description">${x.description}</span><span class="card-tags">${(x.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</span><span class="card-footer"><span>${x.triangles.length} TRIANGLES</span><span>${x.difficulty} ↗</span></span></button>`).join('')}</div></section></main>`+footer();
  bind();if(gallery)requestAnimationFrame(()=>document.getElementById('challenges')?.scrollIntoView({behavior:reduced.matches?'instant':'smooth'}));
@@ -39,20 +42,33 @@ function escapeHtml(text){
 }
 function saveProgress(){
   try{localStorage.setItem("pileup-pass-b-v2-"+current.id,JSON.stringify({
-    solved:[...solved],notes,hintLevels,hintsUsed,extensionGrades
-  }));}catch(_){}
+    solved:[...solved],workingBySide,hintLevels,hintsUsed,extensionGrades
+  }));}catch(error){
+    // Storage quota or disabled storage must not prevent solving.
+    console.warn("Could not save the working for this puzzle.",error);
+  }
 }
 function loadProgress(){
-  solved=new Set();notes={};hintLevels={};hintsUsed=0;extensionGrades={};
+  solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};
   try{
     const saved=JSON.parse(localStorage.getItem("pileup-pass-b-v2-"+current.id)||"null");
     if(!saved || typeof saved!=="object")return;
     if(Array.isArray(saved.solved))for(const key of saved.solved){
       if(sideMap.has(key) && !sideMap.get(key).given)solved.add(key);
     }
-    if(saved.notes && typeof saved.notes==="object"){
+    if(saved.workingBySide && typeof saved.workingBySide==="object"){
+      for(const [key,value] of Object.entries(saved.workingBySide)){
+        if(sideMap.has(key)&&!sideMap.get(key).given)workingBySide[key]=sanitizeWorking(value);
+      }
+    }else if(saved.notes && typeof saved.notes==="object"){
+      // One-time conversion from the old free-text working field.
+      // Preserve its contents inside an editable maths line rather than discarding it.
       for(const [key,value] of Object.entries(saved.notes)){
-        if(sideMap.has(key)&&typeof value==="string")notes[key]=value.slice(0,1000);
+        if(!sideMap.has(key)||sideMap.get(key).given||typeof value!=="string"||!value.trim())continue;
+        const lines=value.split("\n").map(line=>line.trim()).filter(Boolean).slice(0,16);
+        workingBySide[key]=sanitizeWorking({tab:"math",lines:lines.map((latex,i)=>({
+          id:"legacy-"+i,latex:latex.replace(/²/g,"^{2}").replace(/³/g,"^{3}").slice(0,260)
+        }))});
       }
     }
     if(saved.hintLevels && typeof saved.hintLevels==="object"){
@@ -64,8 +80,11 @@ function loadProgress(){
     if(saved.extensionGrades && typeof saved.extensionGrades==="object"){
       for(const item of current.extensions||[])if(saved.extensionGrades[item.id]===true)extensionGrades[item.id]=true;
     }
-  }catch(_){}
+  }catch(error){
+    console.warn("Could not restore the working for this puzzle.",error);
+  }
 }
+
 function stepsRemaining(){
   return [...sideMap.values()].filter(s=>!s.given&&!solved.has(s.key));
 }
@@ -454,6 +473,7 @@ function incorrectFeedback(side,value){
 }
 
 function renderInspector(){
+  disposeWorking();disposeWorking=()=>{};
   const panel=document.getElementById("inspector");if(!panel)return;
   const meter=document.getElementById("progress-count"),bar=document.getElementById("progress-fill");
   const state=progress();
@@ -512,7 +532,8 @@ function renderInspector(){
   }else if(solved.has(side.key)){
     body=`<h3 class="inspect-title">Length discovered ✓</h3>
       <p class="solved-note">${side.isTarget?"The final length x":"This shared length"} = <strong>${exactLength(side.length)} cm</strong></p>
-      <p class="inspect-intro">This measurement is now available wherever the side is shared.</p>`;
+      <p class="inspect-intro">This measurement is now available wherever the side is shared.</p>
+      <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else{
     const level=hintLevels[side.key]||0;
     const valid=readySteps(current,sideMap,solved).some(step=>step.sideKey===side.key);
@@ -527,9 +548,7 @@ function renderInspector(){
       <div id="answer-feedback" role="status" aria-live="polite"></div>
       <div class="hint-area"><button class="hint-button" id="hint-next" ${level>=4?"disabled":""}>${level?level>=4?"ALL CLUES SHOWN":"REVEAL NEXT CLUE ("+(level+1)+"/4)":"NEED A CLUE? (1/4)"}</button>
       ${level?`<div class="hint-content"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>
-      <details class="working-details"><summary>MY WORKING (OPTIONAL)</summary><p>Keep your calculation for this side. Notes are saved in this browser.</p>
-        <div class="inspect-field"><textarea id="working-notes" maxlength="1000" aria-label="Your working notes for this side" placeholder="Example: a² + b² = c²">${escapeHtml(notes[side.key]||"")}</textarea></div>
-      </details>`;
+      <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }
   panel.innerHTML=`<span class="kicker">THE GEOMETER’S NOTES</span>
     ${choices}
@@ -550,7 +569,7 @@ function renderInspector(){
   });
   panel.querySelector("#reset-progress").addEventListener("click",()=>{
     if(!window.confirm("Clear your discovered lengths and working notes for this challenge?"))return;
-    solved=new Set();notes={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
+    solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
     saveProgress();renderDiagram(false);
   });
   const form=panel.querySelector("#answer-form");
@@ -563,10 +582,14 @@ function renderInspector(){
     hintLevels[side.key]=Math.min(4,(hintLevels[side.key]||0)+1);
     hintsUsed++;saveProgress();renderInspector();
   });
-  const textarea=panel.querySelector("#working-notes");
-  if(textarea)textarea.addEventListener("input",event=>{
-    notes[side.key]=event.target.value;saveProgress();
-  });
+  const space=panel.querySelector("#working-pad-mount");
+  if(space && side && !side.given){
+    const id=side.key;
+    disposeWorking=mountWorkingSpace(space,workingBySide[id],working=>{
+      workingBySide[id]=working;
+      saveProgress();
+    });
+  }
 }
 
 function renderExtensions(panel){
@@ -643,6 +666,7 @@ function showCompletion(){
   if(!dialog.open)dialog.showModal();
 }
 function openPuzzle(id){
+  disposeWorking();disposeWorking=()=>{};
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
   current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;extensionMode=false;screen=id;clearTimeout(finishTimer);
   loadProgress();
