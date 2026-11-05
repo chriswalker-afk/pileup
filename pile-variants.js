@@ -121,10 +121,16 @@ export function makeSplitPile({
 }
 
 /**
- * Bridge a split pile with an additional triangle whose full side
- * spans both adjacent support sections, then add another upper piece.
- * These intentional polygon overlaps are part of the puzzle's
- * construction; no simple sum-of-areas extension is offered.
+ * The master puzzle uses TWO smaller support edges against one long
+ * bottom hypotenuse. A separate upper chain joins the exposed B
+ * hypotenuse, without covering any existing triangle.
+ *
+ * Its starting paths are independent: the bottom triangle provides
+ * the whole side while triangle III provides one short section.
+ * Subtraction unlocks triangle II, and then IV and V.
+ *
+ * Every pair of triangle interiors is disjoint; shared boundaries
+ * and vertices are allowed, obscured triangle faces are not.
  */
 export function makeCrownPile({id,title,epithet,difficulty,description,colors,tags=[]}) {
   const base=makeSplitPile({
@@ -133,21 +139,26 @@ export function makeCrownPile({id,title,epithet,difficulty,description,colors,ta
     hypotenuseGivens:[13,13],equalHypotenuses:false,
     colors:colors.slice(0,3)
   });
-  const [A,B]=base.triangles;
-  const P=A.pts[0],R=A.pts[2],U=B.pts[2];
-  // Fourth triangle spans the two collinear supports on the opposite
-  // side of the diagonal from B and C.
-  const W=thirdVertex(P,R,U,R,6);
-  const bridge={id:"IV",pts:[P,R,W],right:1,color:colors[3],
-    givens:[{a:R,b:W,value:6}]};
-  const E=thirdVertex(P,W,R,W,5,false);
-  const crown={id:"V",pts:[P,W,E],right:1,color:colors[4],
+  const [A,B,C]=base.triangles;
+  const P=A.pts[0],Q=A.pts[1],M=B.pts[1],U=B.pts[2];
+  // Reveal the floor length, but withhold II's hypotenuse.
+  // To obtain PU, students must find PR, then MR, then PM.
+  A.givens.push({a:P,b:Q,value:15});
+  B.givens=B.givens.filter(g=>!(g.a===P && g.b===U));
+  // The first new triangle is attached to the OUTSIDE of the
+  // not-yet-known PU hypotenuse, never painted over II.
+  const W=thirdVertex(P,U,M,U,6,true);
+  const IV={id:"IV",pts:[P,U,W],right:1,color:colors[3],
+    givens:[{a:U,b:W,value:6}]};
+  // Attach the final triangle externally to IV's hypotenuse PW.
+  const E=thirdVertex(P,W,U,W,5,true);
+  const V={id:"V",pts:[P,W,E],right:1,color:colors[4],
     givens:[{a:W,b:E,value:5}]};
-  base.triangles.push(bridge,crown);
+  base.triangles.push(IV,V);
   base.target={a:P,b:E};
   base.solution=distance(P,E);
   base.tags=tags;
-  base.spanHighlight={whole:{a:P,b:R},
+  base.spanHighlight={whole:{a:P,b:A.pts[2]},
     parts:base.spanHighlight.parts};
   if(base.triangles.some(t=>t.pts.some(q=>q.y< -1e-8))) {
     throw Error("A crown vertex falls below the stone floor.");
