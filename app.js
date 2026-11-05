@@ -685,10 +685,15 @@ function renderDiagram(animate=false,forceMotion=false){
   // unknown labels on the selected face (or once discovered). All
   // sides remain selectable through SVG hit targets and the side list.
   const quietDense=["great-interlock","nine-muses","acropolis"].includes(current.id);
+  // All Labels is an explicit opt-in to show *every* measurement,
+  // including postponed question marks. Returning to Focus View
+  // restores the low-clutter state without losing student work.
+  const forceAllLabels=focusUserChoice&&!focusLabels;
   const compactKeys=pieces.length>=4?
     crowdedUnknownKeys(sideMap.values(),xy):new Set();
   const sides=[...sideMap.values()].filter(side=>{
     if(side.suppressLabel)return false;
+    if(forceAllLabels)return true;
     // Never hide givens, discovered lengths, the target or the chosen
     // shape's measurements. Only defer nonessential '?' labels in
     // genuinely crowded regions until that triangle is investigated.
@@ -987,6 +992,10 @@ function renderInspector(){
     return;
   }
   const unprovided=[...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel);
+  const shapes=[...current.triangles,...(current.rectangles||[])];
+  const xy=fitPileInTablet(current).xy;
+  const hasSmallCluster=shapes.length>=4&&
+    shapes.some(shape=>compactFace(shape,shapes,xy));
   const side=selectedSide?sideMap.get(selectedSide):null;
   const choices=`<div class="inspect-field clarity-field">
     <div class="clarity-selector-heading"><label for="side-select">CHOOSE A SIDE TO INVESTIGATE</label>
@@ -994,7 +1003,7 @@ function renderInspector(){
         aria-pressed="${focusLabels}" title="${focusLabels?"Show every measurement":"Show only measurements belonging to the selected shape"}">
         ${focusLabels?"ALL LABELS":"FOCUS VIEW"}</button></div>
     <div class="clarity-selector-row"><select id="side-select">
-      <option value="">${["great-interlock","nine-muses","acropolis"].includes(current.id)?"Select a side…":"Select a marked side…"}</option>
+      <option value="">${hasSmallCluster?"Select a side…":"Select a marked side…"}</option>
       ${unprovided.map((s,i)=>`<option value="${s.key}" ${selectedSide===s.key?"selected":""}>${s.isTarget?"Target x":"Side "+(i+1)+" · triangle "+s.triangleIds.join(" & ")}${solved.has(s.key)?" ✓":""}</option>`).join("")}
     </select>
     <button id="locate-side" type="button" class="clarity-locate"
@@ -1002,7 +1011,7 @@ function renderInspector(){
       aria-label="Locate selected side in diagram" ${selectedSide?"":"disabled"}>LOCATE ↗</button></div></div>`;
   let body;
   if(!side){
-    body=`<div class="workspace-brief"><strong>${["great-interlock","nine-muses","acropolis"].includes(current.id)?"Select a triangle or choose a side":"Select a ? on the diagram"}</strong><span>Or begin calculations on your scratchpad.</span></div>
+    body=`<div class="workspace-brief"><strong>${hasSmallCluster?"Tap a triangle to inspect its lengths":"Select a ? on the diagram"}</strong><span>Choose a side above, or start working on your scratchpad.</span></div>
       <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(side.given){
     body=`<div class="workspace-brief"><strong>Given: ${exactLength(side.length)} cm</strong><span>Select a missing length to solve it.</span></div>
@@ -1034,14 +1043,12 @@ function renderInspector(){
       <button class="btn-link" id="solution-toggle">REVEAL FULL SOLUTION ↗</button>
       <button class="btn-link" id="reset-progress">START AGAIN ↻</button>
     </div>`;
-  panel.querySelector("#label-focus-toggle").addEventListener("click",event=>{
+  panel.querySelector("#label-focus-toggle").addEventListener("click",()=>{
     focusLabels=!focusLabels;
     focusUserChoice=true;
-    const button=event.currentTarget;
-    button.setAttribute("aria-pressed",String(focusLabels));
-    button.textContent=focusLabels?"ALL LABELS":"FOCUS VIEW";
-    button.title=focusLabels?"Show every measurement":"Show only the selected shape’s measurements";
-    refreshLabelClarity();
+    // This action also changes which unknown chips exist in crowded
+    // areas, so a fresh SVG is required. Ordinary hover never does so.
+    renderDiagram(false);
   });
   panel.querySelector("#locate-side").addEventListener("click",locateSelectedSide);
   panel.querySelector("#side-select").addEventListener("change",event=>{
