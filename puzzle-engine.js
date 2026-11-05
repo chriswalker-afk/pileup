@@ -1,3 +1,5 @@
+import { rectangleVirtualTriangles,rectangleOppositePairs,rectangleIsValid } from "./rectangle-math.js";
+
 /**
  * Pure mathematical helpers for Pythagoras Pile Up.
  * These functions do not access the DOM or browser storage.
@@ -33,13 +35,27 @@ export function buildSides(puzzle) {
     side.givenValue = measurement.value;
     if (overhang) side.isOverhang = true;
   };
-  for (const triangle of puzzle.triangles) {
+  for (const triangle of [...puzzle.triangles,...rectangleVirtualTriangles(puzzle)]) {
     const pts = triangle.pts;
     for (const [i, j] of [[0, 1], [1, 2], [2, 0]]) {
       const side = register(pts[i], pts[j]);
       if (!side.triangleIds.includes(triangle.id)) side.triangleIds.push(triangle.id);
     }
     for (const measurement of triangle.givens) markGiven(measurement);
+  }
+  for(const rect of puzzle.rectangles||[]){
+    if(!rectangleIsValid(rect))throw Error("Invalid rectangle "+rect.id);
+    const pts=rect.pts;
+    for(let i=0;i<4;i++){
+      const s=register(pts[i],pts[(i+1)%4]);
+      if(!s.triangleIds.includes(rect.id))s.triangleIds.push(rect.id);
+    }
+    for(const diagonal of rect.diagonals||[]){
+      const s=register(diagonal.a,diagonal.b);
+      if(!s.triangleIds.includes(rect.id))s.triangleIds.push(rect.id);
+      s.isRectangleDiagonal=true;
+    }
+    for(const measurement of rect.givens||[])markGiven(measurement);
   }
   for (const extra of puzzle.extraSegments || []) markGiven(extra, true);
   for (const relation of puzzle.lengthRelations || []) {
@@ -93,7 +109,7 @@ export function isKnown(side, solved) {
 }
 export function readySteps(puzzle, sides, solved) {
   const candidates = [];
-  for (const triangle of puzzle.triangles) {
+  for (const triangle of [...puzzle.triangles,...rectangleVirtualTriangles(puzzle)]) {
     const edges = sidesOfTriangle(triangle, sides);
     const missing = edges.filter(side => !isKnown(side, solved));
     if (missing.length === 1) {
@@ -129,6 +145,24 @@ export function readySteps(puzzle, sides, solved) {
       answer: exactLength(answer.length),
       length: answer.length
     });
+  }
+  // Opposite rectangle edges have equal lengths. This is a true
+  // mathematical dependency, not an automatically supplied number.
+  for(const rect of puzzle.rectangles||[]){
+    for(const pair of rectangleOppositePairs(rect)){
+      const edges=pair.map(d=>sides.get(sideKey(d.a,d.b)));
+      for(let j=0;j<2;j++){
+        const missing=edges[j],known=edges[1-j];
+        if(!isKnown(missing,solved)&&isKnown(known,solved)){
+          candidates.push({
+            kind:"rectangle-opposite",triangleId:rect.id,sideKey:missing.key,
+            isTarget:missing.isTarget,isHypotenuse:false,
+            known:[known.key],answer:exactLength(missing.length),length:missing.length,
+            equation:"s = "+exactLength(known.length)+" (opposite rectangle sides)"
+          });
+        }
+      }
+    }
   }
   // Equal tick marks: use one discovered side to deduce its match,
   // without requiring a new Pythagoras calculation.
@@ -183,7 +217,7 @@ function makeStep(triangle, missing, known, sides) {
     expression = "(" + exactLength(hyp.length) + ")² − (" + exactLength(leg.length) + ")²";
   }
   return {
-    kind: "pythagoras",
+    kind: triangle.id.includes("-DIAG-")?"rectangle-diagonal":"pythagoras",
     triangleId: triangle.id,
     sideKey: missing.key,
     isTarget: missing.isTarget,
@@ -311,7 +345,8 @@ export function correctAnswer(raw, expected) {
 
 export function puzzleIsValid(puzzle) {
   const sides = buildSides(puzzle);
-  for (const triangle of puzzle.triangles) {
+  for(const rect of puzzle.rectangles||[])if(!rectangleIsValid(rect))return false;
+  for (const triangle of [...puzzle.triangles,...rectangleVirtualTriangles(puzzle)]) {
     const corner = triangle.pts[triangle.right];
     const ends = triangle.pts.filter((_, i) => i !== triangle.right);
     const ax = ends[0].x - corner.x, ay = ends[0].y - corner.y;
