@@ -11,9 +11,9 @@ import {assertFullyVisiblePuzzle,hiddenShapePairs,fitPileInTablet}
   from "../pile-visibility.js";
 
 const advanced=[
-  ["nine-muses",9,0,"√274"],
+  ["nine-muses",9,0,"√1021"],
   ["marble-terrace",8,1,"2√38"],
-  ["acropolis",10,2,"25"],
+  ["acropolis",10,2,"15"],
   ["great-interlock",13,0,"24"]
 ];
 test("the advanced challenges retain their identity and shape counts",()=>{
@@ -98,7 +98,7 @@ function canFinishWithout(puzzle,blockedRectangle){
   const targetKey=sideKey(puzzle.target.a,puzzle.target.b);
   return solved.has(targetKey);
 }
-test("Acropolis target requires both independent diagonal calculations",()=>{
+test("Acropolis target requires both successive diagonal calculations",()=>{
   const p=puzzles.find(x=>x.id==="acropolis");
   assert.equal(p.rectangles.length,2);
   const s=buildSides(p),steps=solutionSteps(p,s);
@@ -108,18 +108,24 @@ test("Acropolis target requires both independent diagonal calculations",()=>{
     "Final roof should be blocked if left plinth is unknown");
   assert.equal(canFinishWithout(p,"R2"),false,
     "Final roof should be blocked if right plinth is unknown");
-  const relations=p.lengthRelations[0];
-  assert.equal(relations.parts.length,2);
-  for(const part of relations.parts){
-    assert.ok(Math.abs(Math.hypot(part.a.x-part.b.x,part.a.y-part.b.y)-12)<1e-7);
-  }
-  assert.equal(p.equalSideGroups.length,2);
+  const relation=p.lengthRelations[0];
+  assert.equal(relation.parts.length,2);
+  const lengths=relation.parts.map(x=>Math.hypot(x.a.x-x.b.x,x.a.y-x.b.y));
+  assert.ok(Math.abs(lengths[0]-10)<1e-7);
+  assert.ok(Math.abs(lengths[1]-2)<1e-7);
+  assert.equal(p.equalSideGroups?.length||0,0,
+    "No unattached lengths should rely on matching ticks");
+  assert.ok(p.triangles.some(t=>t.id==="II"));
+  assert.equal(p.overhang.value,2);
 });
-test("Nine Muses no longer fans from one floor vertex",()=>{
+test("Nine Muses has one grounded base and a real 2 cm roof offset",()=>{
   const p=puzzles.find(x=>x.id==="nine-muses");
-  assert.ok(!p.rectangles.length);
+  assert.equal(p.rectangles.length,0);
   assert.equal(p.triangles.length,9);
-  assert.equal(p.triangles.filter(t=>t.pts.some(q=>q.y===0)).length,3);
-  assert.ok(p.equalSideGroups.length>=2);
-  assert.ok(solutionSteps(p).filter(s=>s.kind==="pythagoras").length>=7);
+  assert.equal(p.triangles.filter(t=>t.pts.filter(q=>q.y===0).length>=2).length,1);
+  assert.equal(p.overhang.value,2);
+  assert.equal(p.lengthRelations.length,1);
+  assert.equal(p.equalSideGroups?.length||0,0);
+  assert.ok(solutionSteps(p).filter(s=>s.kind==="pythagoras").length>=9);
+  assert.ok(solutionSteps(p).some(s=>s.isTarget&&s.answer==="√1021"));
 });
