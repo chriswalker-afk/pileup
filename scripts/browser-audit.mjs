@@ -472,6 +472,83 @@ try{
       if(name==="desktop"||name==="phone")await snap(page,"zoom-acropolis-"+name);
       return {afterZoom:first,panBefore:before,panAfter:after,reset};
     });
+    // SVG viewBox zoom should enlarge only the pile, NOT the
+    // numerical labels or their precise attachment markers.
+    // Compare actual CSS pixel boxes at 100, 125, 200 and 400%.
+    for(const id of ["first-fall","acropolis","great-interlock"]){
+      await run(name+" / "+id+" fixed-size labels through 400% zoom",async()=>{
+        await open(page,id);
+        const readings=async()=>page.evaluate(()=>{
+          const svg=document.querySelector("#diagram svg");
+          const tethers=[...svg.querySelectorAll(".measurement-tether")];
+          const values=[...svg.querySelectorAll(".side-chip")].slice(0,8).map(chip=>{
+            const key=chip.getAttribute("data-side-key");
+            const tether=tethers.find(t=>t.getAttribute("data-side-key")===key);
+            const label=chip.querySelector("rect");
+            const rect=label.getBoundingClientRect();
+            const line=tether?.querySelector(".side-association");
+            if(!line)return {key,error:"Missing measured-side attachment"};
+            const ctm=line.getScreenCTM();
+            const end=new DOMPoint(Number(line.getAttribute("x2")),
+              Number(line.getAttribute("y2"))).matrixTransform(ctm);
+            const anchor=new DOMPoint(Number(line.getAttribute("x1")),
+              Number(line.getAttribute("y1"))).matrixTransform(ctm);
+            const insideX=end.x>=rect.left-2&&end.x<=rect.right+2;
+            const insideY=end.y>=rect.top-2&&end.y<=rect.bottom+2;
+            const onBorder=insideX&&insideY&&(
+              Math.min(Math.abs(end.x-rect.left),Math.abs(end.x-rect.right),
+                Math.abs(end.y-rect.top),Math.abs(end.y-rect.bottom))<2);
+            return {key,width:rect.width,height:rect.height,onBorder,
+              leaderLength:Math.hypot(end.x-anchor.x,end.y-anchor.y),
+              labelTransform:chip.getAttribute("transform"),
+              tetherTransform:tether.getAttribute("transform"),
+              anchorX:anchor.x,anchorY:anchor.y};
+          });
+          return {scale:document.querySelector("#diagram-zoom-level").textContent,
+            values};
+        });
+        const initial=await readings();
+        insist(initial.values.length>=2,"No measurable labels",initial);
+        insist(initial.values.every(x=>!x.error&&x.onBorder),
+          "Initial labels were not connected to their sides",initial);
+        const controls=page.locator(".diagram-zoom-controls");
+        for(const target of [1.25,2,4]){
+          let current=Number((await page.locator("#diagram-zoom-level").innerText()).replace("%",""))/100;
+          while(current<target-.001){
+            await controls.locator("#diagram-zoom-in").click();
+            current=Number((await page.locator("#diagram-zoom-level").innerText()).replace("%",""))/100;
+          }
+          const next=await readings();
+          insist(next.scale===Math.round(target*100)+"%",
+            "Wrong zoom test level",{id,target,next:next.scale});
+          for(const [i,item] of next.values.entries()){
+            const base=initial.values[i];
+            insist(item.key===base.key,"Annotation identities changed during zoom",{id,item,base});
+            insist(Math.abs(item.width-base.width)<1.5&&
+              Math.abs(item.height-base.height)<1.5,
+              "Measurement label grew or shrank in CSS pixels",
+              {id,target,base,item});
+            insist(Math.abs(item.leaderLength-base.leaderLength)<1.6,
+              "Side-to-label attachment length changed with zoom",
+              {id,target,base,item});
+            insist(item.onBorder&&item.labelTransform&&item.tetherTransform,
+              "Label/tether no longer meet or counter-scale",
+              {id,target,item});
+          }
+          if(target===4&&["desktop","phone"].includes(name))
+            await snap(page,"fixed-labels-400-"+id+"-"+name);
+        }
+        await controls.locator("#diagram-zoom-fit").click();
+        const reset=await readings();
+        insist(reset.scale==="100%","Fit did not restore 100%",reset);
+        insist(reset.values.every((item,i)=>
+          !item.labelTransform&&!item.tetherTransform&&
+          Math.abs(item.width-initial.values[i].width)<1.5&&item.onBorder),
+          "Fit did not restore baseline labels/attachments",{id,reset});
+        return {puzzle:id,labelsChecked:initial.values.length,
+          at:["100%","125%","200%","400%"]};
+      });
+    }
     await run(name+" / label Focus, exact trace and Locate at zoom",async()=>{
       await open(page,"acropolis");
       const svg=page.locator("#diagram svg");
