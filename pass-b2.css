@@ -33,7 +33,7 @@
 #diagram svg .side-labels.waiting,#diagram svg .side-labels.hidden-labels{opacity:0;pointer-events:none}
 #diagram svg.ready-to-fall .piece{opacity:0}
 #diagram svg.falling .piece{
- animation:greek-piece-drop 1180ms cubic-bezier(.22,.68,.32,1) both;
+ animation:greek-piece-drop 1340ms cubic-bezier(.22,.68,.32,1) both;
  animation-delay:var(--delay);
  transform-origin:center;transform-box:fill-box
 }
@@ -63,4 +63,19 @@
 @media(prefers-reduced-motion:reduce){
  #diagram svg .piece,#diagram svg.falling .piece{animation:none!important;opacity:1!important;transform:none!important}
  #diagram svg .side-labels{transition:none!important}
+}
+#diagram svg .dimension-leader{
+  stroke:#937d5a;stroke-width:1px;stroke-dasharray:3 4;
+  pointer-events:none;opacity:.65
+}
+.tablet-controls .replay-button{
+  min-width:0;width:auto;padding:0 13px;display:flex;align-items:center;
+  justify-content:center;gap:7px;white-space:nowrap
+}
+.tablet-controls .replay-button span{
+  font:700 9px 'DM Sans',sans-serif;letter-spacing:.06em
+}
+@media(max-width:520px){
+  .tablet-controls .replay-button{width:35px;padding:0}
+  .tablet-controls .replay-button span{display:none}
 }
