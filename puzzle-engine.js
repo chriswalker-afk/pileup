@@ -16,23 +16,50 @@ export function sideLength(a, b) {
 
 export function buildSides(puzzle) {
   const sides = new Map();
+  const register = (a, b) => {
+    const key = sideKey(a, b);
+    if (!sides.has(key)) sides.set(key, {
+      key, a, b, length: sideLength(a, b), given: false,
+      triangleIds: [], isTarget: false, isOverhang: false
+    });
+    return sides.get(key);
+  };
+  const markGiven = (measurement, overhang = false) => {
+    const side = register(measurement.a, measurement.b);
+    if (Math.abs(side.length - measurement.value) > EPSILON) {
+      throw Error("An incorrect given length was provided.");
+    }
+    side.given = true;
+    side.givenValue = measurement.value;
+    if (overhang) side.isOverhang = true;
+  };
   for (const triangle of puzzle.triangles) {
     const pts = triangle.pts;
     for (const [i, j] of [[0, 1], [1, 2], [2, 0]]) {
-      const a = pts[i], b = pts[j], key = sideKey(a, b);
-      if (!sides.has(key)) sides.set(key, {
-        key, a, b, length: sideLength(a, b), given: false,
-        triangleIds: [], isTarget: false
-      });
-      const side = sides.get(key);
+      const side = register(pts[i], pts[j]);
       if (!side.triangleIds.includes(triangle.id)) side.triangleIds.push(triangle.id);
     }
-    for (const measurement of triangle.givens) {
-      const side = sides.get(sideKey(measurement.a, measurement.b));
-      if (!side) throw Error("A measurement references a missing edge.");
-      if (Math.abs(side.length - measurement.value) > EPSILON) throw Error("An incorrect given length was provided.");
-      side.given = true;
-      side.givenValue = measurement.value;
+    for (const measurement of triangle.givens) markGiven(measurement);
+  }
+  for (const extra of puzzle.extraSegments || []) markGiven(extra, true);
+  for (const relation of puzzle.lengthRelations || []) {
+    const whole = register(relation.whole.a, relation.whole.b);
+    const parts = relation.parts.map(s => register(s.a, s.b));
+    const total = parts.reduce((sum, part) => sum + part.length, 0);
+    if (Math.abs(total - whole.length) > EPSILON) {
+      throw Error("Overhang parts must add to the complete straight side.");
+    }
+    const A = whole.a, B = whole.b, ABx = B.x - A.x, ABy = B.y - A.y;
+    const magnitude = whole.length;
+    for (const part of parts) {
+      for (const point of [part.a, part.b]) {
+        const APx = point.x - A.x, APy = point.y - A.y;
+        const distance = Math.abs(ABx * APy - ABy * APx) / magnitude;
+        const projection = (ABx * APx + ABy * APy) / magnitude;
+        if (distance > EPSILON || projection < -EPSILON || projection > magnitude + EPSILON) {
+          throw Error("An overhang segment must lie on the straight side.");
+        }
+      }
     }
   }
   const targetKey = sideKey(puzzle.target.a, puzzle.target.b);
@@ -40,6 +67,7 @@ export function buildSides(puzzle) {
   sides.get(targetKey).isTarget = true;
   return sides;
 }
+
 export function sidesOfTriangle(triangle, sides) {
   return [
     sides.get(sideKey(triangle.pts[0], triangle.pts[1])),
@@ -65,6 +93,33 @@ export function readySteps(puzzle, sides, solved) {
         candidates.push(makeStep(triangle, missing[0], known, sides));
       }
     }
+  }
+  // Length along a straight line: whole = first part + overhang.
+  // The student may solve any of the three lengths when the other two are known.
+  for (const relation of puzzle.lengthRelations || []) {
+    const whole = sides.get(sideKey(relation.whole.a, relation.whole.b));
+    const parts = relation.parts.map(part => sides.get(sideKey(part.a, part.b)));
+    const group = [whole, ...parts];
+    const missing = group.filter(side => !isKnown(side, solved));
+    if (missing.length !== 1) continue;
+    const answer = missing[0];
+    const known = group.filter(side => isKnown(side, solved));
+    const isWhole = answer.key === whole.key;
+    const otherPart = parts.find(s => s.key !== answer.key);
+    const equation = isWhole ?
+      "s = " + parts.map(s => exactLength(s.length)).join(" + ") :
+      "s = " + exactLength(whole.length) + " − " + exactLength(otherPart.length);
+    candidates.push({
+      kind: "overhang",
+      triangleId: "OVERHANG",
+      sideKey: answer.key,
+      isTarget: answer.isTarget,
+      isHypotenuse: false,
+      known: known.map(s => s.key),
+      equation,
+      answer: exactLength(answer.length),
+      length: answer.length
+    });
   }
   return candidates;
 }
@@ -102,6 +157,7 @@ function makeStep(triangle, missing, known, sides) {
     expression = "(" + exactLength(hyp.length) + ")² − (" + exactLength(leg.length) + ")²";
   }
   return {
+    kind: "pythagoras",
     triangleId: triangle.id,
     sideKey: missing.key,
     isTarget: missing.isTarget,
@@ -236,5 +292,6 @@ export function puzzleIsValid(puzzle) {
     const bx = ends[1].x - corner.x, by = ends[1].y - corner.y;
     if (Math.abs(ax * bx + ay * by) > EPSILON) return false;
   }
+  if (puzzle.floor && (Math.abs(puzzle.floor.a.y - puzzle.floor.b.y) > EPSILON || puzzle.triangles.some(t => t.pts.some(v => v.y < puzzle.floor.a.y - EPSILON)))) return false;
   return solutionSteps(puzzle, sides).length === [...sides.values()].filter(side => !side.given).length;
 }
