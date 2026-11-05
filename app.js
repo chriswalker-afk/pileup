@@ -991,7 +991,6 @@ function submitAnswer(raw){
     return;
   }
   if(correctAnswer(raw,side.length)){
-    const previousCount=solved.size;
     solved.add(side.key);
     const rectangleSides=propagateRectangleSides(current,sideMap,solved);
     pendingDiscoveredKey=side.key;
@@ -1064,12 +1063,12 @@ function openPuzzle(id){
       </aside>
     </div><div class="challenge-bottom"><button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
     </main>
-    <dialog class="completion-dialog" id="completion-modal" aria-labelledby="completion-heading">
+    <dialog class="completion-dialog" id="completion-modal" aria-labelledby="completion-heading" aria-describedby="completion-subtitle">
       <div class="completion-inner">
       <div class="completion-overline">✦ A GEOMETER'S TRIAL ✦</div>
       <div class="completion-crest">${completionLaurel()}</div>
       <h2 id="completion-heading">The pile is solved.</h2>
-      <p class="completion-subtitle">You have found the final length.</p>
+      <p class="completion-subtitle" id="completion-subtitle">You have found the final length.</p>
       <div class="completion-answer" id="final-answer"></div>
       <p id="completion-hints"></p><div class="completion-controls">
       <button class="confirm" id="completion-review">REVIEW THE FULL SOLUTION →</button>
