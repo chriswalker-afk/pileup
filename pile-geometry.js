@@ -1,9 +1,7 @@
 import { makeSplitPile } from "./pile-variants.js";
 import {
-  makeCantileverChallenge,makeSuspendedProjectChallenge,
-  makeForkAndRejoinChallenge,makeBridgeChallenge,
-  makeTerracedMusesChallenge,makePlatformTerraceChallenge,
-  makeTwinPlinthAcropolis
+  makeCantileverChallenge,makeForkAndRejoinChallenge,
+  makePlatformTerraceChallenge
 } from "./distinct-piles.js";
 import { makeGreatInterlock } from "./interlocking-pile.js";
 import {
@@ -13,13 +11,9 @@ import {
 import { assertFullyVisiblePuzzle } from "./pile-visibility.js";
 
 /**
- * Mathematically exact, deliberately stacked triangle piles.
- *
- * The base triangle rests on y=0. Triangle II uses only part of its
- * hypotenuse (so the exposed part is a labelled overhang). Triangle III
- * rests on triangle II's unknown leg; later triangles rest on the
- * previous triangle's hypotenuse. This forms a real pile, not a fan
- * of triangles sharing one ground-level vertex.
+ * Legacy helper for the unchanged introductory overhang stack.
+ * The ten challenges below now deliberately use separate authored
+ * architectures, including four dependency-first replacements.
  */
 export const point = (x,y) => ({x,y});
 const vector=(a,b)=>point(b.x-a.x,b.y-a.y);
