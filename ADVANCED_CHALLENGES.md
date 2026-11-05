@@ -9,6 +9,7 @@ The original nine puzzles have been re-architected to make their **physical stru
 | The Nine Muses | 9 right triangles | Three foundations, two parallel middle terraces, matching lengths and an upper crown | **√274 cm** |
 | The Marble Terrace | 8 right triangles + 1 rectangle | A wide ground-level rectangle supporting two staggered towers | **2√38 cm** |
 | The Acropolis | 10 right triangles + 2 rectangles | Two independent plinths, separated by an open bay, joining into a high bridge | **25 cm** |
+| The Great Interlock | 13 right triangles | Two indispensable floor supports, angled wedges, two inset offsets and a 24 cm canopy | **24 cm** |
 
 ### Nine Muses
 Three foundation triangles support twin roof routes. Further outside triangles rise independently, and matched lengths reconnect their upper tips beneath a final crown. This is a layered arrangement, **not a fan rooted at one ground vertex**.
@@ -28,7 +29,7 @@ The classroom workspace still supports a general scratchpad before selecting any
 ## Acceptance and release testing
 
 - All ten puzzles must have complete, non-overlapping, mathematically correct shapes, at least one grounded support, and a real solution dependency chain.
-- The advanced collection must have visually distinct silhouettes. The Nine Muses is a terraced three-foundation pile, the Marble Terrace a **single rectangular platform**, and the Acropolis **two separate plinths**.
+- The advanced collection must have visually distinct silhouettes. The Nine Muses is a terraced three-foundation pile, the Marble Terrace a **single rectangular platform**, the Acropolis **two separate plinths**, and the Great Interlock a dense leaning assembly on two mathematical foundations.
 - Both rectangle diagonals must be necessary for completing the Acropolis.
 - The browser workflow captures every puzzle at desktop and phone widths and verifies all ten at five widths (including 320 px), with label collision protection.
 - Test geometry at ordinary and magnified views; ensure drawing/solution buttons never overlap, even on short laptops.
