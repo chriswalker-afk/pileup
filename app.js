@@ -382,28 +382,51 @@ function renderDiagram(animate=false,forceMotion=false){
     if(isFloor){
       if(ny>0){nx=-nx;ny=-ny;}
     }else if(side.isOverhang){
-      // Put the dimension line on the inside of the bottom triangle.
-      const b=centroids[0].point;
-      if(((b.x-mx)*nx+(b.y-my)*ny)<0){nx=-nx;ny=-ny;}
+      const base=centroids[0].point;
+      if(((base.x-mx)*nx+(base.y-my)*ny)<0){nx=-nx;ny=-ny;}
     }else if(overlapKeys.has(side.key)){
       if(!inward){nx=-nx;ny=-ny;}
-    }else{
-      if(inward){nx=-nx;ny=-ny;}
-    }
+    }else if(inward){nx=-nx;ny=-ny;}
     const tx=dx/length,ty=dy/length;
     let best=null;
-    const normalOffsets=[side.isOverhang?30:24,39,54,68,84];
-    for(const distance of normalOffsets){
-      for(const tangent of [0,-19,19,-37,37,-56,56]){
-        const pos={x:mx+nx*distance+tx*tangent,y:my+ny*distance+ty*tangent};
-        const boundaryPenalty=(pos.x<labelWidth/2+25 || pos.x>W-labelWidth/2-25 ||
-          pos.y<36 || pos.y>floorY+1)?20000:0;
-        const penalty=clash(pos,labelWidth,boxHeight)+boundaryPenalty+
-          (distance-normalOffsets[0])*.18+Math.abs(tangent)*.12;
-        if(!best||penalty<best.penalty)best={pos,nx,ny,score:penalty,penalty};
+    const inside=pos=>pos.x>=labelWidth/2+23&&pos.x<=W-labelWidth/2-23&&
+      pos.y>=36+boxHeight/2&&pos.y<=floorY-boxHeight/2+1;
+    const assess=(pos,flipped=0,extra=0)=>{
+      if(!inside(pos))return;
+      const collision=clash(pos,labelWidth,boxHeight);
+      const distance=Math.hypot(pos.x-mx,pos.y-my);
+      const penalty=(collision>0?100000+collision*100:0)+
+        distance*.14+flipped*19+extra;
+      if(!best||penalty<best.penalty){
+        best={pos,nx,ny,penalty,needsLeader:distance>50};
+      }
+    };
+    const normalOffsets=[side.isOverhang?26:19,29,40,55,74,95,120,150,188,232];
+    const tangents=[0,-18,18,-35,35,-55,55,-80,80,-112,112,-148,148];
+    // Place measurements alongside their own sides whenever possible.
+    // For dense advanced piles, search both normals and a much wider
+    // tangent range before permitting any rectangle collisions.
+    for(const flip of [1,-1]){
+      for(const d of normalOffsets)for(const t of tangents){
+        assess({
+          x:mx+nx*flip*d+tx*t,
+          y:my+ny*flip*d+ty*t
+        },flip<0?1:0,Math.abs(t)*.04);
       }
     }
-    return best;
+    // A compact pile can contain 25+ dimensions. If the local area is
+    // saturated, place a labelled callout in otherwise empty tablet
+    // space, joined by a thin line to its geometric side.
+    if(!best||best.penalty>=100000){
+      for(let y=59;y<=floorY-28;y+=37){
+        for(let x=45;x<=W-45;x+=34){
+          assess({x,y},0,4);
+        }
+      }
+    }
+    return best||{pos:{x:Math.max(labelWidth/2+23,Math.min(W-labelWidth/2-23,mx)),
+      y:Math.max(36+boxHeight/2,Math.min(floorY-boxHeight/2,my))},
+      nx,ny,needsLeader:false};
   }
   const sides=[...sideMap.values()].filter(side=>!side.suppressLabel);
   // Given lengths before unknown tags; annotate the overhang clearly.
@@ -432,7 +455,7 @@ function renderDiagram(animate=false,forceMotion=false){
         group.append(el("line",{x1:pt.x-nx*5,y1:pt.y-ny*5,x2:pt.x+nx*5,y2:pt.y+ny*5,class:"overhang-bracket"}));
       }
     }
-    if(overlapKeys.has(side.key)){
+    if(overlapKeys.has(side.key)||chosen.needsLeader){
       // Thin leader lines distinguish the whole hypotenuse from its
       // overlapping shorter section when both are still unknown.
       const ends=toSide(side);
