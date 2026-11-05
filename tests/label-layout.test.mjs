@@ -5,7 +5,7 @@ import {fitPileInTablet} from "../pile-visibility.js";
 import {buildSides,exactLength,sideKey} from "../puzzle-engine.js";
 import {
   layoutMeasurements,dimensionBracket,classifyRelationSides,
-  placementStats,segmentsCross
+  placementStats,segmentsCross,labelTether
 } from "../label-layout.js";
 
 const near=(a,b,eps=1e-6)=>assert.ok(Math.abs(a-b)<eps,
@@ -25,6 +25,23 @@ test("the bracket caps identify exact whole and partial edge extents",()=>{
   assert.equal(zero,null);
   const above=dimensionBracket(a,b,{nx:0,ny:1},"overhang");
   near(above.start.y,36);
+});
+
+test("all ten sides and brackets have a deterministic edge-bound physical pointer",()=>{
+  const entry={key:"ab",ends:{a:{x:100,y:120},b:{x:220,y:120}},
+    width:58,height:24,owner:{x:160,y:175}};
+  const chosen={pos:{x:160,y:90}};
+  const tether=labelTether(entry,chosen);
+  assert.deepEqual(tether.anchor,{x:160,y:120});
+  near(tether.end.x,160);near(tether.end.y,102);
+  near(tether.length,18);
+  const bracket={x:160,y:104}; // inside the chip; must not hide the endpoint.
+  assert.deepEqual(labelTether(entry,chosen,bracket),tether);
+  const outside={x:160,y:114};
+  const bracketTether=labelTether(entry,chosen,outside);
+  near(bracketTether.anchor.y,114);
+  near(bracketTether.end.y,102);
+  assert.ok(bracketTether.length>0);
 });
 
 test("relation metadata distinguishes the complete side and each part",()=>{
@@ -68,7 +85,7 @@ test("simple sides get local labels, without collisions or long leaders",()=>{
     [...p.values()].map(x=>x.pos),"Placement must be deterministic");
 });
 
-test("all nine authored piles stay bounded and collision-free at classroom widths",()=>{
+test("all ten authored piles stay bounded and collision-free at classroom widths",()=>{
   for(const puzzle of puzzles){
     const sides=buildSides(puzzle);
     const {width,height,floorY,xy}=fitPileInTablet(puzzle);
@@ -115,6 +132,27 @@ test("all nine authored piles stay bounded and collision-free at classroom width
         }))
       });
       const stats=placementStats(p);
+      // Every chip has an actual pointer anchored at the exact
+      // measured midpoint and ending at the chip border.
+      for(const item of p.values()){
+        const desc=descriptors.find(d=>d.key===item.key);
+        assert.ok(desc,"No matching side for "+item.key);
+        const midpoint={x:(desc.ends.a.x+desc.ends.b.x)/2,
+          y:(desc.ends.a.y+desc.ends.b.y)/2};
+        near(item.tether.anchor.x,midpoint.x);
+        near(item.tether.anchor.y,midpoint.y);
+        assert.ok(item.tether.length>1,
+          "Missing visible association for "+puzzle.id+" at "+availableWidth+"px");
+        const e=item.tether.end,r=item.rect;
+        const onBorder=(Math.abs(e.x-r.left)<1e-6||
+          Math.abs(e.x-r.right)<1e-6||
+          Math.abs(e.y-r.top)<1e-6||
+          Math.abs(e.y-r.bottom)<1e-6)&&
+          e.x>=r.left-1e-6&&e.x<=r.right+1e-6&&
+          e.y>=r.top-1e-6&&e.y<=r.bottom+1e-6;
+        assert.ok(onBorder,
+          "Attachment missed chip border in "+puzzle.id+" at "+availableWidth+"px");
+      }
       assert.equal(stats.labels,descriptors.length);
       assert.equal(stats.collisions,0,
         "Clashing labels on "+puzzle.id+" at "+availableWidth+"px");
