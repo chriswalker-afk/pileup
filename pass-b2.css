@@ -88,3 +88,39 @@
     animation-delay:var(--delay)!important;
   }
 }
+
+
+/* Autoplay preference is intentionally visible: browsers requesting
+   reduced motion start with AUTO OFF, but users can opt in for this
+   site without changing device accessibility settings. */
+.tablet-controls .autoplay-button{
+  min-width:82px;
+  width:auto;
+  padding:0 9px;
+  white-space:nowrap;
+  font:700 9px 'DM Sans',system-ui,sans-serif;
+  letter-spacing:.05em;
+}
+.tablet-controls .autoplay-button[aria-pressed="true"]{
+  border-color:#506d58;
+  background:#e1ecdf;
+  color:#315b3c;
+}
+.tablet-controls .autoplay-button[aria-pressed="false"]{
+  border-color:#b5a587;
+  background:#eee0c9;
+  color:#745e3f;
+}
+@media(max-width:520px){
+  .tablet-controls{gap:4px}
+  .tablet-controls .autoplay-button{
+    width:35px;min-width:35px;padding:0;
+    font-size:0;
+  }
+  .tablet-controls .autoplay-button::before{
+    content:"▶";font-size:15px;
+  }
+  .tablet-controls .autoplay-button[aria-pressed="false"]::before{
+    content:"▷";
+  }
+}

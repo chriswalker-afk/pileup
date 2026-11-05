@@ -5,6 +5,45 @@ import { fitPileInTablet } from "./pile-visibility.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+
+/** Site-specific override: respect reduced motion unless the student
+ * explicitly opts into automatic falling on this website. */
+let autoplayPreference="system";
+try{
+  const stored=localStorage.getItem("pileup-auto-fall");
+  if(stored==="on"||stored==="off")autoplayPreference=stored;
+}catch(_){}
+function autoFallEnabled(){
+  return autoplayPreference==="on"||
+    (autoplayPreference==="system"&&!reduced.matches);
+}
+function refreshAutoFallControl(){
+  const button=document.getElementById("autoplay-toggle");
+  if(!button)return;
+  const on=autoFallEnabled();
+  const reason=!on&&autoplayPreference==="system"&&reduced.matches;
+  button.textContent=on?"▶ AUTO ON":"▷ AUTO OFF";
+  button.setAttribute("aria-pressed",String(on));
+  const explanation=on?
+    "Automatic falling animation is on. Click to turn it off.":
+    reason?
+      "Automatic falling is off because your device requests reduced motion. Click to enable it for this website.":
+      "Automatic falling is off. Click to enable it.";
+  button.setAttribute("aria-label",explanation);
+  button.title=explanation;
+}
+function toggleAutoFall(){
+  autoplayPreference=autoFallEnabled()?"off":"on";
+  try{localStorage.setItem("pileup-auto-fall",autoplayPreference)}catch(_){}
+  refreshAutoFallControl();
+  if(autoFallEnabled()){
+    // An explicit opt-in starts the current puzzle immediately, too.
+    renderDiagram(true,true);
+  }else if(animating){
+    stopAnimation();
+  }
+}
+
 const p=(x,y)=>({x,y}),d=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y),mid=(a,b)=>p((a.x+b.x)/2,(a.y+b.y)/2);
 const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.x+a.y*b.y;
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
@@ -204,7 +243,7 @@ function chooseSide(key){
 let pieceAnimations=[];
 let fallRequest=0;
 function renderDiagram(animate=false,forceMotion=false){
-  const shouldAnimate=animate&&(!reduced.matches||forceMotion);
+  const shouldAnimate=animate&&(forceMotion||autoFallEnabled());
   clearTimeout(finishTimer);
   pieceAnimations.forEach(animation=>{try{animation.cancel()}catch(_){}});
   pieceAnimations=[];
@@ -485,7 +524,7 @@ function renderDiagram(animate=false,forceMotion=false){
   canvas.replaceChildren(svg);
   if(shouldAnimate){
     animating=true;
-    if(forceMotion)svg.classList.add("manual-motion");
+    if(forceMotion||(autoplayPreference==="on"&&reduced.matches))svg.classList.add("manual-motion");
     svg.classList.add("ready-to-fall");
     document.getElementById("skip").hidden=false;
     document.getElementById("replay").disabled=true;
@@ -511,8 +550,10 @@ function renderDiagram(animate=false,forceMotion=false){
       }else{
         svg.classList.add("falling");
       }
+      // Do not count down in a hidden tab before the first animation
+      // frame. requestAnimationFrame may be suspended but timers can run.
+      finishTimer=setTimeout(stopAnimation,(pieces.length-1)*stepMs+1400);
     });
-    finishTimer=setTimeout(stopAnimation,(pieces.length-1)*stepMs+1400);
   }else{
     animating=false;
     document.getElementById("skip").hidden=true;
@@ -842,6 +883,7 @@ function openPuzzle(id){
     <div class="challenge-layout"><div class="tablet">
       <div class="tablet-bar"><span><span class="symbol">✧</span> THE GEOMETER’S TABLET</span>
         <span class="tablet-controls"><button id="replay" class="small-btn replay-button" title="Replay the falling triangles" aria-label="Replay the falling triangles">↻ <span>REPLAY FALL</span></button>
+        <button id="autoplay-toggle" type="button" class="small-btn autoplay-button" aria-pressed="false" title="Enable or disable automatic falling animation">▷ AUTO OFF</button>
         <button id="labels-toggle" class="small-btn" title="Show or hide measurements" aria-label="Show or hide measurements" aria-pressed="false">◉</button></span></div>
       <div class="tablet-inside"><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
         <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED · RECTANGLES HAVE 90° CORNERS</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
@@ -868,6 +910,8 @@ function openPuzzle(id){
   setWorkingFocused(workingFocused);
   document.getElementById("workspace-size-toggle")?.addEventListener("click",()=>setWorkingFocused(!workingFocused));
   document.getElementById("replay").addEventListener("click",()=>renderDiagram(true,true));
+  document.getElementById("autoplay-toggle").addEventListener("click",toggleAutoFall);
+  refreshAutoFallControl();
   document.getElementById("skip").addEventListener("click",stopAnimation);
   document.getElementById("labels-toggle").addEventListener("click",event=>{
     visible=!visible;
