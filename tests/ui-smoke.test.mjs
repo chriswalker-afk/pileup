@@ -69,7 +69,7 @@ class FakeNode {
   close(){this.open=false;}
 }
 
-test("all nine puzzles mount with bounded labels and falling animations",async()=>{
+test("all ten puzzles mount with bounded labels and falling animations",async()=>{
   const oldGlobals={};
   const names=["document","window","location","history","localStorage","matchMedia","requestAnimationFrame","cancelAnimationFrame","setTimeout","clearTimeout"];
   for(const name of names)oldGlobals[name]=globalThis[name];
@@ -205,14 +205,14 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
         cases++;
       }
     }
-    assert.equal(cases,36);
-    // The desktop home screen should put all nine challenges beside
+    assert.equal(cases,puzzles.length*4);
+    // The desktop home screen should put all ten challenges beside
     // the introduction rather than below a full-page hero.
     location.hash="#home";show();
     const home=nodes.get("app")?.innerHTML||"";
     assert.match(home,/class="home-compact"/);
     assert.match(home,/class="home-puzzle-grid"/);
-    assert.equal((home.match(/class="challenge-card home-challenge-card"/g)||[]).length,9);
+    assert.equal((home.match(/class="challenge-card home-challenge-card"/g)||[]).length,puzzles.length);
     assert.ok(!home.includes("Three steps to discovery"));
     // Navigation must be meaningful and non-duplicative now that
     // introduction and challenge catalogue share one dashboard.
@@ -230,7 +230,7 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     };
     assertSingleNavigation(home);
     assert.match(home,/id="home" class="home-compact"/);
-    assert.match(home,/9 CHALLENGES/);
+    assert.match(home,/10 CHALLENGES/);
     assert.ok(!home.includes("The six trials"));
     // Visuals use genuine authored puzzle geometry, not one repeated
     // ornamental icon or placeholder reused on every challenge card.
@@ -246,7 +246,7 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     assert.match(home,/class="hero-goal"/);
     assert.ok(!home.includes("home-art-symbol"),
       "Replace the old placeholder triangle with the geometric tableau");
-    assert.equal((home.match(/class="difficulty-emblem difficulty-/g)||[]).length,9,
+    assert.equal((home.match(/class="difficulty-emblem difficulty-/g)||[]).length,puzzles.length,
       "Every challenge should carry a small engraved difficulty seal");
     assert.match(home,/difficulty-triangle/);
     assert.match(home,/difficulty-double/);
@@ -257,7 +257,7 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     location.hash="#puzzles";show();
     const catalogue=nodes.get("app")?.innerHTML||"";
     assertSingleNavigation(catalogue);
-    assert.equal((catalogue.match(/class="challenge-card home-challenge-card"/g)||[]).length,9,
+    assert.equal((catalogue.match(/class="challenge-card home-challenge-card"/g)||[]).length,puzzles.length,
       "Challenges link should expose every puzzle");
 
     location.hash="#first-fall";show();
