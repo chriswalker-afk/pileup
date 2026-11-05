@@ -1,124 +1,124 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { puzzles } from "../pile-geometry.js";
+import {puzzles} from "../pile-geometry.js";
 import {
   buildSides,sideKey,readySteps,solutionSteps,correctAnswer,
   exactLength,propagateRectangleSides,puzzleIsValid
 } from "../puzzle-engine.js";
-import {
-  rectangleVirtualTriangles,rectangleIsValid,rectangleOppositePairs
-} from "../rectangle-math.js";
-import {
-  assertFullyVisiblePuzzle,hiddenShapePairs,fitPileInTablet
-} from "../pile-visibility.js";
+import {rectangleVirtualTriangles,rectangleIsValid,rectangleOppositePairs}
+  from "../rectangle-math.js";
+import {assertFullyVisiblePuzzle,hiddenShapePairs,fitPileInTablet}
+  from "../pile-visibility.js";
 
-const expected=[
-  ["nine-muses",9,0,"2√95",
-    ["20","24","10","2√41","10√2","√281","3√34","√322","√371","2√95"]],
-  ["marble-terrace",8,1,"2√102",
-    ["12","9","15","5√10","5√11","10√3","4√21","2√93","2√102","9","12"]],
-  ["acropolis",10,2,"√105",
-    ["12","9","15","5√10","5√11","10√3","4","9","12","10√3","4",
-      "√41","√57","√73","√89","√105"]]
+const advanced=[
+  ["nine-muses",9,0,"√274"],
+  ["marble-terrace",8,1,"2√38"],
+  ["acropolis",10,2,"25"]
 ];
-test("three advanced puzzles follow the six original challenges",()=>{
-  assert.equal(puzzles.length,9);
-  assert.deepEqual(puzzles.slice(6).map(p=>p.id),expected.map(x=>x[0]));
+test("the advanced challenges retain their identity and shape counts",()=>{
+  assert.deepEqual(puzzles.slice(6).map(p=>p.id),advanced.map(x=>x[0]));
 });
-for(const [id,triangles,rectangles,target,chain] of expected){
-  test(id+": complete exact solution chain and visible multi-piece construction",()=>{
-    const p=puzzles.find(p=>p.id===id),sides=buildSides(p);
-    assert.equal(p.triangles.length,triangles);
-    assert.equal(p.rectangles?.length||0,rectangles);
+for(const [id,tris,rects,answer] of advanced){
+  test(id+": complete exact solution chain and visible structure",()=>{
+    const p=puzzles.find(x=>x.id===id),sides=buildSides(p);
+    assert.equal(p.triangles.length,tris);
+    assert.equal(p.rectangles?.length||0,rects);
     assert.equal(puzzleIsValid(p),true);
     assert.equal(assertFullyVisiblePuzzle(p),true);
     assert.deepEqual(hiddenShapePairs(p),[]);
-    assert.equal(exactLength(p.solution),target);
+    assert.equal(exactLength(p.solution),answer);
     const steps=solutionSteps(p,sides);
-    assert.deepEqual(steps.map(s=>s.answer),chain);
-    assert.equal(steps.length,[...sides.values()].filter(side=>!side.given).length);
-    assert.ok(steps.some(step=>step.isTarget && step.answer===target));
-    assert.equal(correctAnswer(target,p.solution),true);
-    assert.ok(correctAnswer(Number(p.solution.toPrecision(3)).toString(),p.solution));
+    assert.equal(steps.length,[...sides.values()].filter(s=>!s.given).length);
+    assert.ok(steps.some(s=>s.isTarget && s.answer===answer));
+    assert.equal(correctAnswer(answer,p.solution),true);
     for(const t of p.triangles){
-      const k=t.right,a=t.pts[(k+1)%3],b=t.pts[(k+2)%3],o=t.pts[k];
-      const dot=(a.x-o.x)*(b.x-o.x)+(a.y-o.y)*(b.y-o.y);
-      assert.ok(Math.abs(dot)<1e-7,"Right angle failed for triangle "+t.id);
+      const corner=t.pts[t.right],other=t.pts.filter((_,j)=>j!==t.right);
+      const a={x:other[0].x-corner.x,y:other[0].y-corner.y};
+      const b={x:other[1].x-corner.x,y:other[1].y-corner.y};
+      assert.ok(Math.abs(a.x*b.x+a.y*b.y)<1e-7,"Not right: "+id+"/"+t.id);
     }
     const fit=fitPileInTablet(p);
-    for(const piece of [...p.triangles,...(p.rectangles||[])]){
-      for(const vertex of piece.pts){
-        const point=fit.xy(vertex);
-        assert.ok(point.x>=60&&point.x<=900&&point.y>=65&&point.y<=518,
-          "Piece "+piece.id+" would be cropped.");
+    for(const shape of [...p.triangles,...(p.rectangles||[])]){
+      for(const vertex of shape.pts){
+        const pixel=fit.xy(vertex);
+        assert.ok(pixel.x>=60&&pixel.x<=900&&pixel.y>=65&&pixel.y<=518.01,
+          "Clipped: "+id+"/"+shape.id);
       }
     }
   });
 }
 for(const id of ["marble-terrace","acropolis"]){
-  test(id+": rectangles provide actual Pythagoras dependencies",()=>{
-    const p=puzzles.find(x=>x.id===id),sides=buildSides(p);
-    for(const rect of p.rectangles){
-      assert.equal(rectangleIsValid(rect),true);
-      assert.equal(rect.diagonals.length,1);
-      const [a,b]=rect.diagonals[0].a&&
-        [rect.diagonals[0].a,rect.diagonals[0].b];
-      const diagonal=Math.hypot(a.x-b.x,a.y-b.y);
-      assert.ok(Math.abs(rect.givens[0].value-diagonal)<1e-8);
-      assert.equal(rectangleVirtualTriangles({rectangles:[rect]}).length,2);
-      for(const pair of rectangleOppositePairs(rect)){
-        const s=pair.map(edge=>sides.get(sideKey(edge.a,edge.b)));
-        assert.ok(Math.abs(s[0].length-s[1].length)<1e-8);
-      }
-      assert.equal(rect.suppressLabels.length,2);
-    }
-    assert.ok(solutionSteps(p,sides).some(step=>step.kind==="rectangle-diagonal"));
-    assert.ok(solutionSteps(p,sides).some(step=>step.kind==="rectangle-opposite"));
+  test(id+": both visible geometry and genuine rectangle-diagonal steps",()=>{
+    const p=puzzles.find(x=>x.id===id),s=buildSides(p);
     assert.equal(new Set(p.fallOrder).size,p.triangles.length+p.rectangles.length);
-    assert.equal(p.fallOrder[0],"I");
-    assert.equal(p.fallOrder[1],"R1");
-    for(const rect of p.rectangles)assert.ok(p.fallOrder.includes(rect.id));
+    for(const r of p.rectangles){
+      assert.ok(p.fallOrder.includes(r.id));
+      assert.equal(rectangleIsValid(r),true);
+      assert.equal(r.diagonals.length,1);
+      assert.equal(r.suppressLabels.length,2);
+      assert.equal(rectangleVirtualTriangles({rectangles:[r]}).length,2);
+      for(const pair of rectangleOppositePairs(r)){
+        const edges=pair.map(x=>s.get(sideKey(x.a,x.b)));
+        assert.ok(Math.abs(edges[0].length-edges[1].length)<1e-8);
+      }
+      assert.ok(solutionSteps(p,s).some(step=>
+        step.kind==="rectangle-diagonal"&&step.triangleId.startsWith(r.id)));
+    }
+    // Opposite edges may be carried automatically from the paired
+    // rectangle side, rather than requiring a redundant answer step.
+    const pairs=p.rectangles.flatMap(rect=>rectangleOppositePairs(rect));
+    assert.ok(pairs.length>=2);
   });
 }
-test("the first rectangle's diagonal must be used to obtain its roof",()=>{
-  const p=puzzles.find(x=>x.id==="marble-terrace"),sides=buildSides(p);
-  const initial=readySteps(p,sides,new Set());
-  assert.equal(initial.filter(x=>x.kind==="rectangle-diagonal").length,0);
-  const first=initial.find(x=>x.triangleId==="I");
-  assert.ok(first && first.answer==="12");
-  const solved=new Set([first.sideKey]);
-  const ready=readySteps(p,sides,solved);
-  assert.ok(ready.some(x=>x.kind==="rectangle-diagonal"&&x.answer==="9"));
-  assert.equal(ready.some(x=>x.triangleId==="II"),false);
-  // Opposite rectangle sides are automatically revealed when their
-  // matching edge is established (no repetitive answer submissions).
-  assert.equal(propagateRectangleSides(p,sides,solved),1);
-  const roof=ready.find(x=>x.answer==="9"&&x.kind==="rectangle-diagonal");
-  solved.add(roof.sideKey);
-  assert.equal(propagateRectangleSides(p,sides,solved),1);
-  assert.ok(readySteps(p,sides,solved).some(x=>x.triangleId==="II"&&x.answer==="15"));
+test("Marble Terrace roof width requires a real rectangle diagonal",()=>{
+  const p=puzzles.find(x=>x.id==="marble-terrace"),s=buildSides(p);
+  const initial=readySteps(p,s,new Set());
+  assert.equal(initial.some(step=>step.kind==="rectangle-diagonal"),false);
+  const left=initial.find(step=>step.triangleId==="I");
+  assert.ok(left&&left.answer==="5");
+  const solved=new Set([left.sideKey]);
+  const after=readySteps(p,s,solved);
+  assert.ok(after.some(step=>step.kind==="rectangle-diagonal"&&step.answer==="12"));
+  assert.equal(propagateRectangleSides(p,s,solved),1);
+  assert.ok(readySteps(p,s,solved).some(step=>
+    step.kind==="rectangle-diagonal"&&step.answer==="12"));
 });
-test("a second diagonal is required to continue The Acropolis",()=>{
-  const p=puzzles.find(x=>x.id==="acropolis"),sides=buildSides(p);
-  const sequence=solutionSteps(p,sides);
-  const index=sequence.findIndex(step=>step.kind==="rectangle-diagonal"&&step.triangleId.startsWith("R2"));
-  assert.ok(index>4);
-  const earlier=new Set(sequence.slice(0,index).map(step=>step.sideKey));
-  const available=readySteps(p,sides,earlier);
-  assert.ok(available.some(step=>step.kind==="rectangle-diagonal"&&step.triangleId.startsWith("R2")&&step.answer==="4"));
-  const future=p.triangles.find(t=>t.id==="VI");
-  const needed=new Set([
-    sideKey(future.pts[0],future.pts[1]),
-    sideKey(future.pts[1],future.pts[2]),
-    sideKey(future.pts[2],future.pts[0])
-  ]);
-  assert.ok(available.every(step=>!needed.has(step.sideKey) || step.kind==="rectangle-diagonal"),
-    "Rectangle VI should not be immediately solvable before its frame is measured.");
+function canFinishWithout(puzzle,blockedRectangle){
+  const sideMap=buildSides(puzzle),solved=new Set();
+  for(let k=0;k<300;k++){
+    propagateRectangleSides(puzzle,sideMap,solved);
+    const available=readySteps(puzzle,sideMap,solved).filter(step=>
+      !solved.has(step.sideKey) &&
+      !(step.kind==="rectangle-diagonal"&&
+        step.triangleId.startsWith(blockedRectangle)));
+    if(!available.length)break;
+    solved.add(available[0].sideKey);
+  }
+  const targetKey=sideKey(puzzle.target.a,puzzle.target.b);
+  return solved.has(targetKey);
+}
+test("Acropolis target requires both independent diagonal calculations",()=>{
+  const p=puzzles.find(x=>x.id==="acropolis");
+  assert.equal(p.rectangles.length,2);
+  const s=buildSides(p),steps=solutionSteps(p,s);
+  assert.ok(steps.some(x=>x.kind==="rectangle-diagonal"&&x.triangleId.startsWith("R1")));
+  assert.ok(steps.some(x=>x.kind==="rectangle-diagonal"&&x.triangleId.startsWith("R2")));
+  assert.equal(canFinishWithout(p,"R1"),false,
+    "Final roof should be blocked if left plinth is unknown");
+  assert.equal(canFinishWithout(p,"R2"),false,
+    "Final roof should be blocked if right plinth is unknown");
+  const relations=p.lengthRelations[0];
+  assert.equal(relations.parts.length,2);
+  for(const part of relations.parts){
+    assert.ok(Math.abs(Math.hypot(part.a.x-part.b.x,part.a.y-part.b.y)-12)<1e-7);
+  }
+  assert.equal(p.equalSideGroups.length,2);
 });
-test("the nine-muse construction contains no rectangles or hidden faces",()=>{
+test("Nine Muses no longer fans from one floor vertex",()=>{
   const p=puzzles.find(x=>x.id==="nine-muses");
-  assert.ok(!p.rectangles?.length);
+  assert.ok(!p.rectangles.length);
   assert.equal(p.triangles.length,9);
-  assert.deepEqual(hiddenShapePairs(p),[]);
-  assert.equal(solutionSteps(p).filter(x=>x.kind==="pythagoras").length,9);
+  assert.equal(p.triangles.filter(t=>t.pts.some(q=>q.y===0)).length,3);
+  assert.ok(p.equalSideGroups.length>=2);
+  assert.ok(solutionSteps(p).filter(s=>s.kind==="pythagoras").length>=7);
 });

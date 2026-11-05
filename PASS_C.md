@@ -1,3 +1,7 @@
+> **Historical archive.** This document describes the previous six-puzzle geometry before the 2026 architecture redesign. The answer chains below are NOT the current ones. For the nine live puzzle structures and answers, see [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md).
+
+---
+
 # Pass C — Curated puzzles with different overlapping relationships
 
 ## Scope and design principles

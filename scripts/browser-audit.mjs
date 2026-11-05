@@ -205,8 +205,10 @@ try{
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
         if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
-        if(["first-fall","acropolis","twin-paths","split-project"].includes(id)&&
-          ["desktop","phone"].includes(name))await snap(page,id+"-"+name);
+        // Each rewritten silhouette is visually audited at both
+        // desktop and phone size; do not rely only on overlap counts.
+        if(["desktop","phone"].includes(name))
+          await snap(page,"architecture-"+id+"-"+name);
         return d;
       });
     }
@@ -591,6 +593,60 @@ try{
     await reduce.page.locator("#skip").click();
   });
   await reduce.context.close();
+  const migration=await newPage(1366,768,true);
+  await run("redesigned puzzle progress does not inherit invalid older solved sides",async()=>{
+    await migration.page.goto(base+"/#home",{waitUntil:"domcontentloaded"});
+    const data=await migration.page.evaluate(async()=>{
+      const {puzzles}=await import("./pile-geometry.js");
+      const {sideKey,exactLength}=await import("./puzzle-engine.js");
+      const old=puzzles.find(x=>x.id==="projecting-edge");
+      const key=sideKey(old.target.a,old.target.b);
+      const stored=JSON.stringify({solved:[key],workingBySide:{},
+        hintLevels:{},hintsUsed:1});
+      localStorage.setItem("pileup-pass-b-v2-projecting-edge",stored);
+      return {key,answer:exactLength(old.solution),old:stored};
+    });
+    await open(migration.page,"projecting-edge");
+    const oldSolved=await migration.page.evaluate(key=>{
+      const chip=[...document.querySelectorAll(".side-chip")].find(x=>
+        x.getAttribute("data-side-key")===key);
+      return chip?.classList.contains("solved")||false;
+    },data.key);
+    insist(!oldSolved,"An old answer was incorrectly loaded into changed geometry");
+    await migration.page.locator("#side-select").selectOption(data.key);
+    await migration.page.locator("#answer-input").fill(data.answer);
+    await migration.page.locator("#answer-form button[type=submit]").click();
+    const saved=await migration.page.evaluate(()=>({
+      prior:localStorage.getItem("pileup-pass-b-v2-projecting-edge"),
+      current:localStorage.getItem("pileup-architecture-v1-projecting-edge")
+    }));
+    insist(saved.prior===data.old,"Historical student working was overwritten");
+    insist(saved.current&&JSON.parse(saved.current).solved.includes(data.key),
+      "New solution was not saved under the redesigned puzzle version");
+    await migration.page.evaluate(()=>localStorage.removeItem("pileup-pass-b-v2-projecting-edge"));
+    return {newKey:"pileup-architecture-v1-projecting-edge",oldPreserved:true};
+  });
+  await run("unchanged first challenge continues using saved student progress",async()=>{
+    await migration.page.goto(base+"/#home",{waitUntil:"domcontentloaded"});
+    const side=await migration.page.evaluate(async()=>{
+      const {puzzles}=await import("./pile-geometry.js");
+      const {sideKey}=await import("./puzzle-engine.js");
+      const p=puzzles.find(x=>x.id==="first-fall");
+      const key=sideKey(p.target.a,p.target.b);
+      localStorage.setItem("pileup-pass-b-v2-first-fall",
+        JSON.stringify({solved:[key],workingBySide:{}}));
+      return key;
+    });
+    await open(migration.page,"first-fall");
+    const restored=await migration.page.evaluate(key=>{
+      const chip=[...document.querySelectorAll(".side-chip")].find(x=>
+        x.getAttribute("data-side-key")===key);
+      return chip?.classList.contains("solved")||false;
+    },side);
+    insist(restored,"Unchanged First Fall lost its previous progress");
+    return {originalProgressPreserved:true};
+  });
+  await migration.context.close();
   for(const [name,width,height] of [["phone",390,844],["small-phone",320,568]]){
     const target=await newPage(width,height,true);
     await run(name+" / responsive completion dialog and reachable bottom actions",async()=>{
