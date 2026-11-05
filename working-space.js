@@ -5,9 +5,9 @@
  * A keyboard-editable LaTeX input remains functional if its CDN is blocked.
  */
 export const MAX_MATH_LINES = 16;
-export const MAX_STROKES = 200;
+export const MAX_STROKES = 120;
 const MAX_LATEX = 260;
-const MAX_POINTS = 1400;
+const MAX_POINTS = 420;
 let nextLineId = 1;
 
 function freshLine(latex = "") {
@@ -29,7 +29,7 @@ export function sanitizeWorking(input) {
       width:Math.max(1,Math.min(8,Number(s.width)||2.4)),
       points:s.points.slice(0,MAX_POINTS)
         .filter(p=>Array.isArray(p)&&p.length===2&&Number.isFinite(+p[0])&&Number.isFinite(+p[1]))
-        .map(p=>[Math.max(0,Math.min(1,+p[0])),Math.max(0,Math.min(1,+p[1]))])
+        .map(p=>[Number(Math.max(0,Math.min(1,+p[0])).toFixed(4)),Number(Math.max(0,Math.min(1,+p[1])).toFixed(4))])
     })).filter(s=>s.points.length) : [];
   return {tab,lines:lines.length?lines:[freshLine()],strokes};
 }
