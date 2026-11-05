@@ -257,27 +257,6 @@ function renderDiagram(animate=false,forceMotion=false){
     });
     svg.append(group);
   });
-  // Matching tick marks indicate equal lengths, not extra given values.
-  // Their geometry is drawn on the actual side (above the hit targets
-  // and below the labels), so students see the mathematical convention.
-  for(const [groupIndex,group] of (current.equalSideGroups||[]).entries()){
-    for(const descriptor of group){
-      const side=sideMap.get(sideKey(descriptor.a,descriptor.b));
-      if(!side)continue;
-      const endpoints=toSide(side),dx=endpoints.b.x-endpoints.a.x,dy=endpoints.b.y-endpoints.a.y;
-      const L=Math.hypot(dx,dy),nx=-dy/L,ny=dx/L,tx=dx/L,ty=dy/L;
-      const ticks=Math.min(3,groupIndex+2);
-      for(let j=0;j<ticks;j++){
-        const shift=(j-(ticks-1)/2)*8;
-        const cx=(endpoints.a.x+endpoints.b.x)/2+tx*shift;
-        const cy=(endpoints.a.y+endpoints.b.y)/2+ty*shift;
-        svg.append(el("line",{
-          x1:cx-nx*8,y1:cy-ny*8,x2:cx+nx*8,y2:cy+ny*8,
-          class:"equal-side-tick"
-        }));
-      }
-    }
-  }
   if(selectedSide){
     const side=sideMap.get(selectedSide),ends=toSide(side);
     svg.append(el("line",{x1:ends.a.x,y1:ends.a.y,x2:ends.b.x,y2:ends.b.y,class:"active-side"}));
@@ -303,6 +282,29 @@ function renderDiagram(animate=false,forceMotion=false){
   }
 
   const labels=el("g",{class:"side-labels"+(shouldAnimate?" waiting":"")});
+  // Matching tick marks are measurements: hide and reveal them with all
+  // other measurement labels after the final piece has settled.
+  // Their geometry is drawn on the actual side (above the hit targets
+  // and below the labels), so students see the mathematical convention.
+  for(const [groupIndex,group] of (current.equalSideGroups||[]).entries()){
+    for(const descriptor of group){
+      const side=sideMap.get(sideKey(descriptor.a,descriptor.b));
+      if(!side)continue;
+      const endpoints=toSide(side),dx=endpoints.b.x-endpoints.a.x,dy=endpoints.b.y-endpoints.a.y;
+      const L=Math.hypot(dx,dy),nx=-dy/L,ny=dx/L,tx=dx/L,ty=dy/L;
+      const ticks=Math.min(3,groupIndex+2);
+      for(let j=0;j<ticks;j++){
+        const shift=(j-(ticks-1)/2)*8;
+        const cx=(endpoints.a.x+endpoints.b.x)/2+tx*shift;
+        const cy=(endpoints.a.y+endpoints.b.y)/2+ty*shift;
+        labels.append(el("line",{
+          x1:cx-nx*8,y1:cy-ny*8,x2:cx+nx*8,y2:cy+ny*8,
+          class:"equal-side-tick"
+        }));
+      }
+    }
+  }
+
   const occupied=[];
   const actualW=canvas.getBoundingClientRect().width||780;
   const actualH=Math.min(490,Math.max(340,actualW*590/960));
