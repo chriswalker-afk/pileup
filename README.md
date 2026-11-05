@@ -130,3 +130,7 @@ The previously balanced/open-bridge constructions were replaced after classroom 
 ## Diagram readability after the four-puzzle redesign
 
 [Diagram Readability Pass D](LABEL_READABILITY_PASS_D.md) checks every measurement's **exact side attachment**, including dense clusters of small right triangles. Visible measurements have fine anchored connectors to their own segments; six-plus-piece puzzles initially show givens and target x, revealing intermediate unknowns when a piece is selected (which also activates a focused local view). Givens and x stay visible. **All Labels** genuinely reveals postponed unknowns and respects the student's explicit preference. The automated browser audit verifies attachment geometry on every challenge, in addition to label collisions and responsive layout.
+
+## Fixed-size measurement labels while zooming
+
+The diagram's `+ / − / FIT` controls still magnify the triangles from 100% to 400%, but **numbers, ?/x chips and their subtle side-attachment connectors no longer grow**. Each label and its leader counter-scales around the exact side it describes, so its on-screen size and separation remain stable during zoom, drag, pinch, Ctrl/Command-wheel and Locate. This is a rendering-only change; triangle measurements, correct answers, hint dependencies and saved student progress are unchanged. The Chromium audit checks rendered label widths and tether endpoints at 100%, 125%, 200% and 400%.
