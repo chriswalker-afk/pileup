@@ -71,6 +71,30 @@ const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by t
  * icon. Colour blocks, true overhangs, and rectangle diagonals allow
  * each of the nine challenges to have its own visual identity.
  */
+/**
+ * Engraved difficulty seal. Uses the puzzle's actual tier rather than
+ * repeating a decorative emoji. The label remains in text for clarity;
+ * the SVG is silent to screen readers.
+ */
+function difficultyEmblem(puzzle){
+  const tier=String(puzzle.difficulty||"").toUpperCase();
+  const shape=tier.includes("GRAND")?"temple":
+    tier.includes("MASTER")?"laurel":
+    tier.includes("EXPERT")||tier.includes("ADVANCED")?"column":
+    tier.includes("INTERMEDIATE")||tier.includes("DEVELOPING")?"double":"triangle";
+  const drawings={
+    triangle:'<path d="M18 7L29 27H7Z M12 23V27H16" />',
+    double:'<path d="M6 25L15 9L24 25Z M16 27L25 11L31 27Z" />',
+    column:'<path d="M5 12L18 6L31 12 M7 14H29 M10 14V26 M16 14V26 M22 14V26 M28 14V26 M6 28H30" />',
+    laurel:'<path d="M18 8L27 24H9Z M9 28C3 24 4 16 8 12 M27 28C33 24 32 16 28 12 M6 17L10 18 M7 22L12 23 M30 17L26 18 M29 22L24 23" />',
+    temple:'<path d="M4 14L18 6L32 14 M7 16H29 M9 16V27 M15 16V27 M21 16V27 M27 16V27 M5 29H31" />'
+  };
+  return '<svg class="difficulty-emblem difficulty-'+shape+
+    '" aria-hidden="true" focusable="false" viewBox="0 0 36 36">'+
+    '<circle class="difficulty-emblem-ring" cx="18" cy="18" r="16"/>'+
+    '<g class="difficulty-emblem-drawing">'+drawings[shape]+'</g></svg>';
+}
+
 function miniPreview(puzzle){
   const shapes=[...puzzle.triangles,...(puzzle.rectangles||[])];
   const points=shapes.flatMap(t=>t.pts);
@@ -194,7 +218,7 @@ function home(gallery=false){
       </div>
       <div class="home-puzzle-grid">
       ${puzzles.map((puzzle,index)=>`<button class="challenge-card home-challenge-card" data-puzzle="${puzzle.id}" aria-label="Challenge ${index+1}: ${puzzle.title}. ${puzzle.difficulty}">
-        <span class="home-card-number">${String(index+1).padStart(2,"0")} / ${puzzle.difficulty}</span>
+        <span class="home-card-number"><span>${String(index+1).padStart(2,"0")} / ${puzzle.difficulty}</span>${difficultyEmblem(puzzle)}</span>
         ${miniPreview(puzzle)}
         <span class="home-card-copy">
           <strong class="home-card-title">${escapeHtml(puzzle.title)}</strong>
@@ -952,14 +976,22 @@ function openPuzzle(id){
   const following=puzzles[(index+1)%puzzles.length];
   root.innerHTML=header()+`<main class="challenge-main">
     <div class="challenge-heading"><a class="back" href="#puzzles">← ALL CHALLENGES</a>
-      <span class="chapter">CHALLENGE ${String(index+1).padStart(2,"0")} / ${String(puzzles.length).padStart(2,"0")}</span>
+      <span class="chapter">${difficultyEmblem(puzzle)}<span>CHALLENGE ${String(index+1).padStart(2,"0")} / ${String(puzzles.length).padStart(2,"0")}</span></span>
       <h1>${puzzle.title}</h1><p>${puzzle.description}</p><p class="challenge-tags">${(puzzle.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</p></div>
     <div class="challenge-layout"><div class="tablet">
-      <div class="tablet-bar"><span><span class="symbol">✧</span> THE GEOMETER’S TABLET</span>
+      <div class="tablet-bar"><span class="tablet-bar-brand">
+        <span class="tablet-seal" aria-hidden="true"><svg viewBox="0 0 30 30" focusable="false">
+          <circle cx="15" cy="15" r="12"/><path d="M15 4V26 M4 15H26 M15 8L23 22H7Z"/>
+        </svg></span> THE GEOMETER’S TABLET</span>
         <span class="tablet-controls"><button id="replay" class="small-btn replay-button" title="Replay the falling triangles" aria-label="Replay the falling triangles">↻ <span>REPLAY FALL</span></button>
         <button id="autoplay-toggle" type="button" class="small-btn autoplay-button" aria-pressed="false" title="Enable or disable automatic falling animation">▷ AUTO OFF</button>
         <button id="labels-toggle" class="small-btn" title="Show or hide measurements" aria-label="Show or hide measurements" aria-pressed="false">◉</button></span></div>
-      <div class="tablet-inside"><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
+      <div class="tablet-inside"><div class="tablet-engraving" aria-hidden="true">
+          <span class="tablet-engraving-corner tablet-engraving-nw">⌜</span>
+          <span class="tablet-engraving-corner tablet-engraving-ne">⌝</span>
+          <span class="tablet-engraving-corner tablet-engraving-sw">⌞</span>
+          <span class="tablet-engraving-corner tablet-engraving-se">⌟</span>
+        </div><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
         <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED · RECTANGLES HAVE 90° CORNERS</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
       </div></div>
       <aside class="side"><div class="side-topline"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><button id="workspace-size-toggle" type="button" class="workspace-size-toggle" aria-pressed="false" title="Widen the student working panel">↔ More working room</button></div><div class="rule"></div>
