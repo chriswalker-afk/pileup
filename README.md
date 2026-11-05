@@ -1,6 +1,6 @@
 # Pythagoras Pile Up
 
-A mathematics puzzle website with an Ancient Greek aesthetic: watch right-angled triangles land on the geometer's tablet, then discover a chain of missing lengths using Pythagoras' theorem.
+An Ancient Greek-style mathematical puzzle website where nine genuinely different triangle-and-rectangle structures fall into place. Explore bridges, overhangs, forks, open gaps and real platforms; discover hidden lengths using Pythagoras and exact geometric relationships.
 
 ## Website
 
@@ -12,7 +12,7 @@ A mathematics puzzle website with an Ancient Greek aesthetic: watch right-angled
 2. Select a marked side or click a triangle to investigate it. A side shared by two triangles has one mathematical length.
 3. Enter an exact length (`√281` or `sqrt(281)`) or a suitably rounded decimal.
 4. Record your reasoning as properly typeset mathematical lines or draw directly onto the sketch pad. Explore independently or request progressively revealing hints.
-5. Find `x` to finish, then review the full worked solution. Two puzzles also unlock perimeter and area extensions.
+5. Find `x` to finish, then review the full worked solution. Twin Paths also unlocks perimeter and area extensions.
 
 Any correct length can be entered, in any order; students may solve the puzzle on paper and enter the final answer directly.
 
@@ -38,7 +38,8 @@ npm run check
 - `pass-b.css` — student-solving UI styles
 - `app.js` — frontend geometry, interactions, progress and animations
 - `puzzle-engine.js` — dependency graph, equal-length marks, valid answer evaluation and worked steps
-- `pile-geometry.js` — curated puzzle catalogue with overhang layouts
+- `pile-geometry.js` — nine structurally distinct puzzles with exact mathematical givens
+- `distinct-piles.js` — deliberately authored cantilevers, split foundations, bridges, forks, terraces and twin plinths
 - `pile-variants.js` — precise split-edge and bridging arrangements
 - `pass-c.css` — collection preview and extension styling
 - `working-space.js` — line-by-line maths editor and drawing pad
@@ -47,7 +48,7 @@ npm run check
 - `tests/` — automated checks
 - `.github/workflows/` — GitHub Pages and validation workflows
 
-The library contains **nine** original, mathematically exact puzzles including inset and projecting overhangs, one long side covering two shorter sides, independent branches, matching equal-length ticks, exact surds and compound-shape extensions. See [`PASS_C.md`](PASS_C.md) for mathematical answers and QA requirements.
+The library contains **nine distinct geometries**: a first rising spine, two-arm cantilever, shared-side puzzle, split foundation with an overhanging beam, fork-and-rejoin arch, open bridge, triple-base terrace, rectangle platform and two-plinth Acropolis. Exact targets and the current QA standard are in [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md). Historical six-puzzle answer lists are archived.
 
 ## Credits
 
@@ -67,7 +68,7 @@ Students can switch between a compact or wider working panel on desktop, enlarge
 
 ## Advanced puzzles and student workspace
 
-Three harder problems extend the catalogue: **The Nine Muses** (9 triangles), **The Marble Terrace** (8 triangles + rectangle) and **The Acropolis** (10 triangles + two rectangles). Rectangles contribute mathematical reasoning through their diagonals and equal opposite sides. See [Advanced challenges](ADVANCED_CHALLENGES.md) for the answer chains and testing checklist.
+The advanced collection uses **different architectures**: The Nine Muses (three foundations and nine triangles), The Marble Terrace (eight triangles on one real rectangle platform), and The Acropolis (ten triangles and **two independent rectangle plinths**). Both Acropolis diagonals are required to reach its 25 cm finale. See [Advanced challenges](ADVANCED_CHALLENGES.md) and [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md).
 
 The student panel prioritises maths lines and handwriting rather than explanatory text. A general scratchpad is available before choosing a side, with separate per-side working saved locally.
 
@@ -116,3 +117,7 @@ Hover or focus a measurement to see a temporary trace of its **exact side and en
 ## Label clarity — Pass B
 
 The diagram now places given, target and unknown measurements using a proximity-aware layout that avoids overlapping chips and discourages crossing leader lines. On mathematically defined straight-line relationships, **solid whole-length brackets** and **lighter dashed partial-length brackets** show precisely which section is being measured. Permanent connector lines appear only for distant callouts; Pass A's Focus, exact-side trace and Locate controls remain. Read [Label Clarity Pass B](LABEL_CLARITY_PASS_B.md) for the design, testing and review checklist.
+
+## Nine different puzzle architectures (2026)
+
+Seven of the nine constructions have been substantially redrawn to make their supports and solving routes less repetitive. First Fall and Twin Paths retain their original mathematics; the other seven now have distinct cantilever, two-base, forked, bridge, terrace or plinth structures. All nine use physically connected non-overlapping shapes and complete exact solutions. The older browser-local progress for redesigned puzzles is preserved separately, while the two unchanged challenges keep their saved work. See [Current architecture and exact target values](PUZZLE_ARCHITECTURE_2026.md).
