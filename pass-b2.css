@@ -1,0 +1,66 @@
+/* Diagram refinement: real floor, compact measurements, and a visible fall. */
+#diagram{min-width:0}
+#diagram svg{width:100%;height:468px;max-width:100%;overflow:visible;display:block}
+#diagram .tablet-grid line{stroke:#ac9979;stroke-width:.8px;opacity:.17}
+#diagram svg .piece polygon{stroke:#403c34;stroke-width:2px;stroke-linejoin:round;vector-effect:non-scaling-stroke;fill-opacity:.96}
+#diagram svg .piece:hover polygon,#diagram svg .piece.selected polygon{stroke-width:3px}
+#diagram svg .piece path.angle-square{fill:none;stroke:#413d35;stroke-width:1.7px;vector-effect:non-scaling-stroke}
+#diagram svg .triangle-number{font:600 15px 'Cinzel',serif;fill:#383b34;opacity:.65;pointer-events:none}
+#diagram svg .floor-edge{stroke:#87745c;stroke-width:3px;stroke-linecap:round}
+#diagram svg .stone-seam{stroke:#97866d;stroke-width:1.5px;opacity:.55}
+#diagram svg .active-side{stroke:#aa7041;stroke-width:5px;stroke-linecap:round;vector-effect:non-scaling-stroke;pointer-events:none}
+#diagram svg .side-hit{stroke:transparent;stroke-width:20px;vector-effect:non-scaling-stroke;pointer-events:stroke;cursor:pointer}
+#diagram svg .side-hit:focus-visible{stroke:#ad885852}
+#diagram svg .side-chip{cursor:pointer}
+#diagram svg .side-chip rect{stroke-width:1px;stroke:#bba98c;fill:#fbf6e9;opacity:.98}
+#diagram svg .side-chip.unknown rect{stroke:#c7b794;stroke-dasharray:3 2;fill:#f9f1df}
+#diagram svg .side-chip.target rect{stroke:#dbc49b;fill:#344f42;stroke-width:1.1px}
+#diagram svg .side-chip.solved rect{stroke:#92b19a;fill:#d8e5d6}
+#diagram svg .side-chip.given rect{fill:#faf4e6;stroke:#d1c4aa;stroke-width:.6px}
+#diagram svg .side-chip.overhang rect{fill:#f0e1c3;stroke:#b49157;stroke-width:1px}
+#diagram svg .side-chip.selected rect{stroke:#a97430;stroke-width:2.1px}
+#diagram svg .side-chip .measure-text{
+  fill:#3a3832;stroke:none;paint-order:normal;
+  font-family:'DM Sans',system-ui,sans-serif;font-weight:600;
+  text-anchor:middle;dominant-baseline:central;
+  pointer-events:none
+}
+#diagram svg .side-chip.solved .measure-text{fill:#2e6148}
+#diagram svg .side-chip.target .measure-text{fill:#f8edca;font-family:Georgia,serif;font-style:italic;font-weight:700}
+#diagram svg .side-chip.overhang .measure-text{fill:#79582f;font-weight:700}
+#diagram svg .overhang-bracket{stroke:#997444;stroke-width:1.9px;stroke-linecap:round;stroke-dasharray:0;pointer-events:none}
+#diagram svg .side-labels{transition:opacity .36s ease}
+#diagram svg .side-labels.waiting,#diagram svg .side-labels.hidden-labels{opacity:0;pointer-events:none}
+#diagram svg.ready-to-fall .piece{opacity:0}
+#diagram svg.falling .piece{
+ animation:greek-piece-drop 1180ms cubic-bezier(.22,.68,.32,1) both;
+ animation-delay:var(--delay);
+ transform-origin:center;transform-box:fill-box
+}
+@keyframes greek-piece-drop{
+  0%{opacity:0;transform:translate(65px,-600px) rotate(var(--twist))}
+  68%{opacity:1;transform:translate(0,24px) rotate(-3deg)}
+  84%{transform:translate(0,-12px) rotate(1.4deg)}
+  100%{opacity:1;transform:translate(0,0) rotate(0)}
+}
+.skip{font-weight:700;box-shadow:0 3px 12px #3e322422}
+.tablet-inside{overflow:hidden;min-height:535px;padding:19px 14px 36px}
+.diagram-caption{font-size:9px}
+.side .description{max-width:360px}
+@media(max-width:1090px){
+ #diagram svg{height:420px}
+ .tablet-inside{min-height:485px}
+}
+@media(max-width:800px){
+ #diagram svg{height:440px}
+ .tablet-inside{min-height:490px}
+}
+@media(max-width:520px){
+ #diagram svg{height:340px}
+ .tablet-inside{min-height:395px;padding:9px 4px 37px}
+ .diagram-caption{font-size:7px}
+}
+@media(prefers-reduced-motion:reduce){
+ #diagram svg .piece,#diagram svg.falling .piece{animation:none!important;opacity:1!important;transform:none!important}
+ #diagram svg .side-labels{transition:none!important}
+}
