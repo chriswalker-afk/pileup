@@ -2,6 +2,7 @@ import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTr
 import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
+import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures } from "./diagram-zoom.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -51,6 +52,40 @@ let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},
 let pendingDiscoveredKey=null;
 let disposeWorking=()=>{};
 let extensionMode=false,extensionGrades={};
+let zoomState=newZoom();
+let detachDiagramZoom=()=>{};
+function refreshZoomControls(){
+  const scale=zoomState.scale;
+  const readout=document.getElementById("diagram-zoom-level");
+  if(readout)readout.textContent=Math.round(scale*100)+"%";
+  const minus=document.getElementById("diagram-zoom-out");
+  const plus=document.getElementById("diagram-zoom-in");
+  const fit=document.getElementById("diagram-zoom-fit");
+  if(minus)minus.disabled=scale<=1.001;
+  if(plus)plus.disabled=scale>=3.999;
+  if(fit)fit.disabled=scale<=1.001;
+}
+function setDiagramZoom(next){
+  zoomState=next;
+  const svg=document.querySelector("#diagram svg");
+  if(svg){
+    const box=zoomViewBox(next);
+    svg.setAttribute("viewBox",[box.x,box.y,box.width,box.height].join(" "));
+    svg.classList.toggle("diagram-is-zoomed",next.scale>1.001);
+    const baseDescription="A pile of "+current.triangles.length+" right-angled triangles"+
+      (current.rectangles?.length?" and "+current.rectangles.length+" rectangles":"")+
+      " resting on a stone floor. Select a marked side or shape to investigate.";
+    svg.setAttribute("aria-label",baseDescription+
+      (next.scale>1.001?" Diagram magnified to "+Math.round(next.scale*100)+
+        " percent. Drag to pan, or focus the diagram and use arrow keys.":""));
+  }
+  refreshZoomControls();
+}
+function mountDiagramZoom(svg){
+  detachDiagramZoom();
+  setDiagramZoom(zoomState);
+  detachDiagramZoom=connectZoomGestures(svg,()=>zoomState,setDiagramZoom);
+}
 let workingFocused=false;
 try{workingFocused=localStorage.getItem("pileup-working-width")==="wide";}catch(_){}
 function setWorkingFocused(wide){
@@ -219,6 +254,7 @@ function homeHeroIllustration(){
     '</svg>';
 }
 function home(gallery=false){
+  detachDiagramZoom();detachDiagramZoom=()=>{};
   disposeWorking();disposeWorking=()=>{};
   screen="home";clearTimeout(finishTimer);
   if(document.body?.dataset)document.body.dataset.view="home";
@@ -385,8 +421,11 @@ function renderDiagram(animate=false,forceMotion=false){
   const {width:W,height:H,floorY,xy}=fitPileInTablet(current);
   const toSide=side=>({a:xy(side.a),b:xy(side.b)});
   const canvas=document.getElementById("diagram");
-  const svg=el("svg",{viewBox:"0 0 "+W+" "+H,role:"img",
-    "aria-label":"A pile of "+current.triangles.length+" right-angled triangles"+(current.rectangles?.length?" and "+current.rectangles.length+" rectangles":"")+" resting on a stone floor. Select a marked side or shape to investigate."});
+  const diagramDescription="A pile of "+current.triangles.length+" right-angled triangles"+
+    (current.rectangles?.length?" and "+current.rectangles.length+" rectangles":"")+
+    " resting on a stone floor. Select a marked side or shape to investigate.";
+  const svg=el("svg",{viewBox:"0 0 "+W+" "+H,role:"img",tabindex:0,
+    "aria-label":diagramDescription,"data-base-label":diagramDescription});
   const defs=el("defs");
   const grad=el("linearGradient",{id:"floor-light",x1:"0",y1:"0",x2:"0",y2:"1"});
   grad.append(el("stop",{offset:"0%",'stop-color':"#d6c4a5"}),el("stop",{offset:"100%",'stop-color':"#bca987"}));
@@ -657,6 +696,7 @@ function renderDiagram(animate=false,forceMotion=false){
   if(!visible)labels.classList.add("hidden-labels");
   svg.append(labels);
   canvas.replaceChildren(svg);
+  mountDiagramZoom(svg);
   if(shouldAnimate){
     animating=true;
     if(forceMotion||(autoplayPreference==="on"&&reduced.matches))svg.classList.add("manual-motion");
@@ -1035,6 +1075,8 @@ function showCompletion(){
   }
 }
 function openPuzzle(id){
+  detachDiagramZoom();detachDiagramZoom=()=>{};
+  zoomState=newZoom();
   disposeWorking();disposeWorking=()=>{};
   if(document.body?.dataset)document.body.dataset.view="puzzle";
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
@@ -1061,7 +1103,15 @@ function openPuzzle(id){
           <span class="tablet-engraving-corner tablet-engraving-ne">⌝</span>
           <span class="tablet-engraving-corner tablet-engraving-sw">⌞</span>
           <span class="tablet-engraving-corner tablet-engraving-se">⌟</span>
-        </div><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
+        </div><div id="diagram"></div>
+        <div class="diagram-zoom-controls" role="group" aria-label="Diagram zoom" aria-describedby="diagram-zoom-hint">
+          <button id="diagram-zoom-out" class="diagram-zoom-button" type="button" aria-label="Zoom out" title="Zoom out" disabled>−</button>
+          <output id="diagram-zoom-level" aria-label="Diagram magnification">100%</output>
+          <button id="diagram-zoom-in" class="diagram-zoom-button" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+          <button id="diagram-zoom-fit" class="diagram-zoom-fit" type="button" aria-label="Fit entire puzzle" title="Fit the entire diagram" disabled>FIT</button>
+          <span id="diagram-zoom-hint" class="screenreader-only">Use plus and minus to zoom. At more than 100 percent, drag the picture to move around it, or focus the diagram and use arrow keys. Control plus mouse wheel also zooms.</span>
+        </div>
+        <button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
         <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED · RECTANGLES HAVE 90° CORNERS</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
       </div></div>
       <aside class="side"><div class="side-topline"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><button id="workspace-size-toggle" type="button" class="workspace-size-toggle" aria-pressed="false" title="Widen the student working panel">↔ More working room</button></div><div class="rule"></div>
@@ -1089,6 +1139,9 @@ function openPuzzle(id){
   bind();
   setWorkingFocused(workingFocused);
   document.getElementById("workspace-size-toggle")?.addEventListener("click",()=>setWorkingFocused(!workingFocused));
+  document.getElementById("diagram-zoom-in").addEventListener("click",()=>setDiagramZoom(zoomStep(zoomState,1)));
+  document.getElementById("diagram-zoom-out").addEventListener("click",()=>setDiagramZoom(zoomStep(zoomState,-1)));
+  document.getElementById("diagram-zoom-fit").addEventListener("click",()=>setDiagramZoom(zoomAt(zoomState,1)));
   document.getElementById("replay").addEventListener("click",()=>renderDiagram(true,true));
   document.getElementById("autoplay-toggle").addEventListener("click",toggleAutoFall);
   refreshAutoFallControl();

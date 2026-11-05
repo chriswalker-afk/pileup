@@ -72,6 +72,14 @@ async function sizeAudit(page){
         r.top<box.top-1.5||r.bottom>box.bottom+1.5)out.push(i);
       return out;
     },[]);
+    const toolbar=document.querySelector(".diagram-zoom-controls");
+    const zoomRect=toolbar?b(toolbar):null;
+    const zoomOverlaps=zoomRect?label.reduce((out,r,i)=>{
+      const dx=Math.min(r.right,zoomRect.right)-Math.max(r.left,zoomRect.left);
+      const dy=Math.min(r.bottom,zoomRect.bottom)-Math.max(r.top,zoomRect.top);
+      if(dx>3&&dy>3)out.push(i);
+      return out;
+    },[]):[];
     const overlaps=[];
     for(let i=0;i<label.length;i++)for(let j=i+1;j<label.length;j++){
       const dx=Math.min(label[i].right,label[j].right)-
@@ -84,7 +92,8 @@ async function sizeAudit(page){
       clippedLabels:outside(label),clippedPieces:outside(shape),
       widthOverflow:document.documentElement.scrollWidth-innerWidth,
       rectangles:svg.querySelectorAll(".rectangle-piece").length,
-      equalTicks:svg.querySelectorAll(".equal-side-tick").length};
+      equalTicks:svg.querySelectorAll(".equal-side-tick").length,
+      zoomOverlaps};
   });
 }
 function padRect(page){
@@ -154,6 +163,7 @@ try{
         insist(!d.clippedLabels.length,"Clipped measurements",d);
         insist(!d.clippedPieces.length,"Clipped geometry",d);
         insist(!d.overlaps.length,"Overlapping measurement labels",d);
+        insist(!d.zoomOverlaps.length,"Zoom controls cover a label at 100%",d);
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
         if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
@@ -162,6 +172,126 @@ try{
         return d;
       });
     }
+    await run(name+" / zoom, pan, side selection and Fit",async()=>{
+      await open(page,"acropolis");
+      const controls=page.locator(".diagram-zoom-controls");
+      insist(await controls.count()===1,"Zoom toolbar missing");
+      const data=await page.evaluate(()=>{
+        const svg=document.querySelector("#diagram svg");
+        const view=svg.viewBox.baseVal;
+        const r=e=>{const b=e.getBoundingClientRect();
+          return {left:b.left,right:b.right,top:b.top,bottom:b.bottom}};
+        const control=document.querySelector(".diagram-zoom-controls");
+        const parent=document.querySelector(".tablet-inside");
+        return {original:{x:view.x,y:view.y,width:view.width,height:view.height},
+          controls:r(control),tablet:r(parent),readout:document.querySelector("#diagram-zoom-level").textContent,
+          hiddenOverlap:[...svg.querySelectorAll(".side-chip rect")].filter(label=>{
+            const a=r(label),b=r(control);
+            return Math.min(a.right,b.right)-Math.max(a.left,b.left)>3&&
+              Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top)>3;
+          }).length};
+      });
+      insist(data.readout==="100%","Initial zoom is not Fit",data);
+      insist(data.controls.left>=data.tablet.left &&
+        data.controls.right<=data.tablet.right+1 &&
+        data.controls.top>=data.tablet.top &&
+        data.controls.bottom<=data.tablet.bottom+1,
+        "Zoom controls extend outside the tablet",data);
+      insist(data.hiddenOverlap===0,
+        "Zoom toolbar covers a length label at default magnification",data);
+      await controls.locator("#diagram-zoom-in").click();
+      const first=await page.evaluate(()=>({
+        scale:document.querySelector("#diagram-zoom-level").textContent,
+        width:document.querySelector("#diagram svg").viewBox.baseVal.width
+      }));
+      insist(first.scale==="125%"&&first.width<data.original.width,
+        "Zoom + did not magnify SVG",first);
+      const clickable=await page.locator("#diagram svg").evaluate(svg=>{
+        const bounds=svg.getBoundingClientRect();
+        const safe=[...svg.querySelectorAll(".side-chip.unknown:not(.overhang)")];
+        const one=safe.find(e=>{
+          const b=e.getBoundingClientRect();
+          return b.left>bounds.left+1&&b.right<bounds.right-1&&
+            b.top>bounds.top+1&&b.bottom<bounds.bottom-1;
+        });
+        return one?.getAttribute("data-side-key")||"";
+      });
+      insist(clickable,"No reachable mathematical length at 125%",{name});
+      await page.locator('#diagram svg .side-chip[data-side-key="'+clickable+'"]').click();
+      const clicked=await page.locator("#side-select").inputValue();
+      insist(clicked===clickable,"Clicking a magnified label did not select its side",
+        {clicked,clickable});
+      insist(await page.locator("#diagram-zoom-level").innerText()==="125%",
+        "Clicking a length reset diagram zoom");
+      await controls.locator("#diagram-zoom-in").click();
+      await controls.locator("#diagram-zoom-in").click();
+      const before=await page.evaluate(()=>{
+        const v=document.querySelector("#diagram svg").viewBox.baseVal;
+        return {x:v.x,y:v.y,width:v.width,height:v.height};
+      });
+      const bounds=await page.locator("#diagram svg").boundingBox();
+      insist(bounds?.width>0,"Diagram bounding box missing");
+      await page.mouse.move(bounds.x+bounds.width*.5,bounds.y+bounds.height*.5);
+      await page.mouse.down();
+      await page.mouse.move(bounds.x+bounds.width*.68,bounds.y+bounds.height*.67,{steps:6});
+      await page.mouse.up();
+      const after=await page.evaluate(()=>{
+        const v=document.querySelector("#diagram svg").viewBox.baseVal;
+        return {x:v.x,y:v.y,width:v.width,height:v.height};
+      });
+      insist(Math.abs(after.x-before.x)>1||Math.abs(after.y-before.y)>1,
+        "Drag did not pan the magnified image",{before,after});
+      // Selecting another mathematical side re-renders the SVG; its zoom
+      // must not reset and all diagram hit targets should remain usable.
+      await page.locator("#side-select").selectOption({index:1});
+      const retained=await page.evaluate(()=>{
+        const v=document.querySelector("#diagram svg").viewBox.baseVal;
+        return {width:v.width,readout:document.querySelector("#diagram-zoom-level").textContent};
+      });
+      insist(retained.width<960 && retained.readout!=="100%",
+        "Side selection reset the student's zoom",retained);
+      if(name==="desktop"||name==="phone")
+        await snap(page,"zoomed-acropolis-"+name);
+      // When the diagram itself is focused, arrow keys pan it without
+      // hijacking regular keyboard use in the answer fields.
+      await page.locator("#diagram svg").focus();
+      const keyBefore=await page.locator("#diagram svg").evaluate(e=>e.viewBox.baseVal.x);
+      await page.keyboard.press("ArrowRight");
+      const keyAfter=await page.locator("#diagram svg").evaluate(e=>e.viewBox.baseVal.x);
+      insist(keyAfter>keyBefore+1,"Keyboard arrow did not pan the enlarged view",
+        {keyBefore,keyAfter});
+      // Ctrl-wheel / trackpad gestures zoom at the pointer rather than
+      // zooming the whole webpage.
+      const keyLevel=await page.locator("#diagram-zoom-level").innerText();
+      const b=await page.locator("#diagram svg").boundingBox();
+      await page.mouse.move(b.x+b.width*.48,b.y+b.height*.46);
+      await page.keyboard.down("Control");
+      await page.mouse.wheel(0,-180);
+      await page.keyboard.up("Control");
+      const wheelLevel=await page.locator("#diagram-zoom-level").innerText();
+      insist(wheelLevel!==keyLevel,"Control-wheel did not magnify the SVG",
+        {keyLevel,wheelLevel});
+      await page.locator("#replay").click();
+      insist((await page.locator("#diagram-zoom-level").innerText())!=="100%",
+        "Replay changed zoom unexpectedly");
+      if(await page.locator("#skip").isVisible())await page.locator("#skip").click();
+      insist(await page.locator(".side-labels.waiting").count()===0,
+        "Replay/Skip did not restore labels after zoom");
+      await controls.locator("#diagram-zoom-out").click();
+      await controls.locator("#diagram-zoom-fit").click();
+      const reset=await page.evaluate(()=>{
+        const v=document.querySelector("#diagram svg").viewBox.baseVal;
+        return {x:v.x,y:v.y,width:v.width,height:v.height,
+          label:document.querySelector("#diagram-zoom-level").textContent,
+          fitDisabled:document.querySelector("#diagram-zoom-fit").disabled};
+      });
+      insist(Math.abs(reset.x)<.001&&Math.abs(reset.y)<.001&&
+        Math.abs(reset.width-960)<.001&&Math.abs(reset.height-590)<.001,
+        "Fit failed to restore the complete original diagram",reset);
+      insist(reset.label==="100%"&&reset.fitDisabled,"Zoom reset UI is incorrect",reset);
+      if(name==="desktop"||name==="phone")await snap(page,"zoom-acropolis-"+name);
+      return {afterZoom:first,panBefore:before,panAfter:after,reset};
+    });
     await run(name+" / drawing containment and working controls",async()=>{
       await open(page,"first-fall");
       await page.locator(".ws-tab").nth(1).click();

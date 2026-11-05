@@ -104,3 +104,7 @@ A completed pile now reveals an Ancient Greek laurel-and-Pythagoras seal, with t
 The site includes a real-Chromium browser audit across **five screen sizes**, testing all **nine puzzles**, the homepage, drawing pad, autoplay, exact-answer completion, saved working and reduced-motion settings. The audit found and fixed the mobile challenge-gallery column bug, short-laptop drawing parchment overflow, and completion-wreath/title overlap.
 
 **Final verified result: 62 of 62 browser checks passed**, in addition to `npm run check`. See [Release audit and review notes](RELEASE_AUDIT_2026-11-05.md) for a full coverage matrix, fixes, screenshots and remaining iOS/stylus test limitations.
+
+## Zooming into diagrams
+
+All nine puzzles have **− / + / FIT** controls in the tablet, with a percentage readout from 100% to 400%. Drag a magnified image to move around it, use Ctrl/Command + wheel to zoom near the mouse, or focus the SVG and use arrow keys to pan. Magnification is preserved while working through a puzzle, but resets to the complete fitted view when starting another challenge. Zoom uses SVG viewBox, leaving geometry, side selection, animations and the student working area intact. See [Diagram zoom controls](DIAGRAM_ZOOM.md) for shortcuts and testing.
