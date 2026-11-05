@@ -64,10 +64,29 @@ test("student switches between editable mathematical lines and a persistent ink 
     assert.equal(updates.at(-1).strokes.length,1);
     const points=updates.at(-1).strokes[0].points;
     assert.ok(points.length>=2);
+    // Enlarge the drawing pad without altering the stroke coordinates.
+    const resize=find(host,"ws-resize-pad");
+    resize.handlers.click();
+    assert.equal(updates.at(-1).padHeight,"large");
+    assert.deepEqual(updates.at(-1).strokes[0].points,points);
     const math=[...host.querySelectorAll(".ws-tab")][0];
     math.handlers.click();
     assert.equal(updates.at(-1).lines.length,2);
     assert.equal(updates.at(-1).lines[0].latex,"c^2=5^2+12^2");
+    draw.handlers.click();
+    assert.equal(updates.at(-1).padHeight,"large");
+    assert.equal(updates.at(-1).strokes.length,1);
+    // Undo must survive switching between drawing and maths tabs.
+    find(host,"ws-ink-tools").querySelectorAll(".ws-action")[2].handlers.click();
+    assert.equal(updates.at(-1).strokes.length,0);
+    const canvasAgain=find(host,"ws-ink-canvas");
+    canvasAgain.handlers.pointerdown({button:0,pointerType:"pen",pointerId:2,
+      clientX:60,clientY:60,preventDefault(){}});
+    canvasAgain.handlers.pointermove({pointerId:2,clientX:110,clientY:130,
+      preventDefault(){},getCoalescedEvents:()=>[]});
+    canvasAgain.handlers.pointercancel({pointerId:2,type:"pointercancel"});
+    // Cancelled pen gestures leave no accidental strokes.
+    assert.equal(updates.at(-1).strokes.length,0);
     stop();
   }finally{
     for(const [name,value] of Object.entries(previous)){

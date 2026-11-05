@@ -1,4 +1,5 @@
 import { makeSplitPile, makeCrownPile } from "./pile-variants.js";
+import { assertFullyVisiblePuzzle } from "./pile-visibility.js";
 
 /**
  * Mathematically exact, deliberately stacked triangle piles.
@@ -133,6 +134,7 @@ export const puzzles=[
 
 // Lightweight metadata shared by the home page and individual challenges.
 for(const puzzle of puzzles){
+  assertFullyVisiblePuzzle(puzzle);
   if(!puzzle.tags){
     puzzle.tags=puzzle.id==="first-fall"?["Overhang","Missing shorter side"] :
       puzzle.id==="projecting-edge"?["Projecting overhang","Exact value"] :

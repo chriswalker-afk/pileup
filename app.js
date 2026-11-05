@@ -1,6 +1,7 @@
 import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTriangle, readySteps, solutionSteps } from "./puzzle-engine.js";
 import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
+import { fitPileInTablet } from "./pile-visibility.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -10,6 +11,20 @@ let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTime
 let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
 let disposeWorking=()=>{};
 let extensionMode=false,extensionGrades={};
+let workingFocused=false;
+try{workingFocused=localStorage.getItem("pileup-working-width")==="wide";}catch(_){}
+function setWorkingFocused(wide){
+  workingFocused=Boolean(wide);
+  try{localStorage.setItem("pileup-working-width",workingFocused?"wide":"balanced");}catch(_){}
+  document.querySelector(".challenge-layout")?.classList.toggle("working-focused",workingFocused);
+  const button=document.getElementById("workspace-size-toggle");
+  if(button){
+    button.textContent=workingFocused?"↔ Balanced view":"↔ More working room";
+    button.setAttribute("aria-pressed",String(workingFocused));
+    button.title=workingFocused?"Give the diagram more room":"Widen the student working panel";
+  }
+}
+
 const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav><a href="#home">THE AGORA</a><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
 function miniPreview(puzzle){
@@ -90,11 +105,15 @@ function escapeHtml(text){
   return String(text).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 }
 function saveProgress(){
-  try{localStorage.setItem("pileup-pass-b-v2-"+current.id,JSON.stringify({
-    solved:[...solved],workingBySide,hintLevels,hintsUsed,extensionGrades
-  }));}catch(error){
+  try{
+    localStorage.setItem("pileup-pass-b-v2-"+current.id,JSON.stringify({
+      solved:[...solved],workingBySide,hintLevels,hintsUsed,extensionGrades
+    }));
+    return true;
+  }catch(error){
     // Storage quota or disabled storage must not prevent solving.
     console.warn("Could not save the working for this puzzle.",error);
+    return false;
   }
 }
 function loadProgress(){
@@ -171,7 +190,6 @@ function chooseSide(key){
   feedback=null;
   solutionOpen=false;
   renderDiagram(false);
-  renderInspector();
   document.getElementById("answer-input")?.focus({preventScroll:true});
 }
 
@@ -186,14 +204,7 @@ function renderDiagram(animate=false,forceMotion=false){
   pieceAnimations.forEach(animation=>{try{animation.cancel()}catch(_){}});
   pieceAnimations=[];
   if(fallRequest){cancelAnimationFrame(fallRequest);fallRequest=0;}
-  const W=960,H=590,floorY=518;
-  const points=current.triangles.flatMap(t=>t.pts);
-  const minX=Math.min(...points.map(q=>q.x));
-  const maxX=Math.max(...points.map(q=>q.x));
-  const maxY=Math.max(...points.map(q=>q.y));
-  const scale=Math.min(790/(maxX-minX),418/maxY);
-  const offsetX=(W-(maxX-minX)*scale)/2-minX*scale;
-  const xy=pt=>({x:offsetX+pt.x*scale,y:floorY-pt.y*scale});
+  const {width:W,height:H,floorY,xy}=fitPileInTablet(current);
   const toSide=side=>({a:xy(side.a),b:xy(side.b)});
   const canvas=document.getElementById("diagram");
   const svg=el("svg",{viewBox:"0 0 "+W+" "+H,role:"img",
@@ -628,15 +639,28 @@ function renderInspector(){
   });
   const hintButton=panel.querySelector("#hint-next");
   if(hintButton)hintButton.addEventListener("click",()=>{
-    hintLevels[side.key]=Math.min(4,(hintLevels[side.key]||0)+1);
-    hintsUsed++;saveProgress();renderInspector();
+    const level=Math.min(4,(hintLevels[side.key]||0)+1);
+    if(level===(hintLevels[side.key]||0))return;
+    hintLevels[side.key]=level;hintsUsed++;saveProgress();
+    hintButton.textContent=level>=4?"ALL CLUES SHOWN":"REVEAL NEXT CLUE ("+(level+1)+"/4)";
+    hintButton.disabled=level>=4;
+    const area=panel.querySelector(".hint-area");
+    if(!area)return;
+    let clue=area.querySelector(".hint-content");
+    if(!clue){
+      clue=document.createElement("div");
+      clue.className="hint-content";
+      area.append(clue);
+    }
+    clue.innerHTML="<strong>CLUE "+level+" / 4</strong><p>"+
+      escapeHtml(hintText(side,level))+"</p>";
   });
   const space=panel.querySelector("#working-pad-mount");
   if(space && side && !side.given){
     const id=side.key;
     disposeWorking=mountWorkingSpace(space,workingBySide[id],working=>{
       workingBySide[id]=working;
-      saveProgress();
+      return saveProgress();
     });
   }
 }
@@ -734,7 +758,7 @@ function openPuzzle(id){
       <div class="tablet-inside"><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
         <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
       </div></div>
-      <aside class="side"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><div class="rule"></div>
+      <aside class="side"><div class="side-topline"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><button id="workspace-size-toggle" type="button" class="workspace-size-toggle" aria-pressed="false" title="Widen the student working panel">↔ More working room</button></div><div class="rule"></div>
         <h2>Find the final <em>length.</em></h2>
         <p class="description">Study which sides line up. A long side may cover two shorter edges, and some pieces project beyond their support. Select any marked side to investigate.</p>
         <div class="facts"><div><span>TRIANGLES</span><strong>${puzzle.triangles.length}</strong></div>
@@ -759,6 +783,8 @@ function openPuzzle(id){
       <button class="completion-close" id="completion-close">RETURN TO THE PILE</button></div>
     </dialog>`+footer();
   bind();
+  setWorkingFocused(workingFocused);
+  document.getElementById("workspace-size-toggle")?.addEventListener("click",()=>setWorkingFocused(!workingFocused));
   document.getElementById("replay").addEventListener("click",()=>renderDiagram(true,true));
   document.getElementById("skip").addEventListener("click",stopAnimation);
   document.getElementById("labels-toggle").addEventListener("click",event=>{

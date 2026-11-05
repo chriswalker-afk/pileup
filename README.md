@@ -58,3 +58,9 @@ Inspired by the Pythagoras Pile Up classroom activity at [Great Maths Teaching I
 The homepage shows all six puzzles beside the introduction on a typical desktop screen. Individual puzzle screens keep the tablet and working panel visible simultaneously, with internal scrolling for longer workings. On phones and narrow tablets the layout stacks to preserve legibility.
 
 Each side has **maths lines** (MathLive input with roots, fractions and powers) and a **drawing pad** (pen, stroke eraser, undo, clear). Work is stored locally per side in the browser. The old free-text textarea has been replaced; previously saved text is migrated to maths lines when possible. MathLive is loaded from a pinned CDN version, with a basic LaTeX input fallback if the CDN is unavailable.
+
+## Full-triangle visibility and usability
+
+**Every triangle must be entirely visible.** Shared edges, split sides and overhangs are allowed, but triangle interiors may never cover each other. A geometry guard checks every authored challenge and fits it inside the tablet viewport. The master puzzle now ends at **√230 cm** with five visible triangles.
+
+Students can switch between a compact or wider working panel on desktop, enlarge the drawing pad, and reveal hints without resetting their maths or ink. See [`USABILITY_PASS.md`](USABILITY_PASS.md) for the detailed QA checklist.

@@ -31,7 +31,7 @@ export function sanitizeWorking(input) {
         .filter(p=>Array.isArray(p)&&p.length===2&&Number.isFinite(+p[0])&&Number.isFinite(+p[1]))
         .map(p=>[Number(Math.max(0,Math.min(1,+p[0])).toFixed(4)),Number(Math.max(0,Math.min(1,+p[1])).toFixed(4))])
     })).filter(s=>s.points.length) : [];
-  return {tab,lines:lines.length?lines:[freshLine()],strokes};
+  return {tab,lines:lines.length?lines:[freshLine()],strokes,padHeight:input.padHeight==="large"?"large":"regular"};
 }
 export function appendLine(work, afterId = null) {
   if(work.lines.length>=MAX_MATH_LINES)return false;
@@ -117,35 +117,50 @@ function drawInk(canvas,work,preview=null) {
   work.strokes.forEach(render);
   if(preview)render(preview);
 }
-function buildInk(container, work, commit, onTab) {
-  let tool="pen",activePointer=null,activeStroke=null,undo=[],observer=null,eraserChanged=false;
+function buildInk(container,work,commit,undo) {
+  let tool="pen",activePointer=null,activeStroke=null,observer=null;
+  let eraserChanged=false;
   const toolbar=node("div","ws-ink-tools");
-  const pen=actionButton("✎ Pen","Draw with pen",()=>setTool("pen"));
-  const eraser=actionButton("⌫ Eraser","Erase touched strokes",()=>setTool("eraser"));
-  const undoButton=actionButton("↶ Undo","Undo the last ink change",()=>{
+  const pen=actionButton("✎ Pen","Draw using pen",()=>setTool("pen"));
+  const eraser=actionButton("⌫ Eraser","Erase a touched ink stroke",()=>setTool("eraser"));
+  const undoButton=actionButton("↶ Undo","Undo the most recent drawing or erasure",()=>{
     if(!undo.length)return;
     work.strokes=undo.pop();commit();redraw();updateUndo();
   });
-  const clearButton=actionButton("Clear","Clear all ink",()=>{
+  const clearButton=actionButton("Clear","Clear the drawing, not the mathematical lines",()=>{
     if(!work.strokes.length)return;
     if(!window.confirm("Clear this drawing? Your maths lines will be kept."))return;
     snapshot();work.strokes=[];commit();redraw();updateUndo();
   });
+  const sizeButton=actionButton("⤢ Larger pad","Increase drawing space",()=>{
+    work.padHeight=work.padHeight==="large"?"regular":"large";
+    refreshSize();commit();
+  },"ws-resize-pad");
   const setTool=value=>{
     tool=value;pen.setAttribute("aria-pressed",String(value==="pen"));
     eraser.setAttribute("aria-pressed",String(value==="eraser"));
     canvas.style.cursor=value==="pen"?"crosshair":"cell";
   };
-  toolbar.append(pen,eraser,undoButton,clearButton);
+  toolbar.append(pen,eraser,undoButton,clearButton,sizeButton);
   const frame=node("div","ws-ink-frame");
   const canvas=node("canvas","ws-ink-canvas");
   canvas.setAttribute("role","img");
-  canvas.setAttribute("aria-label","Handwriting area. Use a mouse, finger or stylus to draw mathematical working.");
+  canvas.setAttribute("aria-label","Drawing pad. Use a mouse, finger or stylus to draw; the eraser removes whole strokes.");
   frame.append(canvas);
-  const caption=node("p","ws-help","Write with a finger, mouse or stylus. Ink is saved automatically for this side.");
+  const caption=node("p","ws-help","Draw with mouse, pen or touch. Undo and pad size remain available when you switch tabs.");
   container.append(toolbar,frame,caption);
+  const refreshSize=()=>{
+    frame.className="ws-ink-frame"+(work.padHeight==="large"?" is-large":"");
+    sizeButton.setAttribute("aria-pressed",String(work.padHeight==="large"));
+    sizeButton.textContent=work.padHeight==="large"?"⤡ Smaller pad":"⤢ Larger pad";
+    sizeButton.title=work.padHeight==="large"?"Return to normal drawing height":"Increase drawing height";
+    requestAnimationFrame(redraw);
+  };
   const updateUndo=()=>{undoButton.disabled=undo.length===0;};
-  const snapshot=()=>{undo.push(work.strokes.map(s=>({width:s.width,points:s.points.map(p=>[...p])})));if(undo.length>20)undo.shift();};
+  const snapshot=()=>{
+    undo.push(work.strokes.map(s=>({width:s.width,points:s.points.map(p=>[...p])})));
+    if(undo.length>20)undo.shift();
+  };
   const redraw=()=>drawInk(canvas,work,activeStroke);
   const pointerPoint=event=>{
     const bounds=canvas.getBoundingClientRect();
@@ -154,37 +169,62 @@ function buildInk(container, work, commit, onTab) {
       Math.max(0,Math.min(1,(event.clientY-bounds.top)/Math.max(1,bounds.height)))
     ];
   };
+  const pushPoint=event=>{
+    if(!activeStroke || activeStroke.points.length>=MAX_POINTS)return;
+    const point=pointerPoint(event),last=activeStroke.points.at(-1);
+    if(Math.hypot(point[0]-last[0],point[1]-last[1])>0.0012)activeStroke.points.push(point);
+  };
   canvas.addEventListener("pointerdown",event=>{
-    if(event.button!==undefined&&event.button!==0&&event.pointerType!=="pen")return;
+    if(activePointer!==null || (event.button!==undefined && event.button!==0) ||
+      (event.pointerType==="touch" && event.isPrimary===false))return;
     event.preventDefault();
     activePointer=event.pointerId;eraserChanged=false;
     canvas.setPointerCapture?.(event.pointerId);
     const point=pointerPoint(event);
     snapshot();
-    if(tool==="pen"){activeStroke={width:event.pointerType==="pen"?2.1:2.6,points:[point]};redraw();}
-    else{if(eraseAt(work,point,0.035)){eraserChanged=true;commit();redraw();updateUndo();}}
+    if(tool==="pen"){
+      activeStroke={width:event.pointerType==="pen"?2.2:2.7,points:[point]};
+      redraw();
+    }else if(eraseAt(work,point,0.033)){
+      eraserChanged=true;redraw();updateUndo();
+    }
   });
   canvas.addEventListener("pointermove",event=>{
     if(activePointer!==event.pointerId)return;
     event.preventDefault();
-    const point=pointerPoint(event);
-    if(tool==="pen"&&activeStroke){
-      const last=activeStroke.points.at(-1);
-      if(Math.hypot(point[0]-last[0],point[1]-last[1])>0.0015&&activeStroke.points.length<MAX_POINTS){
-        activeStroke.points.push(point);redraw();
-      }
-    }else if(tool==="eraser"){
-      if(eraseAt(work,point,0.035)){eraserChanged=true;commit();redraw();updateUndo();}
+    if(tool==="pen" && activeStroke){
+      const events=typeof event.getCoalescedEvents==="function" ?
+        event.getCoalescedEvents():[];
+      for(const sample of events.length?events:[event])pushPoint(sample);
+      // Some browsers omit the latest sample from coalesced events.
+      pushPoint(event);
+      redraw();
+    }else if(tool==="eraser" && eraseAt(work,pointerPoint(event),0.033)){
+      eraserChanged=true;redraw();updateUndo();
     }
   });
   const finish=event=>{
     if(activePointer!==event.pointerId)return;
-    if(activeStroke){
+    if(event.type==="pointercancel"){
+      // Palm rejection/browser gesture should not leave a partial line.
+      const previous=undo.pop();
+      if(previous && (activeStroke||eraserChanged)){
+        work.strokes=previous;
+        if(eraserChanged)commit();
+      }
+    }else if(activeStroke){
+      pushPoint(event);
       addStroke(work,activeStroke);
-      activeStroke=null;commit();redraw();updateUndo();
+      commit();
+    }else if(tool==="eraser" && eraserChanged){
+      // Erase is committed once per drag rather than per pointermove.
+      commit();
+    }else if(undo.length){
+      undo.pop(); // no drawing was changed
     }
-    if(tool==="eraser"&&!eraserChanged&&undo.length){undo.pop();updateUndo();}
-    activePointer=null;
+    activeStroke=null;activePointer=null;eraserChanged=false;
+    canvas.releasePointerCapture?.(event.pointerId);
+    redraw();updateUndo();
   };
   canvas.addEventListener("pointerup",finish);
   canvas.addEventListener("pointercancel",finish);
@@ -192,13 +232,14 @@ function buildInk(container, work, commit, onTab) {
     observer=new ResizeObserver(redraw);
     observer.observe(frame);
   }
-  setTool("pen");updateUndo();
-  requestAnimationFrame(redraw);
+  setTool("pen");updateUndo();refreshSize();
   return ()=>{
     observer?.disconnect();
+    if(activeStroke)activeStroke=null;
     // The host element is removed when the selected side changes.
   };
 }
+
 function buildMath(container,work,commit) {
   const list=node("div","ws-line-list");
   const toolbar=node("div","ws-maths-toolbar");
@@ -287,18 +328,27 @@ function buildMath(container,work,commit) {
 }
 export function mountWorkingSpace(container, initial, onChange) {
   const work=sanitizeWorking(initial);
-  let cleanup=()=>{};
+  const inkUndo=[]; // persists when switching between Maths and Draw tabs
+  let cleanup=()=>{},destroyed=false;
   const root=node("section","ws-root");
   root.setAttribute("aria-label","Your mathematical working");
   const head=node("div","ws-header");
+  const titleGroup=node("div","ws-title-group");
   const title=node("strong","ws-title","YOUR WORKING");
+  const status=node("span","ws-save-status","Saved on this device");
+  titleGroup.append(title,status);
   const tabs=node("div","ws-tabs");
-  const math=actionButton("∑ Maths lines","Type mathematics line by line",()=>switchTab("math"),"ws-tab");
+  const math=actionButton("∑ Maths","Type mathematics line by line",()=>switchTab("math"),"ws-tab");
   const ink=actionButton("✎ Draw","Draw freehand with a pen or finger",()=>switchTab("ink"),"ws-tab");
-  tabs.append(math,ink);head.append(title,tabs);
+  tabs.append(math,ink);head.append(titleGroup,tabs);
   const body=node("div","ws-body");
   root.append(head,body);container.append(root);
-  const commit=()=>onChange(sanitizeWorking(work));
+  const commit=()=>{
+    const result=onChange(sanitizeWorking(work));
+    status.textContent=result===false?"Not saved — browser storage full":"Saved on this device";
+    status.dataset.state=result===false?"error":"saved";
+    return result;
+  };
   function switchTab(tab) {
     cleanup();
     work.tab=tab;commit();
@@ -307,8 +357,20 @@ export function mountWorkingSpace(container, initial, onChange) {
     math.setAttribute("aria-pressed",String(tab==="math"));
     ink.setAttribute("aria-pressed",String(tab==="ink"));
     body.replaceChildren();
-    cleanup=tab==="math"?buildMath(body,work,commit):buildInk(body,work,commit);
+    cleanup=tab==="math"?buildMath(body,work,commit):buildInk(body,work,commit,inkUndo);
   }
   switchTab(work.tab);
-  return ()=>cleanup();
+  // If a slow CDN loads MathLive after a fallback field was created,
+  // upgrade the maths view without throwing away any typed lines.
+  if(typeof customElements!=="undefined" && !isMathLiveReady() &&
+     typeof customElements.whenDefined==="function"){
+    customElements.whenDefined("math-field").then(()=>{
+      if(!destroyed && work.tab==="math" && isMathLiveReady()){
+        cleanup();
+        body.replaceChildren();
+        cleanup=buildMath(body,work,commit);
+      }
+    }).catch(()=>{});
+  }
+  return ()=>{destroyed=true;cleanup();};
 }
