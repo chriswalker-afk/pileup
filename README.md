@@ -80,6 +80,11 @@ If your device requests **reduced motion**, the site initially respects that pre
 
 The first-fall completion timer starts **only after the first animation frame**. This prevents opening a puzzle in a background tab from silently finishing its animation before you view it.
 
+
+## Drawing-pad sizing
+
+In **Draw** mode, the yellow parchment grows to contain the entire freehand canvas, including when **Larger pad** is selected. The **Reveal Full Solution** and **Start Again** controls follow it in the normal layout; they are never covered by the canvas. On short desktop screens, scroll **inside the right-hand inspector** to reach those controls. On phones, the page scrolls normally. Switching back to **Maths** restores the flexible line-by-line workspace without losing saved drawing strokes.
+
 ## Graphics — Pass A
 
 The homepage includes an animated Ancient Greek-style geometric engraving **drawn from the actual First Fall triangles** and a miniature picture of **each of the nine real puzzle arrangements**. The gallery diagrams remain visible at compact laptop widths rather than disappearing. A lightweight Greek-key SVG frieze ties together the header and footer across pages. Decorative animation respects reduced-motion settings, independently of the interactive puzzle's falling animation.

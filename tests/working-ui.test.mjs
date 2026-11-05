@@ -10,7 +10,16 @@ test("student switches between editable mathematical lines and a persistent ink 
       this.tag=tag;this.children=[];this.dataset={};this.handlers={};
       this.attrs={};this.textContent="";this.value="";this.className="";
       this.style={};this.disabled=false;this.width=0;this.height=0;
-      this.classList={toggle:()=>{}};
+      this.classList={
+        contains:name=>this.className.split(/\s+/).includes(name),
+        toggle:(name,enabled)=>{
+          const values=new Set(this.className.split(/\s+/).filter(Boolean));
+          const next=enabled??!values.has(name);
+          if(next)values.add(name);else values.delete(name);
+          this.className=[...values].join(" ");
+          return next;
+        }
+      };
     }
     append(...elements){this.children.push(...elements);}
     replaceChildren(...elements){this.children=[...elements];}
@@ -53,9 +62,14 @@ test("student switches between editable mathematical lines and a persistent ink 
     assert.equal(updates.at(-1).lines[0].latex,"c^2=5^2+12^2");
     find(host,"ws-add-line").handlers.click();
     assert.equal(updates.at(-1).lines.length,2);
+    const parchment=find(host,"ws-root");
     const draw=[...host.querySelectorAll(".ws-tab")][1];
     draw.handlers.click();
     assert.equal(updates.at(-1).tab,"ink");
+    assert.equal(host.classList.contains("ws-drawing-host"),true,
+      "Drawing mode must allow the outer mount to grow with the pad");
+    assert.equal(parchment.classList.contains("ws-drawing"),true,
+      "Drawing mode must let the yellow parchment contain the canvas");
     const canvas=find(host,"ws-ink-canvas");
     canvas.handlers.pointerdown({button:0,pointerType:"pen",pointerId:1,
       clientX:45,clientY:45,preventDefault(){}});
@@ -71,9 +85,14 @@ test("student switches between editable mathematical lines and a persistent ink 
     assert.deepEqual(updates.at(-1).strokes[0].points,points);
     const math=[...host.querySelectorAll(".ws-tab")][0];
     math.handlers.click();
+    assert.equal(host.classList.contains("ws-drawing-host"),false,
+      "Switching to maths restores the flexible line editor");
+    assert.equal(parchment.classList.contains("ws-drawing"),false);
     assert.equal(updates.at(-1).lines.length,2);
     assert.equal(updates.at(-1).lines[0].latex,"c^2=5^2+12^2");
     draw.handlers.click();
+    assert.equal(parchment.classList.contains("ws-drawing"),true,
+      "Returning to drawing must restore content-sized parchment");
     assert.equal(updates.at(-1).padHeight,"large");
     assert.equal(updates.at(-1).strokes.length,1);
     // Undo must survive switching between drawing and maths tabs.
