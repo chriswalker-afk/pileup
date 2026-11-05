@@ -113,8 +113,13 @@ test("Acropolis target requires both successive diagonal calculations",()=>{
   const lengths=relation.parts.map(x=>Math.hypot(x.a.x-x.b.x,x.a.y-x.b.y));
   assert.ok(Math.abs(lengths[0]-10)<1e-7);
   assert.ok(Math.abs(lengths[1]-2)<1e-7);
-  assert.equal(p.equalSideGroups?.length||0,0,
-    "No unattached lengths should rely on matching ticks");
+  assert.equal(p.equalSideGroups?.length||0,2,
+    "Both rectangle platforms need visible, mathematically true matching marks");
+  for(const group of p.equalSideGroups){
+    assert.ok(Math.abs(Math.hypot(group[0].a.x-group[0].b.x,
+      group[0].a.y-group[0].b.y)-Math.hypot(group[1].a.x-group[1].b.x,
+      group[1].a.y-group[1].b.y))<1e-7);
+  }
   assert.ok(p.triangles.some(t=>t.id==="II"));
   assert.equal(p.overhang.value,2);
 });
