@@ -127,6 +127,7 @@ function renderDiagram(animate=false){
   svg.append(floor);
   current.triangles.forEach((triangle,i)=>{
     const group=el("g",{class:"piece","data-id":triangle.id,tabindex:0,role:"button",
+      style:"--delay:"+(i*690)+"ms;--twist:"+(i%2?-13:12)+"deg",
       "aria-label":"Select triangle "+triangle.id});
     const tpts=triangle.pts.map(xy);
     if(selectedSide&&!sideMap.get(selectedSide).triangleIds.includes(triangle.id))group.classList.add("dimmed");
@@ -319,19 +320,35 @@ function renderDiagram(animate=false){
 }
 function stopAnimation(){
   clearTimeout(finishTimer);
+  if(fallRequest){cancelAnimationFrame(fallRequest);fallRequest=0;}
+  pieceAnimations.forEach(animation=>{try{animation.cancel()}catch(_){}});
+  pieceAnimations=[];
   animating=false;
   const svg=document.querySelector("#diagram svg");
-  svg?.classList.remove("animating");
+  svg?.classList.remove("animating","falling","ready-to-fall");
   svg?.querySelector(".side-labels")?.classList.remove("waiting");
   document.getElementById("skip").hidden=true;
   document.getElementById("replay").disabled=false;
   renderInspector();
 }
+
 function hintText(side,level){
   const step=activeHintStep();
   if(!step)return "Every missing side has been discovered.";
   const isSelected=step.sideKey===side.key;
   const known=step.known.map(key=>exactLength(sideMap.get(key).length)+" cm");
+  if(step.kind==="overhang"){
+    if(!isSelected){
+      if(level===1)return "Find the complete straight side, then look carefully at the small labelled overhang.";
+      if(level===2)return "The complete side and the extra overhang measure "+known.join(" and ")+".";
+      if(level===3)return "Use lengths along a straight line: "+step.equation+".";
+      return "Subtract the overhang to find the shorter shared side: "+step.answer+" cm.";
+    }
+    if(level===1)return "The shorter side and labelled overhang lie along one straight line.";
+    if(level===2)return "The two known lengths are "+known.join(" and ")+". Think about which one is the whole.";
+    if(level===3)return step.equation+". No Pythagoras is needed in this step.";
+    return "The missing straight-line part is "+step.answer+" cm. Enter it to continue.";
+  }
   if(!isSelected){
     if(level===1)return "Begin with triangle "+step.triangleId+". It currently has two known side lengths.";
     if(level===2)return "In triangle "+step.triangleId+", the available sides are "+known.join(" and ")+". Find its missing side first.";
@@ -339,12 +356,16 @@ function hintText(side,level){
     return "For triangle "+step.triangleId+", that intermediate side is "+step.answer+" cm. Use it to continue the chain.";
   }
   if(level===1)return "Triangle "+step.triangleId+" has enough information to solve this side. Identify its hypotenuse first.";
-  if(level===2)return "The two known lengths are "+known.join(" and ")+". The missing side is "+(step.isHypotenuse?"the hypotenuse.":"a shorter side.") ;
+  if(level===2)return "The two known lengths are "+known.join(" and ")+". The missing side is "+(step.isHypotenuse?"the hypotenuse.":"a shorter side.");
   if(level===3)return step.equation+". Use Pythagoras’ theorem and take the positive square root.";
   return "This side measures "+step.answer+" cm. Enter the value above to record your step.";
 }
+
 function incorrectFeedback(side,value){
   const step=readySteps(current,sideMap,solved).find(st=>st.sideKey===side.key);
+  if(step?.kind==="overhang"){
+    return "Check the straight line: complete length = shorter part + labelled overhang. You may need to subtract.";
+  }
   if(step){
     const known=step.known.map(key=>sideMap.get(key).length);
     if(step.isHypotenuse){
@@ -355,8 +376,9 @@ function incorrectFeedback(side,value){
       if(Math.abs(value-plus)<0.04)return "You already have the hypotenuse. Subtract the square of the known shorter side.";
     }
   }
-  return "Not quite. Check the right angle, decide whether to add or subtract the squares, and check your arithmetic.";
+  return "Not quite. Trace the corresponding triangle or straight line, then check your arithmetic.";
 }
+
 function renderInspector(){
   const panel=document.getElementById("inspector");if(!panel)return;
   const meter=document.getElementById("progress-count"),bar=document.getElementById("progress-fill");
@@ -375,7 +397,7 @@ function renderInspector(){
       <ol class="review-list">
         ${all.map((step,index)=>`<li class="review-item">
           <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · TRIANGLE ${step.triangleId}</span><span>LOCATE ↗</span></button>
-          <p class="step-narrative">Find the ${step.isHypotenuse?"hypotenuse":"missing shorter side"}.</p>
+          <p class="step-narrative">${step.kind==="overhang"?"Subtract the labelled overhang from the complete side.":"Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
           <p class="step-equation">${step.equation}</p>
           <p class="step-result">${step.isTarget?"x":"s"} = ${step.answer} cm</p>
         </li>`).join("")}
@@ -503,9 +525,9 @@ function openPuzzle(id){
       </div></div>
       <aside class="side"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><div class="rule"></div>
         <h2>Find the final <em>length.</em></h2>
-        <p class="description">Trace the shared lengths, or work directly towards <strong>x</strong>. Click a triangle or a marked side to investigate it.</p>
+        <p class="description">Start with the bottom triangle on the floor. Look for the labelled overhang: it is part of the chain. Click any marked side to investigate.</p>
         <div class="facts"><div><span>TRIANGLES</span><strong>${puzzle.triangles.length}</strong></div>
-          <div><span>GIVEN LENGTHS</span><strong>${puzzle.triangles.reduce((n,t)=>n+t.givens.length,0)}</strong></div></div>
+          <div><span>GIVEN LENGTHS</span><strong>${puzzle.triangles.reduce((n,t)=>n+t.givens.length,0)+(puzzle.extraSegments?.length||0)}</strong></div></div>
         <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
         <div class="progress-track" aria-label="Number of missing lengths discovered"><span id="progress-fill" style="width:0"></span></div>
         <div class="inspector" id="inspector" aria-live="polite"></div>
