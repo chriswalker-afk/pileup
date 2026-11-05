@@ -79,3 +79,9 @@ A puzzle normally **animates as soon as it opens**, with labels appearing after 
 If your device requests **reduced motion**, the site initially respects that preference and shows the assembled pile. The tablet toolbar displays **AUTO OFF**. Click or tap it once to enable **AUTO ON** for this website; your choice is saved in this browser, and every subsequently opened puzzle will begin falling automatically. Turning AUTO OFF stops automatic falling while leaving the manual Replay control available. The selection also works across page refreshes.
 
 The first-fall completion timer starts **only after the first animation frame**. This prevents opening a puzzle in a background tab from silently finishing its animation before you view it.
+
+## Graphics — Pass A
+
+The homepage includes an animated Ancient Greek-style geometric engraving **drawn from the actual First Fall triangles** and a miniature picture of **each of the nine real puzzle arrangements**. The gallery diagrams remain visible at compact laptop widths rather than disappearing. A lightweight Greek-key SVG frieze ties together the header and footer across pages. Decorative animation respects reduced-motion settings, independently of the interactive puzzle's falling animation.
+
+See [GRAPHICS_PASS_A.md](GRAPHICS_PASS_A.md) for the design decisions, test coverage and visual review checklist.
