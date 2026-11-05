@@ -4,7 +4,7 @@ import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
 import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures } from "./diagram-zoom.js";
 import { labelsForShape, centreSideAtZoom } from "./label-clarity.js";
-import {layoutMeasurements, classifyRelationSides, dimensionBracket} from "./label-layout.js";
+import {layoutMeasurements, classifyRelationSides, dimensionBracket, labelTether} from "./label-layout.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -67,7 +67,7 @@ function refreshLabelClarity(){
   const emphasis=previewSideKey||selectedSide;
   svg.classList.toggle("label-focus-enabled",focusLabels);
   svg.classList.toggle("label-focus-active",hasFocus);
-  for(const selector of [".side-chip",".side-trace",".dimension-leader",".dimension-bracket"]){
+  for(const selector of [".side-chip",".side-trace",".measurement-tether",".dimension-bracket"]){
     for(const element of svg.querySelectorAll(selector)){
       const key=element.getAttribute?.("data-side-key");
       if(!key)continue;
@@ -701,25 +701,22 @@ function renderDiagram(animate=false,forceMotion=false){
   const byKey=new Map(descriptors.map(item=>[item.key,item]));
   // Brackets identify the physical extent of whole versus part edges.
   const brackets=el("g",{class:"measurement-brackets","aria-hidden":"true"});
-  labels.append(brackets);
+  const tethers=el("g",{class:"measurement-tethers","aria-hidden":"true"});
+  labels.append(brackets,tethers);
   for(const side of sides){
     const info=byKey.get(side.key);
     const {solvedSide,label,width}=info;
     const chosen=placements.get(side.key);
     const pos=chosen.pos;
     const ends=info.ends;
-    const labelConnector=el("line",{
-      x1:(ends.a.x+ends.b.x)/2,y1:(ends.a.y+ends.b.y)/2,
-      x2:pos.x,y2:pos.y,
-      class:"side-association","data-side-key":side.key
-    });
-    traces.append(labelConnector);
     const classes=["side-chip",side.given?"given":solvedSide?"solved":side.isTarget?"target":"unknown"];
     if(side.isOverhang)classes.push("overhang");
     if(selectedSide===side.key)classes.push("selected");
     if(discoveredNow===side.key)classes.push("just-discovered");
     const group=el("g",{class:classes.join(" "),"data-side-key":side.key,role:"button",tabindex:0,
-      "aria-label":(side.isOverhang?"Given overhang ":side.isTarget?"Final target ":side.given?"Given ":"Missing length ")+label});
+      "aria-label":(side.isOverhang?"Given overhang ":side.isTarget?"Final target ":side.given?"Given ":"Missing length ")+
+        label+" on "+(side.triangleIds.length>1?"shared side of ":"side of ")+
+        (side.triangleIds.join(" and ")||"the straight-line segment")});
     const relationKind=relations.get(side.key)||(side.isOverhang?"overhang":null);
     const bracket=relationKind?dimensionBracket(ends.a,ends.b,chosen,relationKind):null;
     if(bracket){
@@ -736,17 +733,25 @@ function renderDiagram(animate=false,forceMotion=false){
       }
       brackets.append(bracketGroup);
     }
-    if(chosen.needsLeader){
-      // Only long-distance callouts need permanent leaders. For a
-      // split span, join to its bracket rather than a misleading part.
-      const anchor=bracket?bracket.mid:{
-        x:(ends.a.x+ends.b.x)/2,y:(ends.a.y+ends.b.y)/2
-      };
-      labels.append(el("line",{
-        x1:anchor.x,y1:anchor.y,x2:pos.x,y2:pos.y,
-        class:"dimension-leader","data-side-key":side.key
-      }));
-    }
+    // Always-visible, understated physical attachment from the exact
+    // side (or the span bracket) to the nearest edge of its own chip.
+    // The fine anchor dot and connection remain clear without hover,
+    // while hover/focus/selection illuminate this precise relationship.
+    const tether=labelTether(info,chosen,bracket?.mid||null);
+    const attach=el("g",{
+      class:"measurement-tether"+(side.isTarget?" tether-target":""),
+      "data-side-key":side.key
+    });
+    attach.append(el("line",{
+      x1:tether.anchor.x,y1:tether.anchor.y,
+      x2:tether.end.x,y2:tether.end.y,
+      class:"side-association","data-side-key":side.key
+    }));
+    attach.append(el("circle",{
+      cx:tether.anchor.x,cy:tether.anchor.y,r:2.7,
+      class:"measurement-anchor","data-side-key":side.key
+    }));
+    tethers.append(attach);
     group.append(el("rect",{x:pos.x-width/2,y:pos.y-boxHeight/2,width,height:boxHeight,rx:4}));
     group.append(el("text",{
       x:pos.x,y:pos.y,style:"font-size:"+fontSize+"px",class:"measure-text"
