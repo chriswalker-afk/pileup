@@ -106,8 +106,8 @@ export function makeRisingZigzag(info){
   II.givens=[given(P,II.pts[2])];
   const S=II.pts[2],III=attach(II,S,R,"a",15,"III");
   III.givens=[given(S,III.pts[2])];
-  const T=III.pts[2],IV=onHyp(III,S,T,8,15,"IV");
-  IV.givens=[given(S,IV.pts[2])];
+  const T=III.pts[2],IV=onHyp(III,R,T,8,15,"IV");
+  IV.givens=[given(R,IV.pts[2])];
   const U=IV.pts[2],V=attach(IV,U,T,"a",20,"V");
   V.givens=[given(U,V.pts[2])];
   const [a,b]=hyp(V),VI=onHyp(V,a,b,7,24,"VI");
