@@ -811,7 +811,7 @@ function renderInspector(){
   if(solutionOpen){
     const all=solutionSteps(current,sideMap);
     panel.innerHTML=`<span class="kicker">THE GEOMETER’S SCROLL</span>
-      <h3 class="inspect-title">Complete worked solution</h3>
+      <h3 class="inspect-title" id="worked-solution-heading" tabindex="-1">Complete worked solution</h3>
       <p class="solution-disclaimer">One valid order is shown. Shared edges may be solved by different routes.</p>
       <ol class="review-list">
         ${all.map((step,index)=>`<li class="review-item">
@@ -833,7 +833,10 @@ function renderInspector(){
       ${(current.extensions||[]).length?`<div class="worked-extensions"><h4>Compound-shape extensions</h4>${current.extensions.map(item=>
         `<p><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.working)}</span></p>`).join("")}</div>`:""}
       <button class="btn-link" id="return-solving">← RETURN TO THE PILE</button>`;
-    panel.querySelector("#return-solving").addEventListener("click",()=>{solutionOpen=false;renderInspector();});
+    panel.querySelector("#return-solving").addEventListener("click",()=>{
+      solutionOpen=false;renderInspector();
+      panel.querySelector("#side-select")?.focus({preventScroll:true});
+    });
     panel.querySelectorAll("[data-review-side]").forEach(button=>button.addEventListener("click",()=>{
       selectedSide=button.dataset.reviewSide;
       renderDiagram(false);
@@ -876,7 +879,7 @@ function renderInspector(){
       <div id="answer-feedback" role="status" aria-live="polite"></div>
       <div id="working-pad-mount" class="working-pad-mount"></div>
       <div class="hint-area"><button class="hint-button" id="hint-next" ${level>=4?"disabled":""}>${level?level>=4?"ALL CLUES SHOWN":"REVEAL NEXT CLUE ("+(level+1)+"/4)":"NEED A CLUE? (1/4)"}</button>
-      ${level?`<div class="hint-content"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>`;
+      ${level?`<div class="hint-content" role="status" aria-live="polite" aria-atomic="true"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>`;
   }
   panel.innerHTML=`${choices}
     ${body}
@@ -890,7 +893,10 @@ function renderInspector(){
     if(event.target.value)chooseSide(event.target.value);
     else{selectedSide=null;feedback=null;renderDiagram(false);}
   });
-  panel.querySelector("#solution-toggle").addEventListener("click",()=>{solutionOpen=true;renderInspector();});
+  panel.querySelector("#solution-toggle").addEventListener("click",()=>{
+    solutionOpen=true;renderInspector();
+    panel.querySelector("#worked-solution-heading")?.focus({preventScroll:false});
+  });
   panel.querySelector("#open-extension-panel")?.addEventListener("click",()=>{
     extensionMode=true;selectedSide=null;renderDiagram(false);
   });
@@ -918,6 +924,9 @@ function renderInspector(){
     if(!clue){
       clue=document.createElement("div");
       clue.className="hint-content";
+      clue.setAttribute("role","status");
+      clue.setAttribute("aria-live","polite");
+      clue.setAttribute("aria-atomic","true");
       area.append(clue);
     }
     clue.innerHTML="<strong>CLUE "+level+" / 4</strong><p>"+
@@ -960,6 +969,7 @@ function renderExtensions(panel){
   });
   panel.querySelector("#extension-solutions").addEventListener("click",()=>{
     solutionOpen=true;renderInspector();
+    panel.querySelector("#worked-solution-heading")?.focus({preventScroll:false});
   });
   panel.querySelectorAll(".extension-form").forEach(form=>{
     form.addEventListener("submit",event=>{
@@ -1092,6 +1102,7 @@ function openPuzzle(id){
   document.getElementById("completion-close").addEventListener("click",()=>modal.close());
   document.getElementById("completion-review").addEventListener("click",()=>{
     modal.close();solutionOpen=true;renderInspector();
+    document.getElementById("worked-solution-heading")?.focus({preventScroll:false});
   });
   document.getElementById("completion-extra").addEventListener("click",()=>{
     modal.close();extensionMode=true;solutionOpen=false;selectedSide=null;renderDiagram(false);
