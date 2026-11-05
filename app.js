@@ -5,6 +5,7 @@ import { fitPileInTablet } from "./pile-visibility.js";
 import { newZoom, zoomAt, zoomStep, zoomViewBox, connectZoomGestures } from "./diagram-zoom.js";
 import { labelsForShape, centreSideAtZoom } from "./label-clarity.js";
 import {layoutMeasurements, classifyRelationSides, dimensionBracket, labelTether} from "./label-layout.js";
+import {crowdedUnknownKeys,compactFace} from "./label-density.js";
 
 const root=document.getElementById('app');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -52,7 +53,7 @@ const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
 let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
 let pendingDiscoveredKey=null;
-let focusLabels=false,focusedShapeId=null,previewSideKey=null;
+let focusLabels=false,focusUserChoice=false,focusedShapeId=null,previewSideKey=null;
 
 /**
  * One visual relationship for the chip, its exact full segment, and
@@ -64,9 +65,14 @@ function refreshLabelClarity(){
   if(!svg)return;
   const hasFocus=focusLabels&&Boolean(selectedSide)&&Boolean(focusedShapeId);
   const permitted=hasFocus?labelsForShape(sideMap,focusedShapeId):new Set();
+  const allShapes=[...current.triangles,...(current.rectangles||[])];
+  const xy=fitPileInTablet(current).xy;
+  const isCompact=hasFocus&&allShapes.some(shape=>
+    shape.id===focusedShapeId&&compactFace(shape,allShapes,xy));
   const emphasis=previewSideKey||selectedSide;
   svg.classList.toggle("label-focus-enabled",focusLabels);
   svg.classList.toggle("label-focus-active",hasFocus);
+  svg.classList.toggle("compact-label-focus",isCompact);
   for(const selector of [".side-chip",".side-trace",".measurement-tether",".dimension-bracket"]){
     for(const element of svg.querySelectorAll(selector)){
       const key=element.getAttribute?.("data-side-key");
@@ -315,7 +321,7 @@ function homeHeroIllustration(){
 }
 function home(gallery=false){
   detachDiagramZoom();detachDiagramZoom=()=>{};
-  focusLabels=false;focusedShapeId=null;previewSideKey=null;
+  focusLabels=false;focusUserChoice=false;focusedShapeId=null;previewSideKey=null;
   disposeWorking();disposeWorking=()=>{};
   screen="home";clearTimeout(finishTimer);
   if(document.body?.dataset)document.body.dataset.view="home";
@@ -477,6 +483,13 @@ function chooseSide(key,shapeId=null){
   if(!side)return;
   selectedSide=key;
   focusedShapeId=shapeId||side.triangleIds[0]||null;
+  // In a tight cluster, automatically isolate the chosen piece's
+  // measurements. An explicit All Labels choice always takes priority.
+  if(!focusUserChoice){
+    const shapes=[...current.triangles,...(current.rectangles||[])];
+    const shape=shapes.find(t=>t.id===focusedShapeId);
+    if(shape)focusLabels=compactFace(shape,shapes,fitPileInTablet(current).xy);
+  }
   previewSideKey=null;
   feedback=null;
   solutionOpen=false;
@@ -615,6 +628,8 @@ function renderDiagram(animate=false,forceMotion=false){
   }
 
   const labels=el("g",{class:"side-labels"+(shouldAnimate?" waiting":"")});
+  const compactScene=pieces.some(shape=>compactFace(shape,pieces,xy));
+  svg.classList.toggle("has-compact-triangles",compactScene);
   const traces=el("g",{class:"side-traces","aria-hidden":"true"});
   for(const side of sideMap.values()){
     if(side.suppressLabel)continue;
@@ -670,12 +685,17 @@ function renderDiagram(animate=false,forceMotion=false){
   // unknown labels on the selected face (or once discovered). All
   // sides remain selectable through SVG hit targets and the side list.
   const quietDense=["great-interlock","nine-muses","acropolis"].includes(current.id);
+  const compactKeys=pieces.length>=4?
+    crowdedUnknownKeys(sideMap.values(),xy):new Set();
   const sides=[...sideMap.values()].filter(side=>{
     if(side.suppressLabel)return false;
-    if(!quietDense)return true;
-    return side.given||side.isTarget||solved.has(side.key)||
-      (selectedSide&&(side.key===selectedSide||
-        side.triangleIds.includes(focusedShapeId)));
+    // Never hide givens, discovered lengths, the target or the chosen
+    // shape's measurements. Only defer nonessential '?' labels in
+    // genuinely crowded regions until that triangle is investigated.
+    if(side.given||side.isTarget||solved.has(side.key))return true;
+    if(selectedSide&&(side.key===selectedSide||
+      side.triangleIds.includes(focusedShapeId)))return true;
+    return !quietDense&&!compactKeys.has(side.key);
   });
   // Reserve the least obstructed spots for givens and target x.
   sides.sort((a,b)=>Number(b.given)-Number(a.given)||
@@ -1016,6 +1036,7 @@ function renderInspector(){
     </div>`;
   panel.querySelector("#label-focus-toggle").addEventListener("click",event=>{
     focusLabels=!focusLabels;
+    focusUserChoice=true;
     const button=event.currentTarget;
     button.setAttribute("aria-pressed",String(focusLabels));
     button.textContent=focusLabels?"ALL LABELS":"FOCUS VIEW";
