@@ -504,8 +504,16 @@ try{
               tetherTransform:tether.getAttribute("transform"),
               anchorX:anchor.x,anchorY:anchor.y};
           });
+          const symbols=[...svg.querySelectorAll(
+            ".triangle-identity, .right-angle-marker, .equal-tick-group, .bracket-end-cap"
+          )].slice(0,18).map(element=>{
+            const rect=element.getBoundingClientRect();
+            return {kind:element.getAttribute("class"),
+              width:rect.width,height:rect.height,
+              transform:element.getAttribute("transform")};
+          });
           return {scale:document.querySelector("#diagram-zoom-level").textContent,
-            values};
+            values,symbols};
         });
         const initial=await readings();
         insist(initial.values.length>=2,"No measurable labels",initial);
@@ -521,6 +529,20 @@ try{
           const next=await readings();
           insist(next.scale===Math.round(target*100)+"%",
             "Wrong zoom test level",{id,target,next:next.scale});
+          insist(next.symbols.length===initial.symbols.length&&next.symbols.length>0,
+            "Zoom annotations are missing",{id,target,next});
+          for(const [i,symbol] of next.symbols.entries()){
+            const base=initial.symbols[i];
+            insist(base.kind===symbol.kind,"Zoom symbol identities changed",
+              {id,target,symbol,base});
+            insist(Math.abs(symbol.width-base.width)<2.5&&
+              Math.abs(symbol.height-base.height)<2.5,
+              "Triangle ID, angle marker or measurement mark grew during zoom",
+              {id,target,symbol,base});
+            insist(symbol.transform,
+              "Zoom symbol did not counter-scale with triangle geometry",
+              {id,target,symbol});
+          }
           for(const [i,item] of next.values.entries()){
             const base=initial.values[i];
             insist(item.key===base.key,"Annotation identities changed during zoom",{id,item,base});
@@ -545,6 +567,10 @@ try{
           !item.labelTransform&&!item.tetherTransform&&
           Math.abs(item.width-initial.values[i].width)<1.5&&item.onBorder),
           "Fit did not restore baseline labels/attachments",{id,reset});
+        insist(reset.symbols.every((symbol,i)=>
+          !symbol.transform&&
+          Math.abs(symbol.width-initial.symbols[i].width)<2.5),
+          "Fit did not restore original annotation symbols",{id,reset});
         return {puzzle:id,labelsChecked:initial.values.length,
           at:["100%","125%","200%","400%"]};
       });
