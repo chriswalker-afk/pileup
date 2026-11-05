@@ -6,21 +6,23 @@ The original nine puzzles have been re-architected to make their **physical stru
 
 | Challenge | Visible shapes | Structural idea | Final exact length |
 |---|---|---|---|
-| The Nine Muses | 9 right triangles | Three foundations, two parallel middle terraces, matching lengths and an upper crown | **√274 cm** |
+| The Nine Muses | 9 right triangles | One upward leaning cascade, nine indispensable steps and a real 2 cm inset | **√1021 cm** |
 | The Marble Terrace | 8 right triangles + 1 rectangle | A wide ground-level rectangle supporting two staggered towers | **2√38 cm** |
-| The Acropolis | 10 right triangles + 2 rectangles | Two independent plinths, separated by an open bay, joining into a high bridge | **25 cm** |
+| The Acropolis | 10 right triangles + 2 rectangles | Two rectangles joined in sequence, with diagonals unlocking a stepped zigzag | **15 cm** |
 | The Great Interlock | 13 right triangles | Two indispensable floor supports, angled wedges, two inset offsets and a 24 cm canopy | **24 cm** |
 
 ### Nine Muses
-Three foundation triangles support twin roof routes. Further outside triangles rise independently, and matched lengths reconnect their upper tips beneath a final crown. This is a layered arrangement, **not a fan rooted at one ground vertex**.
+
+The nine triangles now climb in a dense, leaning *continuous* stack. Starting from one 5–12–13 floor foundation, each new edge supports the next. A true 2 cm overhang on a 15 cm sloping side unlocks a 13 cm subsegment; the final calculation gives **√1021 cm**. The old three-foundation terrace and its equal-tick inference have been removed.
 
 ### Marble Terrace
 A grounded rectangle is the foundation. Its 13 cm diagonal and the derived 5 cm height determine a **12 cm rooftop**. The rooftop is split into 4 cm and 8 cm portions, each supporting different staggered roof triangles; the target is **2√38 cm**.
 
 ### Acropolis
-Two **separate rectangular plinths** each contribute an essential diagonal deduction. Their roof widths are each 12 cm; matching marks carry those lengths to the two halves of the 24 cm upper bridge. A 7 cm upright completes the 7–24–25 right triangle. Removing **either** rectangle diagonal leaves the final target inaccessible in the dependency engine.
 
-Rectangles are actual quadrilaterals with visible edges, right-angle marks and a diagonal; the invisible helper triangles are mathematical, not overlapping coloured artwork. Redundant opposite-length labels are suppressed or propagated when their equalities are established.
+Two rectangles now form successive platforms, not disconnected piers. Rectangle R1's 13 cm diagonal gives a 12 cm width, which unlocks the 16 cm leg leading into rectangle R2. Its 20 cm diagonal in turn gives the next 12 cm roof section. Smaller wedges, a measured 2 cm offset and alternating Pythagoras steps lead to **x = 15 cm**. Both rectangle diagonals are necessary.
+
+Opposite horizontal rectangle sides are visibly marked with matching ticks (two distinct tick groups). Rectangles are actual quadrilaterals, with right-angle marks and a diagonal; helper triangles are mathematical rather than overlapping filled artwork.
 
 ## What stays the same
 
@@ -29,8 +31,8 @@ The classroom workspace still supports a general scratchpad before selecting any
 ## Acceptance and release testing
 
 - All ten puzzles must have complete, non-overlapping, mathematically correct shapes, at least one grounded support, and a real solution dependency chain.
-- The advanced collection must have visually distinct silhouettes. The Nine Muses is a terraced three-foundation pile, the Marble Terrace a **single rectangular platform**, the Acropolis **two separate plinths**, and the Great Interlock a dense leaning assembly on two mathematical foundations.
-- Both rectangle diagonals must be necessary for completing the Acropolis.
+- The advanced collection must have visually distinct silhouettes. The Nine Muses is a one-base leaning cascade, the Marble Terrace a **single rectangular platform**, the Acropolis **two consecutive diagonal-dependent platforms**, and the Great Interlock a dense leaning assembly on two mathematical foundations.
+- Both rectangle diagonals must be necessary in sequence for completing the Acropolis.
 - The browser workflow captures every puzzle at desktop and phone widths and verifies all ten at five widths (including 320 px), with label collision protection.
 - Test geometry at ordinary and magnified views; ensure drawing/solution buttons never overlap, even on short laptops.
 - Check student progress after a redesign: the unchanged two puzzles retain their saved work, while older saved progress on newly redesigned geometries must not mark unrelated lengths as solved.
