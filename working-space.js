@@ -338,6 +338,7 @@ export function mountWorkingSpace(container, initial, onChange) {
   const inkUndo=[]; // persists when switching between Maths and Draw tabs
   let cleanup=()=>{},destroyed=false;
   const root=node("section","ws-root");
+  const inspector=container.closest?.("#inspector")||null;
   root.setAttribute("aria-label","Your mathematical working");
   const head=node("div","ws-header");
   const titleGroup=node("div","ws-title-group");
@@ -365,6 +366,9 @@ export function mountWorkingSpace(container, initial, onChange) {
     // scrolls if there is not enough vertical room.
     container.classList.toggle("ws-drawing-host",tab==="ink");
     root.classList.toggle("ws-drawing",tab==="ink");
+    // Normal-flow block layout prevents the short-laptop inspector's
+    // flex sizing from making the parchment taller than its parent.
+    inspector?.classList.toggle("ws-drawing-inspector",tab==="ink");
     math.classList.toggle("active",tab==="math");
     ink.classList.toggle("active",tab==="ink");
     math.setAttribute("aria-pressed",String(tab==="math"));
@@ -385,5 +389,8 @@ export function mountWorkingSpace(container, initial, onChange) {
       }
     }).catch(()=>{});
   }
-  return ()=>{destroyed=true;cleanup();};
+  return ()=>{
+    destroyed=true;cleanup();
+    inspector?.classList.remove("ws-drawing-inspector");
+  };
 }

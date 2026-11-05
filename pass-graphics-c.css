@@ -188,3 +188,33 @@ body[data-view="puzzle"] .side input:focus-visible {
     transform:none!important;opacity:1!important;
   }
 }
+
+
+/* Release visual audit: the inline SVG's intrinsic sizing made the
+   wreath spill into the completion heading in real Chromium. Bound
+   the illustration to its reserved crest region at every viewport. */
+.completion-dialog .completion-crest {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:clamp(90px,16vh,130px);
+  max-height:130px;
+  min-height:0;
+  overflow:hidden;
+}
+.completion-dialog .completion-crest svg.completion-laurel {
+  display:block;
+  flex:0 1 auto;
+  width:auto;
+  max-width:min(180px,90%);
+  height:100%;
+  max-height:100%;
+  overflow:hidden;
+}
+.completion-dialog .completion-inner h2 {
+  position:relative;
+  z-index:1;
+}
+@media(max-height:630px){
+  .completion-dialog .completion-crest {height:88px;}
+}

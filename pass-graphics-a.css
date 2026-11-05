@@ -192,3 +192,17 @@ body[data-view] footer::before {
   .hero-fall-svg .hero-goal{animation:none!important;opacity:1!important;transform:none!important;}
   .home-challenge-card .mini-pile{transition:none!important;}
 }
+
+/* Audit fix: the 3-column rule above is desktop-only. On phones it
+   overrode the earlier one-column gallery and squeezed every card. */
+@media (max-width:899px) {
+  .home-puzzle-grid {
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:auto;
+  }
+}
+@media (max-width:560px) {
+  .home-puzzle-grid {
+    grid-template-columns:minmax(0,1fr);
+  }
+}
