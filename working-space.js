@@ -118,7 +118,7 @@ function drawInk(canvas,work,preview=null) {
   if(preview)render(preview);
 }
 function buildInk(container, work, commit, onTab) {
-  let tool="pen",activePointer=null,activeStroke=null,undo=[],observer=null;
+  let tool="pen",activePointer=null,activeStroke=null,undo=[],observer=null,eraserChanged=false;
   const toolbar=node("div","ws-ink-tools");
   const pen=actionButton("✎ Pen","Draw with pen",()=>setTool("pen"));
   const eraser=actionButton("⌫ Eraser","Erase touched strokes",()=>setTool("eraser"));
@@ -157,12 +157,12 @@ function buildInk(container, work, commit, onTab) {
   canvas.addEventListener("pointerdown",event=>{
     if(event.button!==undefined&&event.button!==0&&event.pointerType!=="pen")return;
     event.preventDefault();
-    activePointer=event.pointerId;
+    activePointer=event.pointerId;eraserChanged=false;
     canvas.setPointerCapture?.(event.pointerId);
     const point=pointerPoint(event);
     snapshot();
     if(tool==="pen"){activeStroke={width:event.pointerType==="pen"?2.1:2.6,points:[point]};redraw();}
-    else{if(!eraseAt(work,point,0.035)){undo.pop();}else{commit();redraw();updateUndo();}}
+    else{if(eraseAt(work,point,0.035)){eraserChanged=true;commit();redraw();updateUndo();}}
   });
   canvas.addEventListener("pointermove",event=>{
     if(activePointer!==event.pointerId)return;
@@ -174,7 +174,7 @@ function buildInk(container, work, commit, onTab) {
         activeStroke.points.push(point);redraw();
       }
     }else if(tool==="eraser"){
-      if(eraseAt(work,point,0.035)){commit();redraw();updateUndo();}
+      if(eraseAt(work,point,0.035)){eraserChanged=true;commit();redraw();updateUndo();}
     }
   });
   const finish=event=>{
@@ -183,6 +183,7 @@ function buildInk(container, work, commit, onTab) {
       addStroke(work,activeStroke);
       activeStroke=null;commit();redraw();updateUndo();
     }
+    if(tool==="eraser"&&!eraserChanged&&undo.length){undo.pop();updateUndo();}
     activePointer=null;
   };
   canvas.addEventListener("pointerup",finish);
