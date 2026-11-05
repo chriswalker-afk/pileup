@@ -1,0 +1,85 @@
+/* LABEL CLARITY — PASS B
+   Dimension brackets separate a complete straight-line length from
+   its constituent segments without adding floating explanatory text.
+   Every mark follows actual endpoints of the annotated side. */
+#diagram svg .measurement-brackets{pointer-events:none}
+#diagram svg .dimension-bracket{
+  opacity:.62;
+  pointer-events:none;
+  transition:opacity .15s ease-out;
+}
+#diagram svg .dimension-bracket-line,
+#diagram svg .dimension-bracket-spine,
+#diagram svg .dimension-bracket-cap{
+  fill:none;
+  vector-effect:non-scaling-stroke;
+  stroke-linecap:round;
+}
+#diagram svg .dimension-bracket-whole{
+  color:#637567;
+}
+#diagram svg .dimension-bracket-whole .dimension-bracket-spine{
+  stroke:#536956;
+  stroke-width:2.2px;
+}
+#diagram svg .dimension-bracket-whole .dimension-bracket-cap{
+  stroke:#536956;
+  stroke-width:2.2px;
+}
+#diagram svg .dimension-bracket-part{
+  opacity:.47;
+}
+#diagram svg .dimension-bracket-part .dimension-bracket-spine{
+  stroke:#98784d;
+  stroke-width:1.6px;
+  stroke-dasharray:5 3;
+}
+#diagram svg .dimension-bracket-part .dimension-bracket-cap{
+  stroke:#98784d;
+  stroke-width:1.6px;
+}
+#diagram svg .dimension-bracket-overhang{
+  opacity:.78;
+}
+#diagram svg .dimension-bracket-overhang .dimension-bracket-spine,
+#diagram svg .dimension-bracket-overhang .dimension-bracket-cap{
+  stroke:#a77742;
+  stroke-width:1.8px;
+}
+#diagram svg .dimension-bracket.is-emphasized{
+  opacity:1!important;
+  filter:drop-shadow(0 0 2px #ba8d5360);
+}
+#diagram svg .dimension-bracket.is-emphasized .dimension-bracket-spine,
+#diagram svg .dimension-bracket.is-emphasized .dimension-bracket-cap{
+  stroke:#a4682b;
+  stroke-width:2.4px;
+  stroke-dasharray:none;
+}
+#diagram svg.label-focus-active .dimension-bracket.focus-muted{
+  opacity:.08;
+}
+#diagram svg .dimension-leader{
+  stroke:#8e7757;
+  stroke-width:1.1px;
+  stroke-dasharray:3 4;
+  opacity:.56;
+  pointer-events:none;
+}
+#diagram svg .dimension-leader.is-emphasized{
+  stroke:#a76f35;
+  stroke-width:2px;
+  stroke-dasharray:4 3;
+  opacity:1;
+}
+#diagram svg .side-chip.is-emphasized rect{
+  filter:drop-shadow(0 1px 3px #805b2d52);
+}
+@media(max-width:520px){
+  #diagram svg .dimension-bracket{opacity:.49}
+  #diagram svg .dimension-bracket-part{opacity:.39}
+  #diagram svg .dimension-bracket.is-emphasized{opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  #diagram svg .dimension-bracket{transition:none!important}
+}

@@ -88,12 +88,42 @@ async function sizeAudit(page){
         Math.max(label[i].top,label[j].top);
       if(dx>1.5&&dy>1.5)overlaps.push([i,j,Math.round(dx),Math.round(dy)]);
     }
+    const measured=[...svg.querySelectorAll(".side-chip")].map(chip=>{
+      const key=chip.getAttribute("data-side-key");
+      const label=chip.querySelector("rect");
+      const line=[...svg.querySelectorAll(".side-trace")].find(el=>
+        el.getAttribute("data-side-key")===key)?.querySelector("line");
+      if(!line||!label)return null;
+      const cx=Number(label.getAttribute("x"))+Number(label.getAttribute("width"))/2;
+      const cy=Number(label.getAttribute("y"))+Number(label.getAttribute("height"))/2;
+      const mx=(Number(line.getAttribute("x1"))+Number(line.getAttribute("x2")))/2;
+      const my=(Number(line.getAttribute("y1"))+Number(line.getAttribute("y2")))/2;
+      return Math.hypot(cx-mx,cy-my);
+    }).filter(Number.isFinite);
+    const bracketErrors=[];
+    const brackets=[...svg.querySelectorAll(".dimension-bracket")];
+    for(const bracket of brackets){
+      const key=bracket.getAttribute("data-side-key");
+      const trace=[...svg.querySelectorAll(".side-trace")].find(el=>
+        el.getAttribute("data-side-key")===key)?.querySelector("line");
+      const spine=bracket.querySelector(".dimension-bracket-spine");
+      const caps=bracket.querySelectorAll(".dimension-bracket-cap");
+      const len=line=>Math.hypot(
+        Number(line.getAttribute("x2"))-Number(line.getAttribute("x1")),
+        Number(line.getAttribute("y2"))-Number(line.getAttribute("y1")));
+      if(!trace||!spine||caps.length!==2||
+        Math.abs(len(spine)-len(trace))>.001)bracketErrors.push(key);
+    }
     return {pieces:shape.length,labels:label.length,overlaps,
       clippedLabels:outside(label),clippedPieces:outside(shape),
       widthOverflow:document.documentElement.scrollWidth-innerWidth,
       rectangles:svg.querySelectorAll(".rectangle-piece").length,
       equalTicks:svg.querySelectorAll(".equal-side-tick").length,
-      zoomOverlaps};
+      zoomOverlaps,
+      bracketCount:brackets.length,bracketErrors,
+      longLeaders:svg.querySelectorAll(".dimension-leader").length,
+      meanLabelDistance:measured.length?
+        Math.round(measured.reduce((n,x)=>n+x,0)/measured.length*10)/10:0};
   });
 }
 function padRect(page){
@@ -163,11 +193,19 @@ try{
         insist(!d.clippedLabels.length,"Clipped measurements",d);
         insist(!d.clippedPieces.length,"Clipped geometry",d);
         insist(!d.overlaps.length,"Overlapping measurement labels",d);
+        insist(!d.bracketErrors.length,
+          "Whole/part dimension bracket does not span its actual length",d);
+        insist(Number.isFinite(d.meanLabelDistance),
+          "Computed label distances must be finite",d);
+        if(["twin-paths","split-project","first-fall","projecting-edge"].includes(id)){
+          insist(d.bracketCount>0,
+            "Whole/partial straight-line lengths are missing their brackets",d);
+        }
         insist(!d.zoomOverlaps.length,"Zoom controls cover a label at 100%",d);
         if(id==="twin-paths")insist(d.equalTicks===4,"Equal-length marks missing",d);
         if(id==="acropolis")insist(d.rectangles===2,"Two rectangles missing",d);
         if(id==="marble-terrace")insist(d.rectangles===1,"Rectangle missing",d);
-        if(["first-fall","acropolis"].includes(id)&&
+        if(["first-fall","acropolis","twin-paths","split-project"].includes(id)&&
           ["desktop","phone"].includes(name))await snap(page,id+"-"+name);
         return d;
       });
@@ -343,6 +381,9 @@ try{
       }));
       insist(highlighted.focused&&highlighted.muted>0&&highlighted.strong>=3&&
         highlighted.traces===1,"Focus view does not isolate the active shape",highlighted);
+      // Acropolis has rectangles but no authored straight-line
+      // whole/part relation. Bracket-focus behaviour is checked
+      // separately on a split-side challenge below.
       await page.locator("#diagram-zoom-in").click();
       await page.locator("#diagram-zoom-in").click();
       await page.locator("#diagram-zoom-in").click();
@@ -374,7 +415,25 @@ try{
       if(await page.locator("#skip").isVisible())await page.locator("#skip").click();
       insist(await svg.locator(".side-chip").count()===all,
         "Replay/Skip changed the measurement count after Focus view");
-      return {all,preview,highlighted,located};
+      await open(page,"twin-paths");
+      await page.locator("#side-select").selectOption({index:1});
+      await page.locator("#label-focus-toggle").click();
+      const brackets=await page.locator("#diagram svg").evaluate(root=>{
+        const list=[...root.querySelectorAll(".dimension-bracket")];
+        const mismatch=list.flatMap(el=>{
+          const key=el.getAttribute("data-side-key");
+          const chip=[...root.querySelectorAll(".side-chip")].find(x=>x.getAttribute("data-side-key")===key);
+          return chip&&(
+            chip.classList.contains("focus-muted")!==el.classList.contains("focus-muted") ||
+            chip.classList.contains("is-emphasized")!==el.classList.contains("is-emphasized")
+          )?[key]:[];
+        });
+        return {total:list.length,mismatch};
+      });
+      insist(brackets.total>0&&!brackets.mismatch.length,
+        "Split-side dimension brackets do not follow their label Focus state",brackets);
+      if(name==="desktop"||name==="phone")await snap(page,"twin-paths-focused-"+name);
+      return {all,preview,highlighted,located,brackets};
     });
     await run(name+" / drawing containment and working controls",async()=>{
       await open(page,"first-fall");

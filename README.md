@@ -112,3 +112,7 @@ All nine puzzles have **− / + / FIT** controls in the tablet, with a percentag
 ## Label clarity — Pass A
 
 Hover or focus a measurement to see a temporary trace of its **exact side and endpoints**. Use **FOCUS VIEW** beside the side selector to keep the selected triangle or rectangle’s labels prominent, and switch back to **ALL LABELS** at any time. The **LOCATE** button brings a selected side into view without losing the current diagram zoom. This does not change mathematical working or label positions. See [Label Clarity Pass A](LABEL_CLARITY_PASS_A.md) for use and QA.
+
+## Label clarity — Pass B
+
+The diagram now places given, target and unknown measurements using a proximity-aware layout that avoids overlapping chips and discourages crossing leader lines. On mathematically defined straight-line relationships, **solid whole-length brackets** and **lighter dashed partial-length brackets** show precisely which section is being measured. Permanent connector lines appear only for distant callouts; Pass A's Focus, exact-side trace and Locate controls remain. Read [Label Clarity Pass B](LABEL_CLARITY_PASS_B.md) for the design, testing and review checklist.
