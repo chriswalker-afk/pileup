@@ -47,7 +47,7 @@ npm run check
 - `tests/` — automated checks
 - `.github/workflows/` — GitHub Pages and validation workflows
 
-The library contains **six** original, mathematically exact puzzles including inset and projecting overhangs, one long side covering two shorter sides, independent branches, matching equal-length ticks, exact surds and compound-shape extensions. See [`PASS_C.md`](PASS_C.md) for mathematical answers and QA requirements.
+The library contains **nine** original, mathematically exact puzzles including inset and projecting overhangs, one long side covering two shorter sides, independent branches, matching equal-length ticks, exact surds and compound-shape extensions. See [`PASS_C.md`](PASS_C.md) for mathematical answers and QA requirements.
 
 ## Credits
 
@@ -64,3 +64,9 @@ Each side has **maths lines** (MathLive input with roots, fractions and powers) 
 **Every triangle must be entirely visible.** Shared edges, split sides and overhangs are allowed, but triangle interiors may never cover each other. A geometry guard checks every authored challenge and fits it inside the tablet viewport. The master puzzle now ends at **√230 cm** with five visible triangles.
 
 Students can switch between a compact or wider working panel on desktop, enlarge the drawing pad, and reveal hints without resetting their maths or ink. See [`USABILITY_PASS.md`](USABILITY_PASS.md) for the detailed QA checklist.
+
+## Advanced puzzles and student workspace
+
+Three harder problems extend the catalogue: **The Nine Muses** (9 triangles), **The Marble Terrace** (8 triangles + rectangle) and **The Acropolis** (10 triangles + two rectangles). Rectangles contribute mathematical reasoning through their diagonals and equal opposite sides. See [Advanced challenges](ADVANCED_CHALLENGES.md) for the answer chains and testing checklist.
+
+The student panel prioritises maths lines and handwriting rather than explanatory text. A general scratchpad is available before choosing a side, with separate per-side working saved locally.
