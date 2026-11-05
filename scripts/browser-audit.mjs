@@ -507,14 +507,19 @@ try{
           const symbols=[...svg.querySelectorAll(
             ".triangle-identity, .right-angle-marker, .equal-tick-group, .bracket-end-cap"
           )].slice(0,18).map(element=>{
-            // SVG <g>.getBoundingClientRect() may omit a nested transform
-            // in Chromium. Measure the painted leaf (text/path/line)
-            // so the result reflects actual visible screen dimensions.
+            // Chromium's SVG getBoundingClientRect() can report the
+            // uncorrected viewBox dimensions of a nested text/path,
+            // even when the <g> has a valid inverse transform.
+            // Use the painted leaf's local geometry and its *actual*
+            // screen coordinate transform to verify visual size.
             const painted=element.querySelector("text,path,line")||element;
-            const rect=painted.getBoundingClientRect();
+            const geometry=painted.getBBox();
+            const matrix=painted.getScreenCTM();
+            const sx=Math.hypot(matrix.a,matrix.b);
+            const sy=Math.hypot(matrix.c,matrix.d);
             return {kind:element.getAttribute("class"),
-              width:rect.width,height:rect.height,
-              transform:element.getAttribute("transform")};
+              width:geometry.width*sx,height:geometry.height*sy,
+              sx,sy,transform:element.getAttribute("transform")};
           });
           return {scale:document.querySelector("#diagram-zoom-level").textContent,
             values,symbols};
@@ -539,9 +544,13 @@ try{
             const base=initial.symbols[i];
             insist(base.kind===symbol.kind,"Zoom symbol identities changed",
               {id,target,symbol,base});
+            insist(Math.abs(symbol.sx-base.sx)<.002&&
+              Math.abs(symbol.sy-base.sy)<.002,
+              "Triangle ID, angle marker or measurement mark lost its fixed screen scale",
+              {id,target,symbol,base});
             insist(Math.abs(symbol.width-base.width)<2.5&&
               Math.abs(symbol.height-base.height)<2.5,
-              "Triangle ID, angle marker or measurement mark grew during zoom",
+              "Triangle ID, angle marker or measurement mark changed rendered size",
               {id,target,symbol,base});
             insist(symbol.transform,
               "Zoom symbol did not counter-scale with triangle geometry",
