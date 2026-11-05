@@ -1,6 +1,6 @@
 # Advanced challenges and student working — current collection
 
-The nine puzzles have been re-architected to make their **physical structures and mathematical strategies genuinely different**. See [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md) for the complete catalogue and acceptance criteria.
+The original nine puzzles have been re-architected to make their **physical structures and mathematical strategies genuinely different**. See [Puzzle Architecture Pass](PUZZLE_ARCHITECTURE_2026.md) for the complete catalogue and acceptance criteria.
 
 ## Advanced puzzles
 
@@ -27,11 +27,15 @@ The classroom workspace still supports a general scratchpad before selecting any
 
 ## Acceptance and release testing
 
-- All nine puzzles must have complete, non-overlapping, mathematically correct shapes, at least one grounded support, and a real solution dependency chain.
+- All ten puzzles must have complete, non-overlapping, mathematically correct shapes, at least one grounded support, and a real solution dependency chain.
 - The advanced collection must have visually distinct silhouettes. The Nine Muses is a terraced three-foundation pile, the Marble Terrace a **single rectangular platform**, and the Acropolis **two separate plinths**.
 - Both rectangle diagonals must be necessary for completing the Acropolis.
-- The browser workflow captures every puzzle at desktop and phone widths and verifies all nine at five widths (including 320 px), with label collision protection.
+- The browser workflow captures every puzzle at desktop and phone widths and verifies all ten at five widths (including 320 px), with label collision protection.
 - Test geometry at ordinary and magnified views; ensure drawing/solution buttons never overlap, even on short laptops.
 - Check student progress after a redesign: the unchanged two puzzles retain their saved work, while older saved progress on newly redesigned geometries must not mark unrelated lengths as solved.
 
 Earlier exact answer chains from the six-puzzle release no longer apply to the seven re-architected puzzles. Use [current puzzle answers and structure](PUZZLE_ARCHITECTURE_2026.md).
+
+### The Great Interlock
+
+The tenth grand challenge is a reference-inspired original: 13 right triangles, one 24 cm horizontal roof, two 5 cm offsets, two independent bottom-up chains and matching-side ticks. See [full construction and worked solution](THE_GREAT_INTERLOCK.md).
