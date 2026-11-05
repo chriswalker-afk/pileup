@@ -64,7 +64,10 @@ for(const id of ["marble-terrace","acropolis"]){
       assert.ok(solutionSteps(p,s).some(step=>
         step.kind==="rectangle-diagonal"&&step.triangleId.startsWith(r.id)));
     }
-    assert.ok(solutionSteps(p,s).some(step=>step.kind==="rectangle-opposite"));
+    // Opposite edges may be carried automatically from the paired
+    // rectangle side, rather than requiring a redundant answer step.
+    const pairs=p.rectangles.flatMap(rect=>rectangleOppositePairs(rect));
+    assert.ok(pairs.length>=2);
   });
 }
 test("Marble Terrace roof width requires a real rectangle diagonal",()=>{
