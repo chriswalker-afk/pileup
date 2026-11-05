@@ -30,11 +30,60 @@ function miniPreview(puzzle){
     figures+'</svg>';
 }
 function home(gallery=false){
- disposeWorking();disposeWorking=()=>{};
- screen='home';clearTimeout(finishTimer);
- root.innerHTML=header()+`<main><section class="hero"><div><div class="eyebrow">— AN ANCIENT PUZZLE · A MODERN CHALLENGE</div><h1>When triangles<br><em>fall into place.</em></h1><p class="lead">In the footsteps of Pythagoras, follow a trail of hidden lengths. Each answer unlocks the next. Can you uncover the final side?</p><div class="actions"><button class="btn primary" data-puzzle="first-fall">BEGIN THE TRIAL &nbsp; →</button><button class="btn plain" data-gallery>EXPLORE THE CHALLENGES ↗</button></div><p class="footnote">✦ &nbsp; RIGHT-ANGLED TRIANGLES. ONE HIDDEN ANSWER.</p></div><div class="illustration"><svg viewBox="0 0 470 430" role="img" aria-label="Decorative arrangement of coloured geometric triangles"><polygon points="75,260 285,260 285,116" fill="#d7ae69" stroke="#433c31" stroke-width="3"/><polygon points="285,116 285,260 402,190" fill="#7fa7a1" stroke="#433c31" stroke-width="3"/><polygon points="75,260 285,260 184,370" fill="#b77f70" stroke="#433c31" stroke-width="3"/><polygon points="134,73 285,116 75,260" fill="#a7a0bb" stroke="#433c31" stroke-width="3"/><g fill="#433c31" font-size="21" font-family="Georgia,serif"><text x="170" y="249">a</text><text x="308" y="222">b</text><text x="194" y="311">c</text><text x="194" y="102">?</text></g><path d="M47 367H425M47 375H425" stroke="#ae9e80"/></svg><span class="illustration-caption">FIG. I — THE BEAUTY OF CONNECTION</span></div></section><div class="meander"></div><section class="section"><div class="section-title"><div class="eyebrow">THE METHOD</div><h2>Three steps to discovery</h2><p>Simple in principle. Surprisingly deep in practice.</p></div><div class="steps"><article><span class="number">I.</span><h3>Watch the fall</h3><p>Right-angled triangles tumble onto a carefully constructed geometric tablet.</p></article><article><span class="number">II.</span><h3>Follow the clues</h3><p>Known lengths lead to unknown lengths. Discover where the chain begins.</p></article><article><span class="number">III.</span><h3>Find the final side</h3><p>Use Pythagoras' theorem to connect the pieces and reach the target.</p></article></div></section><section class="section" id="challenges"><div class="section-title"><div class="eyebrow">CHOOSE YOUR PATH</div><h2>The challenges</h2><p>Six original piles, each with a different way to connect the mathematics.</p></div><div class="cards">${puzzles.map((x,i)=>`<button class="challenge-card" data-puzzle="${x.id}"><span class="card-index">${String(i+1).padStart(2,"0")} / ${x.epithet}</span>${miniPreview(x)}<span class="card-title">${x.title}</span><span class="card-description">${x.description}</span><span class="card-tags">${(x.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</span><span class="card-footer"><span>${x.triangles.length} TRIANGLES</span><span>${x.difficulty} ↗</span></span></button>`).join('')}</div></section></main>`+footer();
- bind();if(gallery)requestAnimationFrame(()=>document.getElementById('challenges')?.scrollIntoView({behavior:reduced.matches?'instant':'smooth'}));
+  disposeWorking();disposeWorking=()=>{};
+  screen="home";clearTimeout(finishTimer);
+  if(document.body?.dataset)document.body.dataset.view="home";
+  root.innerHTML=header()+`<main class="home-compact">
+    <section class="home-story" aria-labelledby="home-heading">
+      <div class="home-story-top">
+        <div class="eyebrow">✧ AN ANCIENT PUZZLE · A MODERN CHALLENGE</div>
+        <h1 id="home-heading">When triangles <em>fall into place.</em></h1>
+        <p class="home-lead">Discover hidden lengths in a pile of right-angled triangles. Each answer becomes the clue to another.</p>
+        <div class="home-story-art" aria-hidden="true">
+          <span class="home-art-ring"></span>
+          <span class="home-art-symbol">△</span>
+          <span class="home-art-caption">GEOMETRY · REASONING · DISCOVERY</span>
+        </div>
+      </div>
+      <div class="home-story-bottom">
+        <div class="home-steps">
+          <span><b>I</b> Watch them fall</span>
+          <span><b>II</b> Trace the lengths</span>
+          <span><b>III</b> Find the final x</span>
+        </div>
+        <button class="btn primary home-start" data-puzzle="first-fall">BEGIN THE FIRST TRIAL <span aria-hidden="true">→</span></button>
+        <p class="footnote">SIX ORIGINAL CHALLENGES · FROM APPRENTICE TO MASTER</p>
+      </div>
+    </section>
+    <section class="home-library" id="challenges" aria-labelledby="home-challenge-title">
+      <div class="home-library-heading">
+        <div>
+          <div class="eyebrow">CHOOSE YOUR PATH</div>
+          <h2 id="home-challenge-title">The six trials</h2>
+        </div>
+        <p>Different piles. Different connections.</p>
+      </div>
+      <div class="home-puzzle-grid">
+      ${puzzles.map((puzzle,index)=>`<button class="challenge-card home-challenge-card" data-puzzle="${puzzle.id}" aria-label="Challenge ${index+1}: ${puzzle.title}. ${puzzle.difficulty}">
+        <span class="home-card-number">${String(index+1).padStart(2,"0")} / ${puzzle.difficulty}</span>
+        ${miniPreview(puzzle)}
+        <span class="home-card-copy">
+          <strong class="home-card-title">${escapeHtml(puzzle.title)}</strong>
+          <span class="home-card-desc">${escapeHtml(puzzle.description)}</span>
+        </span>
+        <span class="home-card-bottom"><span>${puzzle.triangles.length} TRIANGLES</span><span class="home-card-go">EXPLORE →</span></span>
+      </button>`).join("")}
+      </div>
+    </section>
+  </main>`+footer();
+  bind();
+  if(gallery && window.matchMedia?.("(max-width: 899px)")?.matches){
+    requestAnimationFrame(()=>document.getElementById("challenges")?.scrollIntoView({
+      behavior:reduced.matches?"instant":"smooth"
+    }));
+  }
 }
+
 function el(name,attrs={},text=''){const x=document.createElementNS('http://www.w3.org/2000/svg',name);Object.entries(attrs).forEach(([k,v])=>x.setAttribute(k,String(v)));if(text)x.textContent=text;return x;}
 function labelPoint(a,b,cent,offset){const M=mid(a,b),vec=v(a,b),len=d(a,b);let nx=-vec.y/len,ny=vec.x/len;if((M.x-cent.x)*nx+(M.y-cent.y)*ny<0){nx=-nx;ny=-ny;}return p(M.x+offset*nx,M.y+offset*ny);}
 function escapeHtml(text){
@@ -667,6 +716,7 @@ function showCompletion(){
 }
 function openPuzzle(id){
   disposeWorking();disposeWorking=()=>{};
+  if(document.body?.dataset)document.body.dataset.view="puzzle";
   const puzzle=puzzles.find(x=>x.id===id);if(!puzzle)return;
   current=puzzle;sideMap=buildSides(puzzle);selectedSide=null;visible=true;solutionOpen=false;extensionMode=false;screen=id;clearTimeout(finishTimer);
   loadProgress();
