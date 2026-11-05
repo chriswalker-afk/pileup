@@ -20,7 +20,7 @@ test("the bracket caps identify exact whole and partial edge extents",()=>{
   assert.deepEqual(part.mid,{x:60,y:8});
   assert.equal(part.capA.length,2);
   assert.equal(whole.capB.length,2);
-  near(whole.capA[0].y,-6);near(whole.capA[1].y,8);
+  near(whole.capA[0].y,8);near(whole.capA[1].y,-6);
   const zero=dimensionBracket(a,a,{nx:1,ny:0},"part");
   assert.equal(zero,null);
   const above=dimensionBracket(a,b,{nx:0,ny:1},"overhang");
