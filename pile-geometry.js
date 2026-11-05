@@ -1,4 +1,5 @@
 import { makeSplitPile, makeCrownPile } from "./pile-variants.js";
+import { makeRectangleChallenge } from "./advanced-piles.js";
 import { assertFullyVisiblePuzzle } from "./pile-visibility.js";
 
 /**
@@ -52,7 +53,7 @@ export function makeOverhangPile({
     const previousVertex=last.pts.find(pt=>pt!==lower&&pt!==upper);
     const V=attachOutside(lower,upper,previousVertex,upper,legs[i]);
     const triangle={
-      id:["III","IV","V","VI","VII"][i],
+      id:["III","IV","V","VI","VII","VIII","IX","X","XI","XII"][i],
       pts:[lower,upper,V],right:1,color:colors[i+2],
       givens:[{a:upper,b:V,value:legs[i]}]
     };
@@ -129,6 +130,32 @@ export const puzzles=[
     description:"A long side bridges two smaller triangle sides, before an upper chain leads to one final surd.",
     colors:["#d6b06c","#7aa9a2","#c18a78","#979fc1","#b1a07c"],
     tags:["Two-side bridge","Branches converge","Exact surds"]
+  }),
+  makeOverhangPile({
+    id:"nine-muses",title:"The Nine Muses",epithet:"THE ACADEMY",
+    difficulty:"MASTER CHALLENGE",
+    description:"Nine right triangles weave around a projecting edge. Follow the long chain through increasingly complex exact lengths.",
+    base:[16,12],overhang:4,overhangMode:"extension",upperHypotenuse:26,
+    legs:[8,6,9,5,4,7,3],
+    colors:["#d6b06c","#7aa9a2","#bb8373","#979fc1","#aa9983","#8bac91","#c5a5a0","#a29bba","#bcac7c"],
+    tags:["9 right triangles","Long chain","Overhang","Exact surds"]
+  }),
+  makeRectangleChallenge({
+    id:"marble-terrace",title:"The Marble Terrace",epithet:"THE MASTER BUILDER",
+    difficulty:"MASTER CHALLENGE",
+    description:"Eight right triangles climb from a rectangle. First use its diagonal to unlock the missing roof length.",
+    firstSteps:[{at:"b",leg:5},{at:"a",leg:5},{at:"a",leg:5},
+      {at:"b",leg:6},{at:"b",leg:6},{at:"a",leg:6}],
+    tags:["8 right triangles","1 rectangle","Diagonal reasoning"]
+  }),
+  makeRectangleChallenge({
+    id:"acropolis",title:"The Acropolis",epithet:"THE GRAND ARCHITECT",
+    difficulty:"GRAND CHALLENGE",
+    description:"Ten right triangles and two rectangles. Each diagonal unlocks a new section of the structure.",
+    firstSteps:[{at:"b",leg:5},{at:"a",leg:5},{at:"a",leg:5}],
+    second:{depth:4,edge:"left",at:"b",leg:5,
+      steps:[{at:"a",leg:4},{at:"a",leg:4},{at:"b",leg:4},{at:"b",leg:4}]},
+    tags:["10 right triangles","2 rectangles","Two diagonals","Extended chain"]
   })
 ];
 
@@ -140,7 +167,7 @@ for(const puzzle of puzzles){
       puzzle.id==="projecting-edge"?["Projecting overhang","Exact value"] :
       ["Long chain","Exact surds"];
   }
-  puzzle.topology=puzzle.lengthRelations?.length>1?"split-and-overhang":
+  puzzle.topology=puzzle.topology||(puzzle.lengthRelations?.length>1?"split-and-overhang":
     puzzle.equalSideGroups?.length?"equal-sides":
-    puzzle.spanHighlight?"shared-split-side":"overhang-chain";
+    puzzle.spanHighlight?"shared-split-side":"overhang-chain");
 }

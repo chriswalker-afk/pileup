@@ -1,0 +1,60 @@
+/* Higher-tier geometry: genuine rectangles with a visible, usable
+   diagonal. Nine challenges still fit the main desktop dashboard. */
+#diagram svg .rectangle-piece polygon{
+  fill-opacity:.95;
+  stroke:#615947;stroke-width:2px;stroke-linejoin:round;
+  vector-effect:non-scaling-stroke
+}
+#diagram svg .rectangle-piece.selected polygon{
+  stroke:#826333;stroke-width:3px
+}
+#diagram svg .rectangle-piece .rectangle-diagonal{
+  stroke:#746956;stroke-width:1.8px;stroke-dasharray:7 5;
+  fill:none;vector-effect:non-scaling-stroke;
+  pointer-events:none;opacity:.78
+}
+#diagram svg .rectangle-piece .rectangle-number{
+  fill:#706044;font-size:15px;opacity:.8
+}
+.home-puzzle-grid{grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-rows:repeat(3,minmax(0,1fr))}
+.home-card-copy{max-width:87%;margin-top:clamp(11px,2vh,25px)}
+.home-challenge-card .mini-pile{height:76px;top:14px;width:clamp(86px,8.5vw,120px)}
+.home-card-title{font-size:clamp(13px,1.1vw,18px);line-height:1.27}
+.home-card-desc{font-size:10px;-webkit-line-clamp:2}
+.home-challenge-card{padding:12px!important}
+.home-card-bottom{left:12px;right:12px}
+@media(min-width:900px) and (max-width:1230px){
+  .home-compact{grid-template-columns:minmax(220px,.6fr) minmax(0,1.65fr);
+    gap:12px;padding:14px 17px}
+  .home-story{padding:18px}
+  .home-story h1{font-size:clamp(28px,2.8vw,39px)}
+  .home-story-art{height:90px}
+  .home-story .home-lead{font-size:11px}
+  .home-puzzle-grid{gap:7px}
+  .home-challenge-card .mini-pile{display:none}
+  .home-challenge-card{padding:9px!important}
+  .home-card-copy{max-width:100%;margin-top:12px}
+  .home-card-title{font-size:13px}
+  .home-card-desc{font-size:9px;-webkit-line-clamp:2}
+  .home-card-bottom{left:9px;right:9px;font-size:8px}
+}
+@media(min-width:900px) and (max-height:760px){
+  .home-puzzle-grid{gap:7px;padding-top:7px}
+  .home-challenge-card .mini-pile{width:82px;height:60px;top:10px}
+  .home-card-copy{margin-top:8px}
+  .home-card-desc{-webkit-line-clamp:1}
+  .home-challenge-card{padding:9px!important}
+  .home-card-title{font-size:13px}
+  .home-card-bottom{bottom:7px}
+}
+@media(max-width:899px){
+  .home-puzzle-grid{grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:auto}
+  .home-card-copy{margin-top:30px;max-width:78%}
+  .home-challenge-card .mini-pile{width:112px;height:80px}
+}
+@media(max-width:560px){
+  .home-puzzle-grid{grid-template-columns:1fr}
+  .home-challenge-card{min-height:150px!important}
+}

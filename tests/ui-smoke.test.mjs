@@ -16,6 +16,7 @@ class FakeNode {
     this._classes = new Set();
     this.innerHTML = ""; this.textContent = ""; this.hidden = false;
     this.disabled = false; this.open = false; this.firstChild = null;
+    this.className="";this.value="";
     this.classList = {
       add: (...classes) => classes.forEach(x=>this._classes.add(x)),
       remove: (...classes) => classes.forEach(x=>this._classes.delete(x)),
@@ -32,6 +33,11 @@ class FakeNode {
   append(...children){
     this.children.push(...children);
     this.firstChild = this.children[0] ?? null;
+  }
+  insertBefore(child,before){
+    const index=this.children.indexOf(before);
+    this.children.splice(index<0?this.children.length:index,0,child);
+    this.firstChild=this.children[0]??null;
   }
   replaceChildren(...children){
     this.children = [...children];
@@ -51,6 +57,9 @@ class FakeNode {
   querySelector(selector){return this.querySelectorAll(selector)[0] ?? new FakeNode(selector,this.width);}
   getBoundingClientRect(){return {width:this.width,height:490};}
   focus(){}
+  getContext(){return {setTransform(){},clearRect(){},beginPath(){},
+    moveTo(){},lineTo(){},stroke(){},arc(){},fill(){}};}
+  focus(){}
   animate(frames,options){
     const animation={frames,options,cancel(){}};
     this.lastAnimation=animation;
@@ -60,7 +69,7 @@ class FakeNode {
   close(){this.open=false;}
 }
 
-test("all six puzzles mount with bounded labels and falling animations",async()=>{
+test("all nine puzzles mount with bounded labels and falling animations",async()=>{
   const oldGlobals={};
   const names=["document","window","location","history","localStorage","matchMedia","requestAnimationFrame","cancelAnimationFrame","setTimeout","clearTimeout"];
   for(const name of names)oldGlobals[name]=globalThis[name];
@@ -74,6 +83,7 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
       return node;
     },
     createElementNS(_ns,tag){return new FakeNode(tag,width);},
+    createElement(tag){return new FakeNode(tag,width);},
     querySelector(selector){
       if(selector==="#diagram svg")return nodes.get("diagram")?.firstChild ?? null;
       if(selector===".side-labels")return nodes.get("diagram")?.firstChild?.querySelector(".side-labels") ?? null;
@@ -112,7 +122,9 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
         const svg=nodes.get("diagram")?.firstChild;
         assert.ok(svg,"No SVG mounted for "+puzzle.id);
         const pieces=svg.querySelectorAll(".piece");
-        assert.equal(pieces.length,puzzle.triangles.length);
+        assert.equal(pieces.length,puzzle.triangles.length+(puzzle.rectangles?.length||0));
+        assert.equal(svg.querySelectorAll(".rectangle-piece").length,puzzle.rectangles?.length||0);
+        assert.equal(svg.querySelectorAll(".rectangle-diagonal").length,(puzzle.rectangles||[]).reduce((n,r)=>n+(r.diagonals?.length||0),0));
         const measurements=svg.querySelector(".side-labels");
         assert.ok(measurements,"Every puzzle needs a measurements layer");
         assert.ok(measurements.classList.contains("waiting"),
@@ -180,17 +192,27 @@ test("all six puzzles mount with bounded labels and falling animations",async()=
           assert.equal(measurements.classList.contains("waiting"),false,
             "Measurements reveal once the animation is skipped");
         }
+        const inspector=nodes.get("inspector")?.innerHTML||"";
+        assert.match(inspector,/id="working-pad-mount"/,
+          "Students should have a scratchpad immediately, before selecting a side");
+        const page=nodes.get("app")?.innerHTML||"";
+        assert.ok(!page.includes("Study which sides line up."),
+          "Remove unneeded explanatory flavour copy from the workspace");
+        assert.ok(!page.includes('Find the final <em>length.</em>'),
+          "Remove the repeated final-length headline");
+        assert.ok(!page.includes('class="facts"'),
+          "Triangle and given counts should not crowd the working panel");
         cases++;
       }
     }
-    assert.equal(cases,24);
-    // The desktop home screen should put all six challenges beside
+    assert.equal(cases,36);
+    // The desktop home screen should put all nine challenges beside
     // the introduction rather than below a full-page hero.
     location.hash="#home";show();
     const home=nodes.get("app")?.innerHTML||"";
     assert.match(home,/class="home-compact"/);
     assert.match(home,/class="home-puzzle-grid"/);
-    assert.equal((home.match(/class="challenge-card home-challenge-card"/g)||[]).length,6);
+    assert.equal((home.match(/class="challenge-card home-challenge-card"/g)||[]).length,9);
     assert.ok(!home.includes("Three steps to discovery"));
   }finally{
     for(const name of names){

@@ -1,4 +1,4 @@
-import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTriangle, readySteps, solutionSteps } from "./puzzle-engine.js";
+import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTriangle, readySteps, solutionSteps, propagateRectangleSides } from "./puzzle-engine.js";
 import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
@@ -28,7 +28,8 @@ function setWorkingFocused(wide){
 const header=()=>'<header><a class="brand" href="#home"><span class="seal">△</span><span>PYTHAGORAS <em>PILE UP</em></span></a><nav><a href="#home">THE AGORA</a><a href="#puzzles">THE CHALLENGES</a></nav><span class="header-note">A GEOMETER’S TRIAL</span></header>';
 const footer=()=>'<footer><span>△ PYTHAGORAS PILE UP</span><span>Inspired by the original classroom activity at greatmathsteachingideas.com and a design by @mrallanmaths.</span><span>MADE FOR CURIOUS MINDS</span></footer>';
 function miniPreview(puzzle){
-  const points=puzzle.triangles.flatMap(t=>t.pts);
+  const shapes=[...puzzle.triangles,...(puzzle.rectangles||[])];
+  const points=shapes.flatMap(t=>t.pts);
   const left=Math.min(...points.map(p=>p.x)),right=Math.max(...points.map(p=>p.x));
   const height=Math.max(...points.map(p=>p.y));
   const factor=Math.min(123/(right-left),72/height);
@@ -36,7 +37,7 @@ function miniPreview(puzzle){
     x:80+(p.x-(left+right)/2)*factor,
     y:86-p.y*factor
   });
-  const figures=puzzle.triangles.map(t=>
+  const figures=shapes.map(t=>
     '<polygon fill="'+t.color+'" points="'+t.pts.map(point=>{
       const v=px(point);return v.x.toFixed(1)+','+v.y.toFixed(1);
     }).join(' ')+'"/>').join('');
@@ -126,7 +127,8 @@ function loadProgress(){
     }
     if(saved.workingBySide && typeof saved.workingBySide==="object"){
       for(const [key,value] of Object.entries(saved.workingBySide)){
-        if(sideMap.has(key)&&!sideMap.get(key).given)workingBySide[key]=sanitizeWorking(value);
+        if(key==="__scratch__" || (sideMap.has(key)&&!sideMap.get(key).given))
+          workingBySide[key]=sanitizeWorking(value);
       }
     }else if(saved.notes && typeof saved.notes==="object"){
       // One-time conversion from the old free-text working field.
@@ -145,6 +147,7 @@ function loadProgress(){
       }
     }
     hintsUsed=Math.max(0,Number(saved.hintsUsed)||0);
+    propagateRectangleSides(current,sideMap,solved);
     if(saved.extensionGrades && typeof saved.extensionGrades==="object"){
       for(const item of current.extensions||[])if(saved.extensionGrades[item.id]===true)extensionGrades[item.id]=true;
     }
@@ -154,14 +157,14 @@ function loadProgress(){
 }
 
 function stepsRemaining(){
-  return [...sideMap.values()].filter(s=>!s.given&&!solved.has(s.key));
+  return [...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel&&!solved.has(s.key));
 }
 function progress(){
-  const all=[...sideMap.values()].filter(s=>!s.given);
+  const all=[...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel);
   return {total:all.length,done:all.length-stepsRemaining().length};
 }
 function activeHintStep(){
-  const available=readySteps(current,sideMap,solved);
+  const available=readySteps(current,sideMap,solved).filter(s=>!sideMap.get(s.sideKey)?.suppressLabel);
   if(selectedSide){
     const forSelected=available.find(step=>step.sideKey===selectedSide);
     if(forSelected)return forSelected;
@@ -175,12 +178,14 @@ function sideDescription(side){
 }
 function chooseTriangle(id){
   if(animating)return;
-  const triangle=current.triangles.find(t=>t.id===id);
-  if(!triangle)return;
-  const edges=sidesOfTriangle(triangle,sideMap);
-  const options=edges.filter(s=>!s.given&&!solved.has(s.key));
+  const shape=[...current.triangles,...(current.rectangles||[])].find(t=>t.id===id);
+  if(!shape)return;
+  const edges=shape.pts.length===3?sidesOfTriangle(shape,sideMap):
+    [...shape.pts.map((a,i)=>sideMap.get(sideKey(a,shape.pts[(i+1)%4]))),
+     ...(shape.diagonals||[]).map(s=>sideMap.get(sideKey(s.a,s.b)))];
+  const options=edges.filter(s=>s&&!s.given&&!s.suppressLabel&&!solved.has(s.key));
   const choices=readySteps(current,sideMap,solved);
-  const side=options.find(s=>choices.some(step=>step.sideKey===s.key))||options[0]||edges.find(s=>!s.given)||edges[0];
+  const side=options.find(s=>choices.some(step=>step.sideKey===s.key))||options[0]||edges.find(s=>s&&!s.given&&!s.suppressLabel)||edges.find(Boolean);
   if(side)chooseSide(side.key);
 }
 function chooseSide(key){
@@ -208,7 +213,7 @@ function renderDiagram(animate=false,forceMotion=false){
   const toSide=side=>({a:xy(side.a),b:xy(side.b)});
   const canvas=document.getElementById("diagram");
   const svg=el("svg",{viewBox:"0 0 "+W+" "+H,role:"img",
-    "aria-label":"A pile of "+current.triangles.length+" right-angled triangles resting on a stone floor. Select a labelled side or triangle to investigate."});
+    "aria-label":"A pile of "+current.triangles.length+" right-angled triangles"+(current.rectangles?.length?" and "+current.rectangles.length+" rectangles":"")+" resting on a stone floor. Select a marked side or shape to investigate."});
   const defs=el("defs");
   const grad=el("linearGradient",{id:"floor-light",x1:"0",y1:"0",x2:"0",y2:"1"});
   grad.append(el("stop",{offset:"0%",'stop-color':"#d6c4a5"}),el("stop",{offset:"100%",'stop-color':"#bca987"}));
@@ -226,34 +231,70 @@ function renderDiagram(animate=false,forceMotion=false){
     floor.append(el("line",{x1:x,y1:floorY+9,x2:x+7,y2:floorY+12,class:"stone-seam"}));
   }
   svg.append(floor);
-  current.triangles.forEach((triangle,i)=>{
-    const group=el("g",{class:"piece","data-id":triangle.id,tabindex:0,role:"button",
-      style:"--delay:"+(i*850)+"ms;--twist:"+(i%2?-13:12)+"deg",
-      "aria-label":"Select triangle "+triangle.id});
-    const tpts=triangle.pts.map(xy);
-    if(selectedSide&&!sideMap.get(selectedSide).triangleIds.includes(triangle.id))group.classList.add("dimmed");
-    if(selectedSide&&sideMap.get(selectedSide).triangleIds.includes(triangle.id))group.classList.add("selected");
-    group.append(el("polygon",{points:tpts.map(pt=>pt.x+","+pt.y).join(" "),fill:triangle.color}));
-    const corner=tpts[triangle.right];
-    const ends=tpts.filter((_,j)=>j!==triangle.right);
-    const unit=ends.map(end=>{
-      const v=({x:end.x-corner.x,y:end.y-corner.y});
-      const len=Math.hypot(v.x,v.y);
-      return {x:v.x/len,y:v.y/len};
-    });
-    const k=10;
-    group.append(el("path",{
-      d:"M"+(corner.x+unit[0].x*k)+" "+(corner.y+unit[0].y*k)
-       +"L"+(corner.x+(unit[0].x+unit[1].x)*k)+" "+(corner.y+(unit[0].y+unit[1].y)*k)
-       +"L"+(corner.x+unit[1].x*k)+" "+(corner.y+unit[1].y*k),
-      class:"angle-square"
+  const pieces=[...current.triangles,...(current.rectangles||[])];
+  if(current.fallOrder){
+    pieces.sort((a,b)=>current.fallOrder.indexOf(a.id)-current.fallOrder.indexOf(b.id));
+  }
+  // A 10-triangle challenge should not force students to watch 12s
+  // of repetitive falling. Cap the whole construction at roughly 7s.
+  const stepMs=Math.max(290,Math.min(850,5400/Math.max(1,pieces.length-1)));
+  pieces.forEach((shape,i)=>{
+    const rectangle=shape.pts.length===4;
+    const group=el("g",{class:"piece"+(rectangle?" rectangle-piece":""),
+      "data-id":shape.id,tabindex:0,role:"button",
+      style:"--delay:"+(i*stepMs)+"ms;--twist:"+(i%2?-13:12)+"deg",
+      "aria-label":"Select "+(rectangle?"rectangle ":"triangle ")+shape.id});
+    const tpts=shape.pts.map(xy);
+    if(selectedSide&&!sideMap.get(selectedSide).triangleIds.includes(shape.id))
+      group.classList.add("dimmed");
+    if(selectedSide&&sideMap.get(selectedSide).triangleIds.includes(shape.id))
+      group.classList.add("selected");
+    group.append(el("polygon",{
+      points:tpts.map(pt=>pt.x+","+pt.y).join(" "),fill:shape.color
     }));
-    const centroid={x:tpts.reduce((sum,z)=>sum+z.x,0)/3,y:tpts.reduce((sum,z)=>sum+z.y,0)/3};
-    group.append(el("text",{x:centroid.x,y:centroid.y,class:"triangle-number"},triangle.id));
-    group.append(el("title",{},"Triangle "+triangle.id));
-    group.addEventListener("click",()=>chooseTriangle(triangle.id));
+    function cornerMark(corner,first,second){
+      const u={x:first.x-corner.x,y:first.y-corner.y};
+      const w={x:second.x-corner.x,y:second.y-corner.y};
+      const ul=Math.hypot(u.x,u.y),wl=Math.hypot(w.x,w.y),k=rectangle?9:10;
+      if(ul<1e-5||wl<1e-5)return;
+      const a={x:u.x/ul*k,y:u.y/ul*k},b={x:w.x/wl*k,y:w.y/wl*k};
+      group.append(el("path",{
+        d:"M"+(corner.x+a.x)+" "+(corner.y+a.y)+
+          "L"+(corner.x+a.x+b.x)+" "+(corner.y+a.y+b.y)+
+          "L"+(corner.x+b.x)+" "+(corner.y+b.y),
+        class:"angle-square"
+      }));
+    }
+    if(rectangle){
+      // Two neat right-angle indicators establish the rectangle,
+      // while a dotted diagonal gives a real Pythagoras clue.
+      for(const j of [0,2]){
+        cornerMark(tpts[j],tpts[(j+3)%4],tpts[(j+1)%4]);
+      }
+      for(const diagonal of shape.diagonals||[]){
+        const a=xy(diagonal.a),b=xy(diagonal.b);
+        group.append(el("line",{
+          x1:a.x,y1:a.y,x2:b.x,y2:b.y,class:"rectangle-diagonal"
+        }));
+      }
+    }else{
+      const j=shape.right;
+      cornerMark(tpts[j],tpts[(j+1)%3],tpts[(j+2)%3]);
+    }
+    const centroid={
+      x:tpts.reduce((sum,z)=>sum+z.x,0)/tpts.length,
+      y:tpts.reduce((sum,z)=>sum+z.y,0)/tpts.length
+    };
+    group.append(el("text",{
+      x:centroid.x,y:centroid.y,
+      class:"triangle-number"+(rectangle?" rectangle-number":"")
+    },shape.id));
+    group.append(el("title",{},(rectangle?"Rectangle ":"Triangle ")+shape.id));
+    group.addEventListener("click",()=>chooseTriangle(shape.id));
     group.addEventListener("keydown",event=>{
-      if(event.key==="Enter"||event.key===" "){event.preventDefault();chooseTriangle(triangle.id);}
+      if(event.key==="Enter"||event.key===" "){
+        event.preventDefault();chooseTriangle(shape.id);
+      }
     });
     svg.append(group);
   });
@@ -263,7 +304,7 @@ function renderDiagram(animate=false,forceMotion=false){
   }
   // Collinear full/part edges overlap. Hit targets are ordered with short,
   // currently unknown edges above long or given edges for reliable selection.
-  const orderedSides=[...sideMap.values()].sort((a,b)=>
+  const orderedSides=[...sideMap.values()].filter(s=>!s.suppressLabel).sort((a,b)=>
     Number(a.given)-Number(b.given) || b.length-a.length);
   for(const side of orderedSides){
     if(side.isOverhang)continue;
@@ -306,10 +347,12 @@ function renderDiagram(animate=false,forceMotion=false){
   }
 
   const occupied=[];
+  const dense=pieces.length>=8;
   const actualW=canvas.getBoundingClientRect().width||780;
   const actualH=Math.min(490,Math.max(340,actualW*590/960));
   const ratio=Math.max(.32,Math.min(actualW/W,actualH/H));
-  const fontSize=Math.min(31,Math.max(15,12/ratio));
+  const fontSize=dense?Math.min(31,Math.max(12,11/ratio)):
+    Math.min(31,Math.max(15,12/ratio));
   const boxHeight=fontSize+11;
   const clash=(pos,width,height)=>occupied.reduce((total,box)=>{
     const dx=Math.abs(box.x-pos.x),dy=Math.abs(box.y-pos.y);
@@ -317,7 +360,7 @@ function renderDiagram(animate=false,forceMotion=false){
     const oy=Math.max(0,(box.h+height)/2+5-dy);
     return total+ox*oy;
   },0);
-  const centroids=current.triangles.map(t=>({
+  const centroids=pieces.map(t=>({
     id:t.id,
     point:xy({x:t.pts.reduce((sum,z)=>sum+z.x,0)/3,y:t.pts.reduce((sum,z)=>sum+z.y,0)/3})
   }));
@@ -339,30 +382,53 @@ function renderDiagram(animate=false,forceMotion=false){
     if(isFloor){
       if(ny>0){nx=-nx;ny=-ny;}
     }else if(side.isOverhang){
-      // Put the dimension line on the inside of the bottom triangle.
-      const b=centroids[0].point;
-      if(((b.x-mx)*nx+(b.y-my)*ny)<0){nx=-nx;ny=-ny;}
+      const base=centroids[0].point;
+      if(((base.x-mx)*nx+(base.y-my)*ny)<0){nx=-nx;ny=-ny;}
     }else if(overlapKeys.has(side.key)){
       if(!inward){nx=-nx;ny=-ny;}
-    }else{
-      if(inward){nx=-nx;ny=-ny;}
-    }
+    }else if(inward){nx=-nx;ny=-ny;}
     const tx=dx/length,ty=dy/length;
     let best=null;
-    const normalOffsets=[side.isOverhang?30:24,39,54,68,84];
-    for(const distance of normalOffsets){
-      for(const tangent of [0,-19,19,-37,37,-56,56]){
-        const pos={x:mx+nx*distance+tx*tangent,y:my+ny*distance+ty*tangent};
-        const boundaryPenalty=(pos.x<labelWidth/2+25 || pos.x>W-labelWidth/2-25 ||
-          pos.y<36 || pos.y>floorY+1)?20000:0;
-        const penalty=clash(pos,labelWidth,boxHeight)+boundaryPenalty+
-          (distance-normalOffsets[0])*.18+Math.abs(tangent)*.12;
-        if(!best||penalty<best.penalty)best={pos,nx,ny,score:penalty,penalty};
+    const inside=pos=>pos.x>=labelWidth/2+23&&pos.x<=W-labelWidth/2-23&&
+      pos.y>=36+boxHeight/2&&pos.y<=floorY-boxHeight/2+1;
+    const assess=(pos,flipped=0,extra=0)=>{
+      if(!inside(pos))return;
+      const collision=clash(pos,labelWidth,boxHeight);
+      const distance=Math.hypot(pos.x-mx,pos.y-my);
+      const penalty=(collision>0?100000+collision*100:0)+
+        distance*.14+flipped*19+extra;
+      if(!best||penalty<best.penalty){
+        best={pos,nx,ny,penalty,needsLeader:distance>50};
+      }
+    };
+    const normalOffsets=[side.isOverhang?26:19,29,40,55,74,95,120,150,188,232];
+    const tangents=[0,-18,18,-35,35,-55,55,-80,80,-112,112,-148,148];
+    // Place measurements alongside their own sides whenever possible.
+    // For dense advanced piles, search both normals and a much wider
+    // tangent range before permitting any rectangle collisions.
+    for(const flip of [1,-1]){
+      for(const d of normalOffsets)for(const t of tangents){
+        assess({
+          x:mx+nx*flip*d+tx*t,
+          y:my+ny*flip*d+ty*t
+        },flip<0?1:0,Math.abs(t)*.04);
       }
     }
-    return best;
+    // A compact pile can contain 25+ dimensions. If the local area is
+    // saturated, place a labelled callout in otherwise empty tablet
+    // space, joined by a thin line to its geometric side.
+    if(!best||best.penalty>=100000){
+      for(let y=59;y<=floorY-28;y+=37){
+        for(let x=45;x<=W-45;x+=34){
+          assess({x,y},0,4);
+        }
+      }
+    }
+    return best||{pos:{x:Math.max(labelWidth/2+23,Math.min(W-labelWidth/2-23,mx)),
+      y:Math.max(36+boxHeight/2,Math.min(floorY-boxHeight/2,my))},
+      nx,ny,needsLeader:false};
   }
-  const sides=[...sideMap.values()];
+  const sides=[...sideMap.values()].filter(side=>!side.suppressLabel);
   // Given lengths before unknown tags; annotate the overhang clearly.
   sides.sort((a,b)=>Number(b.given)-Number(a.given)||
     Number(b.isOverhang)-Number(a.isOverhang)||
@@ -389,7 +455,7 @@ function renderDiagram(animate=false,forceMotion=false){
         group.append(el("line",{x1:pt.x-nx*5,y1:pt.y-ny*5,x2:pt.x+nx*5,y2:pt.y+ny*5,class:"overhang-bracket"}));
       }
     }
-    if(overlapKeys.has(side.key)){
+    if(overlapKeys.has(side.key)||chosen.needsLeader){
       // Thin leader lines distinguish the whole hypotenuse from its
       // overlapping shorter section when both are still unknown.
       const ends=toSide(side);
@@ -440,13 +506,13 @@ function renderDiagram(animate=false,forceMotion=false){
             {opacity:1,transform:"translate(0px, 24px) rotate(-3deg)",offset:.68},
             {opacity:1,transform:"translate(0px, -12px) rotate(1.4deg)",offset:.84},
             {opacity:1,transform:"translate(0px, 0px) rotate(0deg)",offset:1}
-          ],{delay:i*850,duration:1340,easing:"cubic-bezier(.22,.68,.32,1)",fill:"both"}));
+          ],{delay:i*stepMs,duration:1340,easing:"cubic-bezier(.22,.68,.32,1)",fill:"both"}));
         });
       }else{
         svg.classList.add("falling");
       }
     });
-    finishTimer=setTimeout(stopAnimation,(current.triangles.length-1)*850+1400);
+    finishTimer=setTimeout(stopAnimation,(pieces.length-1)*stepMs+1400);
   }else{
     animating=false;
     document.getElementById("skip").hidden=true;
@@ -473,6 +539,20 @@ function hintText(side,level){
   if(!step)return "Every missing side has been discovered.";
   const isSelected=step.sideKey===side.key;
   const known=step.known.map(key=>exactLength(sideMap.get(key).length)+" cm");
+  if(step.kind==="rectangle-opposite"){
+    if(level===1)return "Opposite edges of a rectangle are equal in length.";
+    if(level===2)return "Look at rectangle "+step.triangleId+
+      ". A parallel side measures "+known[0]+".";
+    if(level===3)return step.equation+".";
+    return "The missing rectangle edge is "+step.answer+" cm.";
+  }
+  if(step.kind==="rectangle-diagonal"){
+    if(level===1)return "A rectangle's diagonal divides it into two right-angled triangles.";
+    if(level===2)return "Use the diagonal and side lengths "+known.join(" and ")+
+      ". Decide whether to add or subtract squares.";
+    if(level===3)return step.equation+".";
+    return "This rectangle length is "+step.answer+" cm.";
+  }
   if(step.kind==="equal"){
     if(!isSelected){
       if(level===1)return "Look for the identical tick marks on two different sides.";
@@ -521,6 +601,8 @@ function incorrectFeedback(side,value){
     return "Check the straight line: decide which lengths form the complete section, and whether you need to add or subtract.";
   }
   if(step?.kind==="equal")return "Matching tick marks represent equal lengths. Look for the known matching side.";
+  if(step?.kind==="rectangle-opposite")return "Opposite sides of a rectangle are equal. Check the matching length.";
+  if(step?.kind==="rectangle-diagonal")return "Use the diagonal as the hypotenuse of a right triangle inside the rectangle.";
   if(step){
     const known=step.known.map(key=>sideMap.get(key).length);
     if(step.isHypotenuse){
@@ -552,8 +634,17 @@ function renderInspector(){
       <p class="solution-disclaimer">One valid order is shown. Shared edges may be solved by different routes.</p>
       <ol class="review-list">
         ${all.map((step,index)=>`<li class="review-item">
-          <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · ${step.kind==="pythagoras"?"TRIANGLE "+step.triangleId:step.kind==="equal"?"EQUAL MARKS":step.kind==="split"?"SHARED LONG SIDE":"OVERHANG"}</span><span>LOCATE ↗</span></button>
-          <p class="step-narrative">${step.kind==="equal"?"Matching ticks mean these two lengths are equal.":step.kind==="split"?"Combine the two shorter edges along one long side.":step.kind==="overhang"?(step.equation.includes("−")?"Subtract the overhang from the longer edge.":"Add the projecting overhang to the supporting side."):"Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
+          <button data-review-side="${step.sideKey}"><span>STEP ${index+1} · ${step.kind==="pythagoras"?"TRIANGLE "+step.triangleId:
+            step.kind==="rectangle-diagonal"?"RECTANGLE DIAGONAL":
+            step.kind==="rectangle-opposite"?"RECTANGLE · EQUAL SIDES":
+            step.kind==="equal"?"EQUAL MARKS":
+            step.kind==="split"?"SHARED LONG SIDE":"OVERHANG"}</span><span>LOCATE ↗</span></button>
+          <p class="step-narrative">${step.kind==="rectangle-diagonal"?"Use the right triangle inside the rectangle.":
+            step.kind==="rectangle-opposite"?"Opposite sides of a rectangle are equal.":
+            step.kind==="equal"?"Matching ticks mean these two lengths are equal.":
+            step.kind==="split"?"Combine the two shorter edges along one long side.":
+            step.kind==="overhang"?(step.equation.includes("−")?"Subtract the overhang from the longer edge.":"Add the projecting overhang to the supporting side."):
+            "Find the "+(step.isHypotenuse?"hypotenuse":"missing shorter side")+"."}</p>
           <p class="step-equation">${escapeHtml(step.equation)}</p>
           <p class="step-result">${step.isTarget?"x":"s"} = ${step.answer} cm</p>
         </li>`).join("")}
@@ -572,7 +663,7 @@ function renderInspector(){
     renderExtensions(panel);
     return;
   }
-  const unprovided=[...sideMap.values()].filter(s=>!s.given);
+  const unprovided=[...sideMap.values()].filter(s=>!s.given&&!s.suppressLabel);
   const side=selectedSide?sideMap.get(selectedSide):null;
   const choices=`<div class="inspect-field">
     <label for="side-select">CHOOSE A SIDE TO INVESTIGATE</label>
@@ -582,38 +673,31 @@ function renderInspector(){
     </select></div>`;
   let body;
   if(!side){
-    const available=readySteps(current,sideMap,solved);
-    const message=available.length
-      ?"Look for a triangle with two known lengths. Select a ? on its side, or choose one in the list."
-      :"The final target is waiting for your answer.";
-    body=`<h3 class="inspect-title">Where would you begin?</h3>
-      <p class="inspect-intro">${message} You can solve on paper and enter the target directly.</p>`;
+    body=`<div class="workspace-brief"><strong>Select a ? on the diagram</strong><span>Or begin calculations on your scratchpad.</span></div>
+      <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(side.given){
-    body=`<h3 class="inspect-title">Given: ${exactLength(side.length)} cm</h3>
-      <p class="inspect-intro">This length is already known. Try selecting a side marked with ? or x.</p>`;
+    body=`<div class="workspace-brief"><strong>Given: ${exactLength(side.length)} cm</strong><span>Select a missing length to solve it.</span></div>
+      <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(solved.has(side.key)){
-    body=`<h3 class="inspect-title">Length discovered ✓</h3>
-      <p class="solved-note">${side.isTarget?"The final length x":"This shared length"} = <strong>${exactLength(side.length)} cm</strong></p>
-      <p class="inspect-intro">This measurement is now available wherever the side is shared.</p>
+    body=`<p class="solved-note"><strong>✓ ${side.isTarget?"x":"Length"} = ${exactLength(side.length)} cm</strong></p>
       <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else{
     const level=hintLevels[side.key]||0;
     const valid=readySteps(current,sideMap,solved).some(step=>step.sideKey===side.key);
-    body=`<h3 class="inspect-title">${side.isTarget?"Discover the final x":"Find this missing length"}</h3>
-      <p class="inspect-intro">${valid?"This side can be found from two known lengths.":"You can enter the answer now if you have worked it out, or find an earlier length first."}</p>
+    body=`<div class="workspace-answer-head"><strong>${side.isTarget?"Solve x":"Missing length"}</strong>
+        <span>${valid?"Ready to calculate":"You may need another side first"}</span></div>
       <form id="answer-form" autocomplete="off">
-        <div class="inspect-field"><label for="answer-input">YOUR ANSWER (CM)</label>
-          <div class="input-row"><input id="answer-input" name="answer" inputmode="decimal" maxlength="90" placeholder="e.g. √205 or 14.3" aria-describedby="answer-format" required>
-          <button class="submit" type="submit">CHECK →</button></div>
-          <span id="answer-format" class="solution-disclaimer">Use an exact value or a decimal to at least 3 s.f. You can type sqrt(205).</span></div>
+        <div class="inspect-field answer-field"><label for="answer-input">ANSWER (CM)</label>
+          <div class="input-row"><input id="answer-input" name="answer" inputmode="decimal" maxlength="90"
+            placeholder="e.g. √205 or 14.3" aria-label="Answer in centimetres" title="Exact surds and rounded decimals accepted" required>
+          <button class="submit" type="submit">CHECK →</button></div></div>
       </form>
       <div id="answer-feedback" role="status" aria-live="polite"></div>
+      <div id="working-pad-mount" class="working-pad-mount"></div>
       <div class="hint-area"><button class="hint-button" id="hint-next" ${level>=4?"disabled":""}>${level?level>=4?"ALL CLUES SHOWN":"REVEAL NEXT CLUE ("+(level+1)+"/4)":"NEED A CLUE? (1/4)"}</button>
-      ${level?`<div class="hint-content"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>
-      <div id="working-pad-mount" class="working-pad-mount"></div>`;
+      ${level?`<div class="hint-content"><strong>CLUE ${level} / 4</strong><p>${escapeHtml(hintText(side,level))}</p></div>`:""}</div>`;
   }
-  panel.innerHTML=`<span class="kicker">THE GEOMETER’S NOTES</span>
-    ${choices}
+  panel.innerHTML=`${choices}
     ${body}
     ${current.extensions?.length && solved.has(sideKey(current.target.a,current.target.b))?
       `<button class="extension-cta" id="open-extension-panel">✦ GEOMETER'S EXTENSIONS · PERIMETER & AREA →</button>`:""}
@@ -630,7 +714,7 @@ function renderInspector(){
     extensionMode=true;selectedSide=null;renderDiagram(false);
   });
   panel.querySelector("#reset-progress").addEventListener("click",()=>{
-    if(!window.confirm("Clear your discovered lengths and working notes for this challenge?"))return;
+    if(!window.confirm("Clear solved lengths, maths lines, drawings and hints for this challenge?"))return;
     solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
     saveProgress();renderDiagram(false);
   });
@@ -658,8 +742,8 @@ function renderInspector(){
       escapeHtml(hintText(side,level))+"</p>";
   });
   const space=panel.querySelector("#working-pad-mount");
-  if(space && side && !side.given){
-    const id=side.key;
+  if(space){
+    const id=side && !side.given?side.key:"__scratch__";
     disposeWorking=mountWorkingSpace(space,workingBySide[id],working=>{
       workingBySide[id]=working;
       return saveProgress();
@@ -725,7 +809,9 @@ function submitAnswer(raw){
     return;
   }
   if(correctAnswer(raw,side.length)){
-    solved.add(side.key);saveProgress();renderDiagram(false);
+    solved.add(side.key);
+    propagateRectangleSides(current,sideMap,solved);
+    saveProgress();renderDiagram(false);
     if(side.isTarget)showCompletion();
   }else{
     const box=document.getElementById("answer-feedback");
@@ -758,21 +844,15 @@ function openPuzzle(id){
         <span class="tablet-controls"><button id="replay" class="small-btn replay-button" title="Replay the falling triangles" aria-label="Replay the falling triangles">↻ <span>REPLAY FALL</span></button>
         <button id="labels-toggle" class="small-btn" title="Show or hide measurements" aria-label="Show or hide measurements" aria-pressed="false">◉</button></span></div>
       <div class="tablet-inside"><div id="diagram"></div><button id="skip" class="skip" hidden>SKIP ANIMATION →</button>
-        <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
+        <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED · RECTANGLES HAVE 90° CORNERS</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
       </div></div>
       <aside class="side"><div class="side-topline"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><button id="workspace-size-toggle" type="button" class="workspace-size-toggle" aria-pressed="false" title="Widen the student working panel">↔ More working room</button></div><div class="rule"></div>
-        <h2>Find the final <em>length.</em></h2>
-        <p class="description">Study which sides line up. A long side may cover two shorter edges, and some pieces project beyond their support. Select any marked side to investigate.</p>
-        <div class="facts"><div><span>TRIANGLES</span><strong>${puzzle.triangles.length}</strong></div>
-          <div><span>GIVEN LENGTHS</span><strong>${puzzle.triangles.reduce((n,t)=>n+t.givens.length,0)+(puzzle.extraSegments?.length||0)}</strong></div></div>
         <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
         <div class="progress-track" aria-label="Number of missing lengths discovered"><span id="progress-fill" style="width:0"></span></div>
         <div class="inspector" id="inspector" aria-live="polite"></div>
-        <div class="side-bottom"><strong>✦ THE CHAIN IS YOURS TO DISCOVER</strong>
-          <p>Any mathematically correct length is accepted, even if you solve the target first. Progress and notes stay in this browser.</p></div>
+
       </aside>
-    </div><div class="challenge-bottom"><span>ANCIENT WISDOM. FRESH PERSPECTIVES.</span>
-      <button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
+    </div><div class="challenge-bottom"><button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
     </main>
     <dialog class="completion-dialog" id="completion-modal" aria-labelledby="completion-heading">
       <div class="completion-inner"><div class="completion-icon">✧</div><h2 id="completion-heading">The pile is solved.</h2>
