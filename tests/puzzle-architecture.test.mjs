@@ -22,7 +22,9 @@ function touches(a,b){
 }
 function groundShapes(puzzle){
   return [...puzzle.triangles,...(puzzle.rectangles||[])].filter(s=>
-    s.pts.some(q=>near(q.y,0)));
+    // Grounded base requires an EDGE on the floor; a passing
+    // vertex at y=0 is merely a contact point, not a foundation.
+    s.pts.filter(q=>near(q.y,0)).length>=2);
 }
 function connectedComponents(puzzle){
   const shapes=[...puzzle.triangles,...(puzzle.rectangles||[])];
@@ -72,8 +74,8 @@ test("every structure is connected through real contacts, not floating scenery",
 test("puzzles intentionally vary their supported ground footprint",()=>{
   const expected=new Map([
     ["first-fall",1],["projecting-edge",1],["twin-paths",1],
-    ["split-project",2],["labyrinth",4],["great-pile",2],
-    ["nine-muses",3],["marble-terrace",3],["acropolis",6]
+    ["split-project",2],["labyrinth",2],["great-pile",2],
+    ["nine-muses",3],["marble-terrace",3],["acropolis",4]
   ]);
   for(const puzzle of puzzles)assert.equal(groundShapes(puzzle).length,
     expected.get(puzzle.id),puzzle.id+" ground footprint changed");
