@@ -90,3 +90,7 @@ In **Draw** mode, the yellow parchment grows to contain the entire freehand canv
 The homepage includes an animated Ancient Greek-style geometric engraving **drawn from the actual First Fall triangles** and a miniature picture of **each of the nine real puzzle arrangements**. The gallery diagrams remain visible at compact laptop widths rather than disappearing. A lightweight Greek-key SVG frieze ties together the header and footer across pages. Decorative animation respects reduced-motion settings, independently of the interactive puzzle's falling animation.
 
 See [GRAPHICS_PASS_A.md](GRAPHICS_PASS_A.md) for the design decisions, test coverage and visual review checklist.
+
+## Graphics — Pass B
+
+Puzzle pages now carry engraved difficulty seals, a Greek-key tablet frame and a faint geometric watermark **only when the drawing pad is empty**. The illustration disappears as soon as drawing starts and returns when the last stroke is removed. Decoration sits behind the interactive diagram and does not capture mouse or touch input. See [Graphics Pass B](GRAPHICS_PASS_B.md) for design and QA notes.

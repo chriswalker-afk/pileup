@@ -70,12 +70,19 @@ test("student switches between editable mathematical lines and a persistent ink 
       "Drawing mode must allow the outer mount to grow with the pad");
     assert.equal(parchment.classList.contains("ws-drawing"),true,
       "Drawing mode must let the yellow parchment contain the canvas");
+    const paper=find(host,"ws-ink-frame");
+    assert.equal(paper.classList.contains("ws-ink-empty"),true,
+      "Empty drawing paper has a faint engraved construction");
     const canvas=find(host,"ws-ink-canvas");
     canvas.handlers.pointerdown({button:0,pointerType:"pen",pointerId:1,
       clientX:45,clientY:45,preventDefault(){}});
+    assert.equal(paper.classList.contains("ws-ink-empty"),false,
+      "Decorative geometry disappears as soon as writing starts");
     canvas.handlers.pointermove({pointerId:1,clientX:120,clientY:120,preventDefault(){}});
     canvas.handlers.pointerup({pointerId:1});
     assert.equal(updates.at(-1).strokes.length,1);
+    assert.equal(paper.classList.contains("ws-ink-empty"),false,
+      "Watermark must not obstruct saved handwriting");
     const points=updates.at(-1).strokes[0].points;
     assert.ok(points.length>=2);
     // Enlarge the drawing pad without altering the stroke coordinates.
@@ -98,6 +105,8 @@ test("student switches between editable mathematical lines and a persistent ink 
     // Undo must survive switching between drawing and maths tabs.
     find(host,"ws-ink-tools").querySelectorAll(".ws-action")[2].handlers.click();
     assert.equal(updates.at(-1).strokes.length,0);
+    assert.equal(find(host,"ws-ink-frame").classList.contains("ws-ink-empty"),true,
+      "Undoing the last stroke restores the gentle watermark");
     const canvasAgain=find(host,"ws-ink-canvas");
     canvasAgain.handlers.pointerdown({button:0,pointerType:"pen",pointerId:2,
       clientX:60,clientY:60,preventDefault(){}});

@@ -150,7 +150,8 @@ function buildInk(container,work,commit,undo) {
   const caption=node("p","ws-help","Draw with mouse, pen or touch. Undo and pad size remain available when you switch tabs.");
   container.append(toolbar,frame,caption);
   const refreshSize=()=>{
-    frame.className="ws-ink-frame"+(work.padHeight==="large"?" is-large":"");
+    frame.className="ws-ink-frame"+(work.padHeight==="large"?" is-large":"")+
+      (work.strokes.length===0?" ws-ink-empty":"");
     sizeButton.setAttribute("aria-pressed",String(work.padHeight==="large"));
     sizeButton.textContent=work.padHeight==="large"?"⤡ Smaller pad":"⤢ Larger pad";
     sizeButton.title=work.padHeight==="large"?"Return to normal drawing height":"Increase drawing height";
@@ -161,7 +162,13 @@ function buildInk(container,work,commit,undo) {
     undo.push(work.strokes.map(s=>({width:s.width,points:s.points.map(p=>[...p])})));
     if(undo.length>20)undo.shift();
   };
-  const redraw=()=>drawInk(canvas,work,activeStroke);
+  const redraw=()=>{
+    // Decorative construction lines only belong on completely blank
+    // paper. Hide the watermark as soon as ink begins, and restore it
+    // after Undo, Eraser or Clear removes the final stroke.
+    frame.classList.toggle("ws-ink-empty",work.strokes.length===0&&!activeStroke);
+    drawInk(canvas,work,activeStroke);
+  };
   const pointerPoint=event=>{
     const bounds=canvas.getBoundingClientRect();
     return [

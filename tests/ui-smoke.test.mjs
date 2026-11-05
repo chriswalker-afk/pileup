@@ -246,6 +246,13 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     assert.match(home,/class="hero-goal"/);
     assert.ok(!home.includes("home-art-symbol"),
       "Replace the old placeholder triangle with the geometric tableau");
+    assert.equal((home.match(/class="difficulty-emblem difficulty-/g)||[]).length,9,
+      "Every challenge should carry a small engraved difficulty seal");
+    assert.match(home,/difficulty-triangle/);
+    assert.match(home,/difficulty-double/);
+    assert.match(home,/difficulty-column/);
+    assert.match(home,/difficulty-laurel/);
+    assert.match(home,/difficulty-temple/);
 
     location.hash="#puzzles";show();
     const catalogue=nodes.get("app")?.innerHTML||"";
@@ -258,6 +265,13 @@ test("all nine puzzles mount with bounded labels and falling animations",async()
     assertSingleNavigation(puzzlePage);
     assert.match(puzzlePage,/← ALL CHALLENGES/,
       "Individual puzzles retain their dedicated back-to-catalogue link");
+    assert.match(puzzlePage,/class="tablet-seal" aria-hidden="true"/);
+    assert.match(puzzlePage,/class="tablet-engraving" aria-hidden="true"/);
+    assert.equal((puzzlePage.match(/class="tablet-engraving-corner /g)||[]).length,4);
+    assert.match(puzzlePage,/class="chapter"><svg class="difficulty-emblem/);
+    assert.match(puzzlePage,/id="diagram"/);
+    assert.match(puzzlePage,/id="workspace-size-toggle"/,
+      "The wider working panel button must remain available");
   }finally{
     for(const name of names){
       if(oldGlobals[name]===undefined)delete globalThis[name];
