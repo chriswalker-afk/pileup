@@ -92,6 +92,7 @@ export function makeSplitPile({
   // This is a union of non-overlapping right triangles, with shared
   // borders only. Its perimeter is exterior edges plus the overhang.
   if(extensions){
+    const clean=n=>Math.abs(n-Math.round(n))<1e-7?Math.round(n):Number(n.toFixed(4));
     const perimeter=base[0]+base[1]+finalExtension+
       h1+h2+legLengths[0]+legLengths[1];
     const area=.5*(base[0]*base[1]+
@@ -103,7 +104,7 @@ export function makeSplitPile({
        unit:"cm",value:perimeter,
        working:base[0]+" + "+base[1]+
           (finalExtension>0?" + "+finalExtension:"")+
-          " + "+h1+" + "+legLengths[0]+" + "+h2+" + "+legLengths[1]+
+          " + "+clean(h1)+" + "+legLengths[0]+" + "+clean(h2)+" + "+legLengths[1]+
           " = "+perimeter+" cm"},
       {id:"area",title:"Area of the complete pile",
        prompt:"Find the total area enclosed by the non-overlapping triangles.",
