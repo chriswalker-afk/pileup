@@ -60,7 +60,12 @@ export function buildSides(puzzle) {
       register(descriptor.a,descriptor.b).suppressLabel=true;
     }
   }
-  for (const extra of puzzle.extraSegments || []) markGiven(extra, true);
+  // Extra measured segments are not necessarily overhangs. A marked
+  // foundation span is a genuine given length but must not inherit the
+  // overhang's visual treatment or interpretation.
+  for (const extra of puzzle.extraSegments || []){
+    markGiven(extra,/overhang/i.test(extra.label||""));
+  }
   for (const relation of puzzle.lengthRelations || []) {
     const whole = register(relation.whole.a, relation.whole.b);
     const parts = relation.parts.map(s => register(s.a, s.b));
