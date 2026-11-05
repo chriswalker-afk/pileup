@@ -62,6 +62,10 @@
 #diagram svg.diagram-is-zoomed{
   cursor:grab;
   touch-action:none;
+  /* The base site uses overflow:visible so labels can sit beside the
+     fitted drawing. When magnified, the SVG viewport must instead
+     clip the enlarged scene so dragging behaves as actual panning. */
+  overflow:hidden;
 }
 #diagram svg.diagram-is-zoomed.zoom-panning{
   cursor:grabbing;
