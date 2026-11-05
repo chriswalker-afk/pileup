@@ -1,0 +1,98 @@
+/* Diagram zoom: drawn over the vacant tablet margin, not in the
+   student's mathematical working panel. No library or raster assets. */
+.tablet-inside .diagram-zoom-controls{
+  position:absolute;
+  right:11px;
+  bottom:34px;
+  z-index:5;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  padding:4px;
+  border:1px solid #b8a27d;
+  background:rgba(249,242,226,.96);
+  box-shadow:0 2px 9px #42352226;
+  border-radius:3px;
+  pointer-events:auto;
+  white-space:nowrap;
+}
+.diagram-zoom-controls button{
+  appearance:none;
+  border:1px solid #cbb995;
+  border-radius:2px;
+  background:#f5ecd8;
+  color:#465746;
+  min-width:34px;
+  height:35px;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  font:700 21px/1 'DM Sans',system-ui,sans-serif;
+  padding:0 5px;
+}
+.diagram-zoom-controls .diagram-zoom-fit{
+  min-width:40px;
+  font-size:10px;
+  letter-spacing:.035em;
+}
+.diagram-zoom-controls button:hover:not(:disabled){
+  background:#e0e9dc;
+  border-color:#6e866a;
+}
+.diagram-zoom-controls button:active:not(:disabled){
+  background:#d1e0ce;
+}
+.diagram-zoom-controls button:disabled{
+  opacity:.38;
+  cursor:default;
+}
+.diagram-zoom-controls button:focus-visible{
+  outline:3px solid #a77a42;
+  outline-offset:2px;
+  position:relative;
+  z-index:1;
+}
+.diagram-zoom-controls output{
+  min-width:43px;
+  text-align:center;
+  font:700 11px/1 'DM Sans',system-ui,sans-serif;
+  color:#514f44;
+  font-variant-numeric:tabular-nums;
+}
+#diagram svg.diagram-is-zoomed{
+  cursor:grab;
+  touch-action:none;
+}
+#diagram svg.diagram-is-zoomed.zoom-panning{
+  cursor:grabbing;
+}
+#diagram svg.diagram-is-zoomed .side-chip,
+#diagram svg.diagram-is-zoomed .side-hit,
+#diagram svg.diagram-is-zoomed .piece{
+  cursor:pointer;
+}
+#diagram svg.diagram-is-zoomed.zoom-panning .side-chip,
+#diagram svg.diagram-is-zoomed.zoom-panning .side-hit,
+#diagram svg.diagram-is-zoomed.zoom-panning .piece{
+  cursor:grabbing;
+}
+/* Zooming does not change opacity or transform a single triangle:
+   only the outer SVG viewBox changes and all hit targets still align. */
+@media(max-width:520px){
+  .tablet-inside .diagram-zoom-controls{
+    right:7px;
+    bottom:36px;
+    padding:3px;
+    gap:2px;
+  }
+  .diagram-zoom-controls button{
+    width:34px;
+    min-width:34px;
+    height:36px;
+  }
+  .diagram-zoom-controls .diagram-zoom-fit{min-width:38px;width:38px}
+  .diagram-zoom-controls output{min-width:38px;font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .diagram-zoom-controls *{transition:none!important}
+}
