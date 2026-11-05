@@ -35,7 +35,7 @@ test("all ten sides and brackets have a deterministic edge-bound physical pointe
   assert.deepEqual(tether.anchor,{x:160,y:120});
   near(tether.end.x,160);near(tether.end.y,102);
   near(tether.length,18);
-  const bracket={x:160,y:104}; // inside the chip; must not hide the endpoint.
+  const bracket={x:160,y:100}; // inside the chip; must not hide the endpoint.
   assert.deepEqual(labelTether(entry,chosen,bracket),tether);
   const outside={x:160,y:114};
   const bracketTether=labelTether(entry,chosen,outside);
