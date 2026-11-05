@@ -22,9 +22,16 @@ function rect(pos,w,h){
  * pixels away from its measured side with no visible connector.
  */
 export function labelTether(entry,placement,explicitAnchor=null){
-  const anchor=explicitAnchor||mid(entry.ends.a,entry.ends.b);
   const pos=placement.pos;
   const halfW=entry.width/2,halfH=entry.height/2;
+  const sideMid=mid(entry.ends.a,entry.ends.b);
+  // A bracket can sit inside an exceptionally close label box.
+  // Attach to the real segment instead rather than drawing a
+  // zero-length leader with no visible origin.
+  const insideLabel=pt=>Math.abs(pt.x-pos.x)<=halfW+EPS&&
+    Math.abs(pt.y-pos.y)<=halfH+EPS;
+  const anchor=explicitAnchor&&!insideLabel(explicitAnchor)?
+    explicitAnchor:sideMid;
   const dx=anchor.x-pos.x,dy=anchor.y-pos.y;
   const ratio=Math.max(Math.abs(dx)/Math.max(EPS,halfW),
     Math.abs(dy)/Math.max(EPS,halfH));
