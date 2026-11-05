@@ -270,6 +270,10 @@ try{
       }));
       insist(first.scale==="125%"&&first.width<data.original.width,
         "Zoom + did not magnify SVG",first);
+      // Dense puzzles intentionally hide question marks until a face
+      // is selected. First select through the visible side list; then
+      // test that its revealed chip remains clickable while zoomed.
+      await page.locator("#side-select").selectOption({index:1});
       const clickable=await page.locator("#diagram svg").evaluate(svg=>{
         const bounds=svg.getBoundingClientRect();
         const safe=[...svg.querySelectorAll(".side-chip.unknown:not(.overhang)")];
@@ -407,9 +411,9 @@ try{
       }));
       insist(highlighted.focused&&highlighted.muted>0&&highlighted.strong>=3&&
         highlighted.traces===1,"Focus view does not isolate the active shape",highlighted);
-      // Acropolis has rectangles but no authored straight-line
-      // whole/part relation. Bracket-focus behaviour is checked
-      // separately on a split-side challenge below.
+      // Acropolis now has a real 2 cm whole/part relation and two
+      // rectangle tick-mark groups. Exact bracket-focus behaviour
+      // is also checked on Twin Paths below.
       await page.locator("#diagram-zoom-in").click();
       await page.locator("#diagram-zoom-in").click();
       await page.locator("#diagram-zoom-in").click();
@@ -437,10 +441,11 @@ try{
       await page.locator("#label-focus-toggle").click();
       insist(await svg.locator(".side-chip.focus-muted").count()===0,
         "All Labels does not restore every measurement");
+      const beforeReplay=await svg.locator(".side-chip").count();
       await page.locator("#replay").click();
       if(await page.locator("#skip").isVisible())await page.locator("#skip").click();
-      insist(await svg.locator(".side-chip").count()===all,
-        "Replay/Skip changed the measurement count after Focus view");
+      insist(await svg.locator(".side-chip").count()===beforeReplay,
+        "Replay/Skip changed the revealed measurements for the selected shape");
       await open(page,"twin-paths");
       await page.locator("#side-select").selectOption({index:1});
       await page.locator("#label-focus-toggle").click();
