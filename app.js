@@ -730,6 +730,13 @@ function renderDiagram(animate=false,forceMotion=false){
     const width=Math.max(fontSize+12,textWidth+15);
     const chosen=positioning(side,width);
     const pos=chosen.pos;
+    const ends=toSide(side);
+    const labelConnector=el("line",{
+      x1:(ends.a.x+ends.b.x)/2,y1:(ends.a.y+ends.b.y)/2,
+      x2:pos.x,y2:pos.y,
+      class:"side-association","data-side-key":side.key
+    });
+    traces.append(labelConnector);
     occupied.push({x:pos.x,y:pos.y,w:width,h:boxHeight});
     const classes=["side-chip",side.given?"given":solvedSide?"solved":side.isTarget?"target":"unknown"];
     if(side.isOverhang)classes.push("overhang");
@@ -975,7 +982,7 @@ function renderInspector(){
   const choices=`<div class="inspect-field clarity-field">
     <div class="clarity-selector-heading"><label for="side-select">CHOOSE A SIDE TO INVESTIGATE</label>
       <button id="label-focus-toggle" type="button" class="clarity-focus-toggle"
-        aria-pressed="${focusLabels}" title="Show only the measurements of the selected triangle or rectangle">
+        aria-pressed="${focusLabels}" title="${focusLabels?"Show every measurement":"Show only measurements belonging to the selected shape"}">
         ${focusLabels?"ALL LABELS":"FOCUS VIEW"}</button></div>
     <div class="clarity-selector-row"><select id="side-select">
       <option value="">Select a marked side…</option>
