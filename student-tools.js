@@ -71,7 +71,10 @@ export function formatCalculatorResult(value){
   return Number(value.toPrecision(10)).toString();
 }
 
+const installedRoots=new WeakSet();
 export function installStudentTools(root){
+  if(installedRoots.has(root))return;
+  installedRoots.add(root);
   const getCalculator=()=>root.querySelector("#calculator-dialog");
   const clearResult=()=>{
     const dialog=getCalculator(),use=dialog?.querySelector("[data-calc-use]");
