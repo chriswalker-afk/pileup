@@ -942,6 +942,47 @@ try{
     });
     await target.context.close();
   }
+  const choice=await newPage(1366,768,true);
+  await run("classroom route challenge / actual four-check play and completion",async()=>{
+    await open(choice.page,"great-pile");
+    const route=await choice.page.evaluate(async()=>{
+      const {puzzles}=await import("./pile-geometry.js");
+      const {buildSides,readySteps}=await import("./puzzle-engine.js");
+      const puzzle=puzzles.find(x=>x.id==="great-pile");
+      const map=buildSides(puzzle),solved=new Set();
+      return ["III","IV","V","VI"].map(id=>{
+        const step=readySteps(puzzle,map,solved).find(s=>s.triangleId===id);
+        if(!step)throw Error("Expected shortcut step "+id+" is not ready");
+        solved.add(step.sideKey);
+        return {key:step.sideKey,answer:step.answer,id};
+      });
+    });
+    await choice.page.locator("#find-start-side").click();
+    const selected=await choice.page.locator("#side-select").inputValue();
+    insist(selected===route[0].key,
+      "Find a start must show the genuine middle-entry route",{selected,first:route[0]});
+    for(const step of route){
+      await choice.page.locator("#side-select").selectOption(step.key);
+      await choice.page.locator("#answer-input").fill(step.answer);
+      await choice.page.locator("#answer-form button[type=submit]").click();
+    }
+    const dialog=choice.page.locator("#completion-modal");
+    insist(await dialog.evaluate(el=>el.open),"Finishing x did not open the completion dialog");
+    const achievement=await dialog.locator("#completion-route").textContent();
+    insist(achievement.includes("Shortcut found!")&&achievement.includes("4 checked lengths"),
+      "The route result did not credit the four-check solution",{achievement});
+    const saved=await choice.page.evaluate(()=>({
+      best:localStorage.getItem("pileup-route-best-great-pile"),
+      current:localStorage.getItem("pileup-challenge-design-v3-great-pile")
+    }));
+    insist(saved.best==="4","Best route was not saved",saved);
+    insist(JSON.parse(saved.current).checkedLengths===4,"Checked count not saved",saved);
+    await dialog.locator("#completion-close").click();
+    insist(await choice.page.locator(".puzzle-navigation button").isVisible(),
+      "Next challenge navigation disappeared from the visible panel");
+    return {steps:route.map(x=>x.id),achievement,best:saved.best};
+  });
+  await choice.context.close();
 }finally{
   await browser.close();
 }
