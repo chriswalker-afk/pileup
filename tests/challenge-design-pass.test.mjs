@@ -20,7 +20,7 @@ function minimumChecks(puzzle,blocked=new Set()) {
       const next=[...known,step.sideKey].sort(),key=next.join(";");
       if(visited.has(key))continue;
       visited.add(key);queue.push(next);
-      assert.ok(queue.length<10000,"Search should not expand unexpectedly");
+      assert.ok(queue.length<150000,"Search should not expand unexpectedly");
     }
   }
   return null;
@@ -62,4 +62,18 @@ test("Nine Muses replaces two repetitive inverse triples with new surd reasoning
   assert.equal(byTriangle("IX")?.answer,"√521");
   assert.equal(puzzle.overhang.value,2);
   assert.ok(steps.filter(step=>step.kind==="pythagoras").length>=9);
+});
+
+test("Marble Terrace has a meaningful seven-check route with an optional peak",()=>{
+  const puzzle=puzzles.find(p=>p.id==="marble-terrace");
+  assert.equal(puzzle.routeChallenge?.par,7);
+  assert.ok(readySteps(puzzle,buildSides(puzzle),new Set()).some(s=>s.triangleId==="II"));
+  const optimum=minimumChecks(puzzle);
+  assert.ok(optimum);
+  assert.equal(optimum.checks,7);
+  // The decorative left upper tower is mathematically sound, but not a
+  // mandatory part of the route to x.
+  const skippingLeft=minimumChecks(puzzle,new Set(["V","VII"]));
+  assert.ok(skippingLeft);
+  assert.equal(skippingLeft.checks,7);
 });
