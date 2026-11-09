@@ -13,13 +13,13 @@ Each puzzle uses true, non-overlapping right triangles (and, where specified, ac
 | 05 | The Geometer's Labyrinth | 5 triangles | Two routes rejoin around a genuine triangular opening | **15 cm** |
 | 06 | The Great Pile Up | 6 triangles | Six-face zigzag with an optional shorter route; four checks can reach x | **24 cm** |
 | 07 | The Nine Muses | 9 triangles | Tall left-leaning cascade with one exact 2 cm inset | **√521 cm** |
-| 08 | The Marble Terrace | 8 triangles + 1 rectangle | A single rectangle is a real ground-level platform | **2√38 cm** |
+| 08 | The Marble Terrace | 8 triangles + 1 rectangle | A rectangular platform, two base supports and a seven-check route | **2√38 cm** |
 | 09 | The Acropolis | 10 triangles + 2 rectangles | Two **successive** rectangular steps, then a leaning canopy | **15 cm** |
 | 10 | The Great Interlock | 13 triangles | Two independent rooted routes through an interlocking crowd | **24 cm** |
 
 ## Classroom-led design revision — 9 November
 
-The previous strict rule that *every triangle must be indispensable* was counterproductive for route-choice puzzles. **Great Pile Up** now labels an additional genuine 8 cm side on triangle II, so triangle III is a valid entry point and the student can reach x in four checked lengths. The optional lower route is still mathematically sound. **Nine Muses** retains its nine-face geometry but replaces repeated reverse triples with √481, 20 and finally √521. These two changed puzzles use new progress namespaces.
+The previous strict rule that *every triangle must be indispensable* was counterproductive for route-choice puzzles. **Great Pile Up** now labels an additional genuine 8 cm side on triangle II, so triangle III is a valid entry point and the student can reach x in four checked lengths. The optional lower route is still mathematically sound. **Nine Muses** retains its nine-face geometry but replaces repeated reverse triples with √481, 20 and finally √521. These two changed geometries use new progress namespaces. Marble Terrace keeps its geometry and progress storage, but now offers a seven-check route goal, because one upper branch is optional.
 
 See [Challenge Design Standard](CHALLENGE_DESIGN_STANDARD.md). Correct geometry, shared-length markings, full visibility and complete worked solutions remain required. A unique starting calculation and a compulsory contribution from every face no longer are.
 
@@ -44,7 +44,7 @@ The four re-authored puzzles use `pileup-architecture-v2-<id>` as their browser-
 
 - Every face has actual right-angle geometry and no polygon interior overlaps.
 - All ten structures remain connected, with real floor support and correctly positioned given/overhang lengths.
-- Dependency tests still require every triangle for #4, #7 and #9. For #6, a shortest-route test proves a four-check shortcut while blocking the two lower optional pieces.
+- Dependency tests still require every triangle for #4, #7 and #9. For #6, a shortest-route test proves a four-check shortcut while blocking the two lower optional pieces. For #8, a separate route test proves a seven-check path that bypasses the optional left tower.
 - For #9, blocking either rectangle-diagonal calculation must also prevent x.
 - The Chrome audit renders all ten puzzles at five viewport widths and checks clipping, measurement-chip overlaps, dimension brackets, saved work, and the existing interaction controls.
 
