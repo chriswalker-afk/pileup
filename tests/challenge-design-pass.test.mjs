@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { puzzles } from "../pile-geometry.js";
-import { buildSides, sideKey, readySteps, solutionSteps, puzzleIsValid } from "../puzzle-engine.js";
+import { buildSides, sideKey, readySteps, solutionSteps, puzzleIsValid, propagateRectangleSides } from "../puzzle-engine.js";
 import { hiddenShapePairs } from "../pile-visibility.js";
 
 /** Finds a truly minimal number of checked lengths, rather than
@@ -13,6 +13,7 @@ function minimumChecks(puzzle,blocked=new Set()) {
   const queue=[[]],visited=new Set([""]);
   for(let index=0;index<queue.length;index++){
     const known=queue[index],set=new Set(known);
+    propagateRectangleSides(puzzle,sides,set); // automatic, no check charged
     if(set.has(target))return {checks:known.length,states:queue.length};
     const options=readySteps(puzzle,sides,set);
     for(const step of options){
