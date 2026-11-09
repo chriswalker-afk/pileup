@@ -55,6 +55,7 @@ const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
 let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
 let pendingDiscoveredKey=null;
+let checkedLengths=0;
 const completedPuzzleKey="pileup-completed-puzzles-v1";
 function completedPuzzles(){try{return new Set(JSON.parse(localStorage.getItem(completedPuzzleKey)||"[]"));}catch(_){return new Set();}}
 function recordCompletedPuzzle(id){const done=completedPuzzles();done.add(id);try{localStorage.setItem(completedPuzzleKey,JSON.stringify([...done]));}catch(_){}}
@@ -413,6 +414,9 @@ function escapeHtml(text){
  * Unchanged First Fall and Twin Paths retain their progress.
  */
 function progressKey(){
+  // Preserve old maths when geometry/givens change; do not misapply solved sides.
+  if(["great-pile","nine-muses"].includes(current.id))
+    return "pileup-challenge-design-v3-"+current.id;
   // The four re-authored puzzles now use different side coordinates,
   // givens and answers. Never mark new lengths solved using old data.
   // Preserve the previous version in localStorage for reversibility.
@@ -424,7 +428,7 @@ function progressKey(){
 function saveProgress(){
   try{
     localStorage.setItem(progressKey(),JSON.stringify({
-      solved:[...solved],workingBySide,hintLevels,hintsUsed,extensionGrades
+      solved:[...solved],workingBySide,hintLevels,hintsUsed,extensionGrades,checkedLengths
     }));
     return true;
   }catch(error){
@@ -434,10 +438,11 @@ function saveProgress(){
   }
 }
 function loadProgress(){
-  solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};
+  solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};checkedLengths=0;
   try{
     const saved=JSON.parse(localStorage.getItem(progressKey())||"null");
     if(!saved || typeof saved!=="object")return;
+    if(Number.isFinite(saved.checkedLengths))checkedLengths=Math.max(0,Math.floor(saved.checkedLengths));
     if(Array.isArray(saved.solved))for(const key of saved.solved){
       if(sideMap.has(key) && !sideMap.get(key).given)solved.add(key);
     }
@@ -505,7 +510,11 @@ function chooseTriangle(id){
   if(side)chooseSide(side.key,id);
 }
 function findStartingSide(){
-  const ready=readySteps(current,sideMap,solved).find(step=>!solved.has(step.sideKey) && !sideMap.get(step.sideKey)?.suppressLabel);
+  const available=readySteps(current,sideMap,solved).filter(step=>
+    !solved.has(step.sideKey)&&!sideMap.get(step.sideKey)?.suppressLabel);
+  // This optional clue shows the useful middle entry in route-choice puzzles.
+  const ready=available.find(step=>step.triangleId===current.routeChallenge?.startTriangle)||
+    available[0];
   if(ready){chooseSide(ready.sideKey);locateSelectedSide();}
 }
 function chooseSide(key,shapeId=null){
@@ -1128,7 +1137,7 @@ function renderInspector(){
   });
   panel.querySelector("#reset-progress").addEventListener("click",()=>{
     if(!window.confirm("Clear solved lengths, maths lines, drawings and hints for this challenge?"))return;
-    solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};extensionMode=false;feedback=null;selectedSide=null;
+    solved=new Set();workingBySide={};hintLevels={};hintsUsed=0;extensionGrades={};checkedLengths=0;extensionMode=false;feedback=null;selectedSide=null;
     pendingDiscoveredKey=null;focusedShapeId=null;previewSideKey=null;
     saveProgress();renderDiagram(false);
   });
@@ -1228,6 +1237,7 @@ function submitAnswer(raw){
   }
   if(correctAnswer(raw,side.length)){
     solved.add(side.key);
+    checkedLengths++;
     const rectangleSides=propagateRectangleSides(current,sideMap,solved);
     pendingDiscoveredKey=side.key;
     saveProgress();
@@ -1255,6 +1265,23 @@ function showCompletion(){
   dialog.querySelector("#final-answer").textContent="x = "+exactLength(sideMap.get(sideKey(current.target.a,current.target.b)).length)+" cm";
   dialog.querySelector("#completion-hints").textContent=hintsUsed===0?"Without any hints":hintsUsed+" clues used";
   dialog.querySelector("#completion-extra").hidden=!current.extensions?.length;
+  const route=dialog.querySelector("#completion-route");
+  if(route){
+    route.hidden=!current.routeChallenge;
+    if(current.routeChallenge){
+      const par=current.routeChallenge.par;
+      const gold=checkedLengths<=par;
+      const key="pileup-route-best-"+current.id;
+      let previous=null;
+      try{const raw=localStorage.getItem(key);if(raw!==null&&Number.isFinite(Number(raw)))previous=Number(raw);}catch(_){}
+      const best=previous===null?checkedLengths:Math.min(previous,checkedLengths);
+      try{localStorage.setItem(key,String(best));}catch(_){}
+      route.textContent=gold?
+        "Shortcut found! "+checkedLengths+" checked lengths (goal: "+par+" or fewer). Best: "+best+".":
+        "You found x in "+checkedLengths+" checked lengths. Can you do it in "+par+" or fewer? Best: "+best+".";
+      route.dataset.outcome=gold?"shortcut":"completed";
+    }
+  }
   if(!dialog.open){
     dialog.showModal();
     dialog.querySelector("#completion-review")?.focus({preventScroll:true});
@@ -1276,7 +1303,7 @@ function openPuzzle(id){
   root.innerHTML=header()+`<main class="challenge-main">
     <div class="challenge-heading"><a class="back" href="#puzzles">← ALL CHALLENGES</a><div class="student-header-actions"><button type="button" data-open-guide>HOW TO PLAY ?</button><button type="button" data-open-calculator>CALCULATOR</button></div>
       <span class="chapter">${difficultyEmblem(puzzle)}<span>CHALLENGE ${String(index+1).padStart(2,"0")} / ${String(puzzles.length).padStart(2,"0")}</span></span>
-      <h1>${puzzle.title}</h1><p class="puzzle-one-line">Find the missing lengths, then solve x.</p><p class="challenge-tags">${(puzzle.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</p></div>
+      <h1>${puzzle.title}</h1><p class="puzzle-one-line">${escapeHtml(puzzle.designBrief||"Find x.")}</p><p class="challenge-tags">${(puzzle.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</p></div>
     <div class="challenge-layout"><div class="tablet">
       <div class="tablet-bar"><span class="tablet-bar-brand">
         <span class="tablet-seal" aria-hidden="true"><svg viewBox="0 0 30 30" focusable="false">
@@ -1316,7 +1343,7 @@ function openPuzzle(id){
       <h2 id="completion-heading">The pile is solved.</h2>
       <p class="completion-subtitle" id="completion-subtitle">You have found the final length.</p>
       <div class="completion-answer" id="final-answer"></div>
-      <p id="completion-hints"></p><div class="completion-controls">
+      <p id="completion-hints"></p><p id="completion-route" class="completion-route" hidden></p><div class="completion-controls">
       <button class="confirm" id="completion-review">REVIEW THE FULL SOLUTION →</button>
       <button id="completion-extra" hidden>TRY PERIMETER & AREA EXTENSIONS ↗</button>
       <button id="completion-other">TRY THE NEXT PILE</button></div>

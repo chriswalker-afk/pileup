@@ -55,6 +55,10 @@ The library contains **ten distinct geometries**: a first rising spine, two-arm 
 
 Inspired by the Pythagoras Pile Up classroom activity at [Great Maths Teaching Ideas](https://www.greatmathsteachingideas.com/) and the design credited to @mrallanmaths in the reference worksheet. The website diagrams and current puzzles are original, not reproduced scans.
 
+## Challenge design revision (9 November 2026)
+
+Following classroom feedback, challenge six **Great Pile Up** now has an intentional shorter solution route: find x in four checked lengths by starting above the foundation. The longer six-face route remains available for practice, and a local best route score appears on completion. The **Marble Terrace** also now offers a seven-check route challenge using its existing optional branch. Challenge seven **Nine Muses** now ends with new surd deductions, reaching **√521 cm**, instead of repeating reverse Pythagorean triples. All ten puzzles now have individual one-line reasoning objectives. The [Challenge Design Standard](CHALLENGE_DESIGN_STANDARD.md) distinguishes non-negotiable mathematical/diagram rules from old, overly restrictive rules about compulsory faces and unique starting points.
+
 ## Working and layouts
 
 The homepage shows all ten puzzles beside the introduction on a typical desktop screen, with one-column cards on phones. Individual puzzle screens keep the tablet and working panel visible simultaneously, with internal scrolling for longer workings. On phones and narrow tablets the layout stacks to preserve legibility.

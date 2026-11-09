@@ -104,7 +104,7 @@ test("the upper structure genuinely rises above its foundations",()=>{
   }
 });
 test("four reworked problems have a genuine, unique mathematical entry",()=>{
-  for(const id of ["split-project","great-pile","nine-muses","acropolis"]){
+  for(const id of ["split-project","nine-muses","acropolis"]){
     const puzzle=puzzles.find(p=>p.id===id);
     const sides=buildSides(puzzle),initial=readySteps(puzzle,sides,new Set());
     assert.equal(initial.length,1,id+" should begin with one clearly marked calculation");
@@ -112,10 +112,18 @@ test("four reworked problems have a genuine, unique mathematical entry",()=>{
     const steps=solutionSteps(puzzle,sides);
     assert.ok(steps.some(step=>step.isTarget));
   }
-  for(const puzzle of puzzles.filter(p=>!["split-project","great-pile","nine-muses","acropolis"].includes(p.id))){
+  for(const puzzle of puzzles.filter(p=>!["split-project","nine-muses","acropolis"].includes(p.id))){
     const ready=readySteps(puzzle,buildSides(puzzle),new Set());
     assert.ok(ready.length>=1,puzzle.id+" needs a valid starting calculation");
   }
+});
+test("Great Pile Up deliberately offers multiple valid starts",()=>{
+  const puzzle=puzzles.find(p=>p.id==="great-pile");
+  const starts=readySteps(puzzle,buildSides(puzzle),new Set());
+  assert.ok(starts.some(step=>step.triangleId==="III"),
+    "A short route should start from the middle triangle");
+  assert.ok(starts.some(step=>step.triangleId==="I"),
+    "The original complete foundation route must remain solvable");
 });
 test("the two new framed structures do not simply append a rectangle",()=>{
   const m=puzzles.find(p=>p.id==="marble-terrace");

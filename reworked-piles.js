@@ -97,14 +97,21 @@ export function makeFoldedStaircase(info){
 /** 06 — THE GREAT PILE UP: asymmetrical zigzag (6 pieces).
  * 6,8 -> 10; 10 and 6 -> 8; 8,15 -> 17;
  * 17 and 8 -> 15; 15,20 -> 25; 25 and 7 -> 24.
- * Every shape meets its predecessor along one continuous edge.
+ * The 8 cm side on II is also given, creating a strategically shorter
+ * starting point at III. Earlier faces remain valid optional practice.
+ * The intermediate 8 cm length is now also labelled as given. Students
+ * can choose the short four-check path III → IV → V → VI, rather than
+ * mechanically completing the two lower practice faces.
  */
 export function makeRisingZigzag(info){
   const P=p(0,0),Q=p(8,0),R=p(8,6);
   const I=tri("I",[P,Q,R],1,[given(P,Q),given(Q,R)]);
   const II=onHyp(I,P,R,6,8,"II");
   II.givens=[given(P,II.pts[2])];
-  const S=II.pts[2],III=attach(II,S,R,"a",15,"III");
+  const S=II.pts[2];
+   // A deliberately independent starting length: route planning matters.
+   II.givens.push(given(S,R));
+   const III=attach(II,S,R,"a",15,"III");
   III.givens=[given(S,III.pts[2])];
   const T=III.pts[2],IV=onHyp(III,R,T,8,15,"IV");
   IV.givens=[given(R,IV.pts[2])];
@@ -113,17 +120,20 @@ export function makeRisingZigzag(info){
   const [a,b]=hyp(V),VI=onHyp(V,a,b,7,24,"VI");
   VI.givens=[given(a,VI.pts[2])];
   return finish(info,[I,II,III,IV,V,VI],[],[VI.pts[2],b],[P,Q],{
-    tags:["No detached bridge","Alternating right-angle deductions","6 → 8 → 17 → 15 → 25 → 24"],
+    tags:["Choice of route","Six connected faces","Four-check shortcut"],
     topology:"six-face-alternating-zigzag",
+     routeChallenge:{par:4,startTriangle:"III"},
     architecture:{family:"alternating zigzag",
-      summary:"Six adjacent faces climb through a continuous zigzag ridge",
-      features:["ground foundation","alternating leg and hypotenuse calculations","no inferred equal-length sides","distinct winding skyline"]}
+      summary:"Six connected faces offer a short middle-entry route and a longer full-chain route",
+      features:["ground foundation","four-check shortcut","optional lower calculations","alternate starting points","distinct winding skyline"]}
   });
 }
 
 /** 07 — NINE MUSES: a leftward climbing staircase, not three piers.
  * One deliberate 2 cm whole/part offset breaks the repeated side
- * matches. All nine pieces are on the indispensable target route.
+ * matches. The late calculation uses 16 and 15 to produce √481,
+ * then subtracts 9² to recover 20, and finally finds √521.
+ * This avoids the old reversible 16–30–34, 30–16 pattern.
  */
 export function makeNineStepCascade(info){
   const P=p(0,0),Q=p(12,0),R=p(12,5);
@@ -139,9 +149,9 @@ export function makeNineStepCascade(info){
   V.givens=[given(E,V.pts[2])];
   const [G,H]=hyp(V),VI=onHyp(V,G,H,12,16,"VI");
   VI.givens=[given(G,VI.pts[2])];
-  const J=VI.pts[2],VII=attach(VI,J,H,"b",30,"VII");
+  const J=VI.pts[2],VII=attach(VI,J,H,"b",15,"VII");
   VII.givens=[given(H,VII.pts[2])];
-  const [K,L]=hyp(VII),VIII=onHyp(VII,K,L,16,30,"VIII");
+  const [K,L]=hyp(VII),VIII=onHyp(VII,K,L,9,20,"VIII");
   VIII.givens=[given(K,VIII.pts[2])];
   const M=VIII.pts[2],IX=attach(VIII,M,L,"b",11,"IX");
   IX.givens=[given(L,IX.pts[2])];
@@ -150,11 +160,11 @@ export function makeNineStepCascade(info){
     lengthRelations:[relation([C,D],[C,E],[E,D],"PROJECTING OVERHANG")],
     extraSegments:[{...given(E,D),label:"2 CM OVERHANG"}],
     overhang:{a:E,b:D,value:2},
-    tags:["Nine linked faces","Climbing offset","One marked 2 cm overhang","Full dependency staircase"],
+    tags:["Nine linked faces","Climbing offset","New surd reasoning","Full dependency staircase"],
     topology:"nine-face-leaning-offset-cascade",
     architecture:{family:"leaning nine-step cascade",
       summary:"A dense zigzag climbs leftwards from one real foundation; every face unlocks the next",
-      features:["one grounded foundation","alternating pitches","one measured overhang","single traceable route","high cantilevered crown"]}
+      features:["one grounded foundation","alternating pitches","one measured overhang","less familiar Pythagorean combinations","single traceable route"]}
   });
 }
 

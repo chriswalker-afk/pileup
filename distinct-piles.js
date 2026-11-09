@@ -230,12 +230,13 @@ export function makePlatformTerraceChallenge(info){
   return finish(info,triangles,[R1],hypotenuse(VIII),[L,R],{
     lengthRelations:[relation([D,C],[D,M],[M,C])],
     spanHighlight:{whole:{a:D,b:C},parts:[{a:D,b:M},{a:M,b:C}]},
-    tags:["Rectangle foundation","Split 4 + 8 platform","Two rising terraces","Diagonal first"],
+    tags:["Rectangle foundation","Route choice","Two supporting braces","Upper terrace"],
+    routeChallenge:{par:7,startTriangle:"II"},
     topology:"rectangle-platform-stepped-ridges",
     rectangleReasoning:true,
     fallOrder:["I","R1","II","III","IV","V","VI","VII","VIII"],
-    architecture:architecture("stepped platform","One wide foundation rectangle carries two offset upward terraces",
-      ["horizontal stone platform","ground braces","split roof","two unequal peaks"])
+    architecture:architecture("stepped platform","A rectangle and alternate braces support two terraces, but only one upper branch leads to x",
+      ["horizontal stone platform","alternative grounded braces","split roof","optional left peak","seven-check route"])
   });
 }
 
