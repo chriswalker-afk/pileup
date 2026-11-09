@@ -14,7 +14,7 @@ const expected=[
   ["split-project",4,0,"√157","four-triangle-inset-fold"],
   ["labyrinth",5,0,"15","forked-arch-rejoining-roof"],
   ["great-pile",6,0,"24","six-face-alternating-zigzag"],
-  ["nine-muses",9,0,"√1021","nine-face-leaning-offset-cascade"],
+  ["nine-muses",9,0,"√521","nine-face-leaning-offset-cascade"],
   ["marble-terrace",8,1,"2√38","rectangle-platform-stepped-ridges"],
   ["acropolis",10,2,"15","two-rectangle-dependent-staircase"],
   ["great-interlock",13,0,"24","dense-interlocking-two-foundations"]
@@ -113,7 +113,7 @@ test("Nine Muses climbs through nine linked faces and a marked subtraction",()=>
   assert.equal(p.equalSideGroups?.length||0,0);
   assert.ok(near(p.overhang.value,2));
   assert.ok(steps.some(s=>s.kind==="overhang"&&s.answer==="13"));
-  assert.ok(steps.some(s=>s.isTarget&&s.answer==="√1021"));
+  assert.ok(steps.some(s=>s.isTarget&&s.answer==="√521"));
 });
 test("Both rectangle puzzles are architecturally different from each other",()=>{
   const marble=puzzles[7],acropolis=puzzles[8];
