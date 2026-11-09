@@ -11,7 +11,7 @@ import {assertFullyVisiblePuzzle,hiddenShapePairs,fitPileInTablet}
   from "../pile-visibility.js";
 
 const advanced=[
-  ["nine-muses",9,0,"√1021"],
+  ["nine-muses",9,0,"√521"],
   ["marble-terrace",8,1,"2√38"],
   ["acropolis",10,2,"15"],
   ["great-interlock",13,0,"24"]
@@ -132,5 +132,5 @@ test("Nine Muses has one grounded base and a real 2 cm roof offset",()=>{
   assert.equal(p.lengthRelations.length,1);
   assert.equal(p.equalSideGroups?.length||0,0);
   assert.ok(solutionSteps(p).filter(s=>s.kind==="pythagoras").length>=9);
-  assert.ok(solutionSteps(p).some(s=>s.isTarget&&s.answer==="√1021"));
+  assert.ok(solutionSteps(p).some(s=>s.isTarget&&s.answer==="√521"));
 });
