@@ -145,7 +145,7 @@ export const puzzles=[
   makePlatformTerraceChallenge({
     id:"marble-terrace",title:"The Marble Terrace",epithet:"THE MASTER BUILDER",
     difficulty:"MASTER CHALLENGE",
-    description:"A broad rectangle is the foundation. Its diagonal reveals a split rooftop carrying two staggered towers."
+    description:"Two grounded braces and a rectangular platform support two terraces. Decide which tower actually leads to x."
   }),
   makeSteppedAcropolis({
     id:"acropolis",title:"The Acropolis",epithet:"THE GRAND ARCHITECT",
@@ -169,7 +169,7 @@ const designBriefs={
   "labyrinth":"Both lower routes must meet at the roof.",
   "great-pile":"Shortcut challenge: find x in 4 checks or fewer.",
   "nine-muses":"Long climb: look carefully when the numbers change.",
-  "marble-terrace":"Which rectangle diagonal starts the upper route?",
+  "marble-terrace":"Route challenge: find x in 7 checks. Which peak is optional?",
   "acropolis":"Two rectangle diagonals unlock the canopy.",
   "great-interlock":"Two distant supports must meet at the final roof."
 };
