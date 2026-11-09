@@ -16,7 +16,7 @@ The original nine puzzles have been re-architected to make their **physical stru
 The nine triangles now climb in a dense, leaning *continuous* stack. Starting from one 5–12–13 floor foundation, each new edge supports the next. A true 2 cm overhang on a 15 cm sloping side unlocks a 13 cm subsegment; the final calculation gives **√521 cm**. The final steps now use 16² + 15² = 481, then 481 − 9² = 400, before 20² + 11² = 521. This removes the former inverse 16–30–34 calculation. The old three-foundation terrace and its equal-tick inference remain removed.
 
 ### Marble Terrace
-A grounded rectangle is the foundation. Its 13 cm diagonal and the derived 5 cm height determine a **12 cm rooftop**. The rooftop is split into 4 cm and 8 cm portions, each supporting different staggered roof triangles; the target is **2√38 cm**.
+A grounded rectangle is the foundation. Its 13 cm diagonal and the derived 5 cm height determine a **12 cm rooftop**. The rooftop is split into 4 cm and 8 cm portions, each supporting different staggered roof triangles; the target is **2√38 cm**. Students now have a route-planning goal: reach x in seven checked lengths using either supporting brace and skipping the optional left upper tower. The geometry is unchanged.
 
 ### Acropolis
 
