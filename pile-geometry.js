@@ -135,12 +135,12 @@ export const puzzles=[
   makeRisingZigzag({
     id:"great-pile",title:"The Great Pile Up",epithet:"THE MASTER GEOMETER",
     difficulty:"MASTER CHALLENGE",
-    description:"Six right triangles climb in an alternating zigzag. Each newly discovered side unlocks the next face."
+    description:"Six connected triangles, two ways to proceed. The shortest route starts above the foundation: which lengths can you skip?"
   }),
   makeNineStepCascade({
     id:"nine-muses",title:"The Nine Muses",epithet:"THE ACADEMY",
     difficulty:"MASTER CHALLENGE",
-    description:"Nine linked triangles lean upwards like a stepped sculpture. The single marked 2 cm offset opens the middle tier."
+    description:"Nine linked triangles form a long climb with one measured inset. The final stages require less familiar combinations of squares."
   }),
   makePlatformTerraceChallenge({
     id:"marble-terrace",title:"The Marble Terrace",epithet:"THE MASTER BUILDER",
@@ -159,8 +159,24 @@ export const puzzles=[
   })
 ];
 
+// The ten challenges have different *reasoning* goals, not just more faces.
+// A goal describes the student decision; it never supplies a hidden length.
+const designBriefs={
+  "first-fall":"Learn the chain: each length unlocks the next.",
+  "projecting-edge":"Investigate the projection before the final roof.",
+  "twin-paths":"Use the matching marks to join two routes.",
+  "split-project":"Find the marked inset before calculating x.",
+  "labyrinth":"Both lower routes must meet at the roof.",
+  "great-pile":"Shortcut challenge: find x in 4 checks or fewer.",
+  "nine-muses":"Long climb: look carefully when the numbers change.",
+  "marble-terrace":"Which rectangle diagonal starts the upper route?",
+  "acropolis":"Two rectangle diagonals unlock the canopy.",
+  "great-interlock":"Two distant supports must meet at the final roof."
+};
+
 // Lightweight metadata shared by the home page and individual challenges.
 for(const puzzle of puzzles){
+  puzzle.designBrief=designBriefs[puzzle.id];
   assertFullyVisiblePuzzle(puzzle);
   if(!puzzle.tags){
     puzzle.tags=puzzle.id==="first-fall"?["Inset overhang","First calculation"]:
