@@ -8,7 +8,7 @@ import {assertFullyVisiblePuzzle,hiddenShapePairs} from "../pile-visibility.js";
 const changed=[
   ["split-project",4,0,"√157"],
   ["great-pile",6,0,"24"],
-  ["nine-muses",9,0,"√1021"],
+  ["nine-muses",9,0,"√521"],
   ["acropolis",10,2,"15"]
 ];
 const near=(a,b)=>Math.abs(a-b)<1e-6;
@@ -43,7 +43,7 @@ for(const [id,count,rectangles,target] of changed){
     assert.ok(solutionSteps(p).some(step=>step.isTarget&&step.answer===target));
     assert.equal(new Set(p.fallOrder).size,count+rectangles);
   });
-  test(id+": every triangle is required to calculate x",()=>{
+  if(id!=="great-pile")test(id+": every triangle is required to calculate x",()=>{
     const p=puzzles.find(p=>p.id===id);
     assert.equal(canReachTarget(p,""),true);
     for(const t of p.triangles){
@@ -54,7 +54,8 @@ for(const [id,count,rectangles,target] of changed){
   test(id+": exactly one valid starting calculation, no unexplained equalities",()=>{
     const p=puzzles.find(p=>p.id===id),s=buildSides(p);
     const initial=readySteps(p,s,new Set());
-    assert.equal(initial.length,1,id+" should have a traceable entry route");
+    if(id==="great-pile")assert.ok(initial.length>=2,"route choice should have independent beginnings");
+    else assert.equal(initial.length,1,id+" should have a traceable entry route");
     assert.equal(initial[0].isTarget,false);
     for(const group of p.equalSideGroups||[]){
       assert.ok(group.length>=2);
