@@ -1,5 +1,7 @@
 # Dependency-first redesign — puzzles 4, 6, 7 and 9
 
+*Historical design note, updated 9 November 2026: the classroom-led [Challenge Design Standard](CHALLENGE_DESIGN_STANDARD.md) now allows optional steps and multiple starts. See the revised Great Pile Up and Nine Muses notes below.*
+
 ## Classroom goal
 
 The four reference pictures show why a Pythagoras *pile up* should feel like a geometric argument, not several triangles positioned near one another. Each newly found length must be a legitimate input to a subsequent, visibly connected step. The replacement diagrams avoid the former "one triangle bridging two peaks" device.
@@ -29,7 +31,7 @@ No hidden matching sides; every transfer is a physically identical segment.
 5. 15 and 20 give diagonal **25**.
 6. 25 and 7 give final leg **x = 24 cm**.
 
-Each unknown is the geometric edge used by the immediately following triangle. The alternation of adding and subtracting squares is deliberate.
+The longer six-step route is still valid, but a second **given 8 cm** on triangle II lets students begin with triangle III and finish in four checks. The point is to **notice a shortcut**, not mechanically work through six faces. The alternation of adding and subtracting squares remains mathematically valid.
 
 ### Challenge 7 — The Nine Muses
 **Shape:** a nine-face cascade leans up and left, like the taller reference example. One small, explicit offset creates a real whole/part decision.
@@ -42,9 +44,9 @@ Each unknown is the geometric edge used by the immediately following triangle. T
 5. 13 and 5 → **12**.
 6. 12 and 16 → **20**.
 7. 20 and 12 → **16**.
-8. 16 and 30 → **34**.
-9. 34 and 16 → **30**.
-10. 30 and 11 → **x = √1021 cm**.
+8. 16 and 15 → **√481**.
+9. √481 and 9 → **20**.
+10. 20 and 11 → **x = √521 cm**.
 
 The subtraction is an actual collinear 2 cm segment; no step presumes an equality that the diagram does not show.
 
@@ -70,7 +72,7 @@ Both diagonal calculations are indispensable. The marked equality groups are on 
 
 ## Tests and review
 
-- `tests/reworked-dependencies.test.mjs` checks every individual triangle is indispensable to x, the two Acropolis rectangle diagonals are both required, the 2 cm offset endpoints are exact, and all matching marks refer to real equal edges.
+- `tests/reworked-dependencies.test.mjs` checks indispensable faces for #4, #7 and #9, the two Acropolis rectangle diagonals are both required, the 2 cm offset endpoints are exact, and all matching marks refer to real equal edges.
 - The normal geometry/visibility tests check right angles, uncropped pieces, physical connections and zero hidden polygons.
 - `scripts/browser-audit.mjs` exercises all ten challenges at five viewport sizes and saves desktop/phone screenshots. For crowded puzzles, click a piece to reveal its relevant unknowns, then use Focus and Locate while zoomed.
 - Saved work for only these four puzzles uses new progress keys. Previously saved data is retained separately rather than applied to new geometry.
