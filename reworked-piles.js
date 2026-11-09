@@ -97,6 +97,8 @@ export function makeFoldedStaircase(info){
 /** 06 — THE GREAT PILE UP: asymmetrical zigzag (6 pieces).
  * 6,8 -> 10; 10 and 6 -> 8; 8,15 -> 17;
  * 17 and 8 -> 15; 15,20 -> 25; 25 and 7 -> 24.
+ * The 8 cm side on II is also given, creating a strategically shorter
+ * starting point at III. Earlier faces remain valid optional practice.
  * The intermediate 8 cm length is now also labelled as given. Students
  * can choose the short four-check path III → IV → V → VI, rather than
  * mechanically completing the two lower practice faces.
