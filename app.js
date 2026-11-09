@@ -1,4 +1,5 @@
 import { buildSides, sideKey, exactLength, parseAnswer, correctAnswer, sidesOfTriangle, readySteps, solutionSteps, propagateRectangleSides } from "./puzzle-engine.js";
+import {studentToolsMarkup, installStudentTools} from "./student-tools.js";
 import { puzzles } from "./pile-geometry.js";
 import { mountWorkingSpace, sanitizeWorking } from "./working-space.js";
 import { fitPileInTablet } from "./pile-visibility.js";
@@ -54,6 +55,9 @@ const v=(a,b)=>p(b.x-a.x,b.y-a.y),cross=(a,b)=>a.x*b.y-a.y*b.x,dot=(a,b)=>a.x*b.
 let current=puzzles[0],selectedSide=null,animating=false,visible=true,finishTimer=null,screen="home";
 let sideMap=buildSides(current),solved=new Set(),workingBySide={},hintLevels={},hintsUsed=0,feedback=null,solutionOpen=false;
 let pendingDiscoveredKey=null;
+const completedPuzzleKey="pileup-completed-puzzles-v1";
+function completedPuzzles(){try{return new Set(JSON.parse(localStorage.getItem(completedPuzzleKey)||"[]"));}catch(_){return new Set();}}
+function recordCompletedPuzzle(id){const done=completedPuzzles();done.add(id);try{localStorage.setItem(completedPuzzleKey,JSON.stringify([...done]));}catch(_){}}
 let focusLabels=false,focusUserChoice=false,focusedShapeId=null,previewSideKey=null;
 
 /**
@@ -378,7 +382,7 @@ function home(gallery=false){
       </div>
       <div class="home-puzzle-grid">
       ${puzzles.map((puzzle,index)=>`<button class="challenge-card home-challenge-card" data-puzzle="${puzzle.id}" aria-label="Challenge ${index+1}: ${puzzle.title}. ${puzzle.difficulty}">
-        <span class="home-card-number"><span>${String(index+1).padStart(2,"0")} / ${puzzle.difficulty}</span>${difficultyEmblem(puzzle)}</span>
+        <span class="home-card-number"><span>${String(index+1).padStart(2,"0")} / ${puzzle.difficulty}</span>${completedPuzzles().has(puzzle.id)?'<span class="challenge-complete" aria-label="Completed">✓ DONE</span>':""}${difficultyEmblem(puzzle)}</span>
         ${miniPreview(puzzle)}
         <span class="home-card-copy">
           <strong class="home-card-title">${escapeHtml(puzzle.title)}</strong>
@@ -499,6 +503,10 @@ function chooseTriangle(id){
   const choices=readySteps(current,sideMap,solved);
   const side=options.find(s=>choices.some(step=>step.sideKey===s.key))||options[0]||edges.find(s=>s&&!s.given&&!s.suppressLabel)||edges.find(Boolean);
   if(side)chooseSide(side.key,id);
+}
+function findStartingSide(){
+  const ready=readySteps(current,sideMap,solved).find(step=>!solved.has(step.sideKey) && !sideMap.get(step.sideKey)?.suppressLabel);
+  if(ready){chooseSide(ready.sideKey);locateSelectedSide();}
 }
 function chooseSide(key,shapeId=null){
   if(animating)return;
@@ -710,8 +718,8 @@ function renderDiagram(animate=false,forceMotion=false){
   const actualW=canvas.getBoundingClientRect().width||780;
   const actualH=Math.min(490,Math.max(340,actualW*590/960));
   const ratio=Math.max(.32,Math.min(actualW/W,actualH/H));
-  const fontSize=dense?Math.min(31,Math.max(12,11/ratio)):
-    Math.min(31,Math.max(15,12/ratio));
+  const fontSize=dense?Math.min(34,Math.max(16,12/ratio)):
+    Math.min(34,Math.max(18,13/ratio));
   const boxHeight=fontSize+11;
   const centroids=pieces.map(t=>({
     id:t.id,
@@ -1053,12 +1061,12 @@ function renderInspector(){
     shapes.some(shape=>compactFace(shape,shapes,xy));
   const side=selectedSide?sideMap.get(selectedSide):null;
   const choices=`<div class="inspect-field clarity-field">
-    <div class="clarity-selector-heading"><label for="side-select">CHOOSE A SIDE TO INVESTIGATE</label>
+    <div class="clarity-selector-heading"><label for="side-select">CHOOSE A LENGTH</label>
       <button id="label-focus-toggle" type="button" class="clarity-focus-toggle"
         aria-pressed="${focusLabels}" title="${focusLabels?"Show every measurement":"Show only measurements belonging to the selected shape"}">
         ${focusLabels?"ALL LABELS":"FOCUS VIEW"}</button></div>
-    <div class="clarity-selector-row"><select id="side-select">
-      <option value="">${hasSmallCluster?"Select a side…":"Select a marked side…"}</option>
+    <div class="clarity-selector-row"><button id="find-start-side" type="button" class="clarity-locate" title="Highlight a side that you can calculate now">FIND A START</button><select id="side-select">
+      <option value="">${hasSmallCluster?"Choose a length…":"Choose a length…"}</option>
       ${unprovided.map((s,i)=>`<option value="${s.key}" ${selectedSide===s.key?"selected":""}>${s.isTarget?"Target x":"Side "+(i+1)+" · triangle "+s.triangleIds.join(" & ")}${solved.has(s.key)?" ✓":""}</option>`).join("")}
     </select>
     <button id="locate-side" type="button" class="clarity-locate"
@@ -1066,7 +1074,7 @@ function renderInspector(){
       aria-label="Locate selected side in diagram" ${selectedSide?"":"disabled"}>LOCATE ↗</button></div></div>`;
   let body;
   if(!side){
-    body=`<div class="workspace-brief"><strong>${hasSmallCluster?"Tap a triangle to inspect its lengths":"Select a ? on the diagram"}</strong><span>Choose a side above, or start working on your scratchpad.</span></div>
+    body=`<div class="workspace-brief"><strong>${hasSmallCluster?"Tap a triangle or choose a length":"Tap a ? or choose a length"}</strong><span>Choose a side above, or start working on your scratchpad.</span></div>
       <div id="working-pad-mount" class="working-pad-mount"></div>`;
   }else if(side.given){
     body=`<div class="workspace-brief"><strong>Given: ${exactLength(side.length)} cm</strong><span>Select a missing length to solve it.</span></div>
@@ -1083,7 +1091,7 @@ function renderInspector(){
         <div class="inspect-field answer-field"><label for="answer-input">ANSWER (CM)</label>
           <div class="input-row"><input id="answer-input" name="answer" inputmode="decimal" maxlength="90"
             placeholder="e.g. √205 or 14.3" aria-label="Answer in centimetres" title="Exact surds and rounded decimals accepted" required>
-          <button class="submit" type="submit">CHECK →</button></div></div>
+          <button type="button" class="answer-sqrt" data-insert-sqrt aria-label="Insert square root">√</button><button class="submit" type="submit">CHECK →</button></div></div>
       </form>
       <div id="answer-feedback" role="status" aria-live="polite"></div>
       <div id="working-pad-mount" class="working-pad-mount"></div>
@@ -1106,6 +1114,7 @@ function renderInspector(){
     renderDiagram(false);
   });
   panel.querySelector("#locate-side").addEventListener("click",locateSelectedSide);
+  panel.querySelector("#find-start-side").addEventListener("click",findStartingSide);
   panel.querySelector("#side-select").addEventListener("change",event=>{
     if(event.target.value)chooseSide(event.target.value);
     else{selectedSide=null;focusedShapeId=null;previewSideKey=null;feedback=null;renderDiagram(false);}
@@ -1233,7 +1242,7 @@ function submitAnswer(raw){
         progressState.done+" of "+progressState.total+" lengths found."+
         (rectangleSides>0?" Matching rectangle lengths added automatically.":"");
     }
-    if(side.isTarget)showCompletion();
+    if(side.isTarget){recordCompletedPuzzle(current.id);showCompletion();}
     else document.getElementById("side-select")?.focus({preventScroll:true});
   }else{
     const box=document.getElementById("answer-feedback");
@@ -1265,9 +1274,9 @@ function openPuzzle(id){
   const index=puzzles.indexOf(puzzle);
   const following=puzzles[(index+1)%puzzles.length];
   root.innerHTML=header()+`<main class="challenge-main">
-    <div class="challenge-heading"><a class="back" href="#puzzles">← ALL CHALLENGES</a>
+    <div class="challenge-heading"><a class="back" href="#puzzles">← ALL CHALLENGES</a><div class="student-header-actions"><button type="button" data-open-guide>HOW TO PLAY ?</button><button type="button" data-open-calculator>CALCULATOR</button></div>
       <span class="chapter">${difficultyEmblem(puzzle)}<span>CHALLENGE ${String(index+1).padStart(2,"0")} / ${String(puzzles.length).padStart(2,"0")}</span></span>
-      <h1>${puzzle.title}</h1><p>${puzzle.description}</p><p class="challenge-tags">${(puzzle.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</p></div>
+      <h1>${puzzle.title}</h1><p class="puzzle-one-line">Find the missing lengths, then solve x.</p><p class="challenge-tags">${(puzzle.tags||[]).map(t=>`<span>${escapeHtml(t)}</span>`).join("")}</p></div>
     <div class="challenge-layout"><div class="tablet">
       <div class="tablet-bar"><span class="tablet-bar-brand">
         <span class="tablet-seal" aria-hidden="true"><svg viewBox="0 0 30 30" focusable="false">
@@ -1293,11 +1302,10 @@ function openPuzzle(id){
         <div class="diagram-caption"><span>✦ ALL TRIANGLES ARE RIGHT-ANGLED · RECTANGLES HAVE 90° CORNERS</span><span>ALL LENGTHS IN CM · DRAWN TO SCALE</span></div>
       </div></div>
       <aside class="side"><div class="side-topline"><div class="kicker">${puzzle.epithet} · ${puzzle.difficulty}</div><button id="workspace-size-toggle" type="button" class="workspace-size-toggle" aria-pressed="false" title="Widen the student working panel">↔ More working room</button></div><div class="rule"></div>
-        <div class="status-strip"><span>DISCOVERED LENGTHS</span><span id="progress-count">0 of 0 lengths found</span></div>
+        <div class="status-strip"><span>YOUR PROGRESS</span><span id="progress-count">0 of 0 lengths found</span></div>
         <div class="progress-track" aria-label="Number of missing lengths discovered"><span id="progress-fill" style="width:0"></span></div>
         <div id="progress-announcement" class="screenreader-only" role="status" aria-live="polite" aria-atomic="true"></div>
-        <div class="inspector" id="inspector"></div>
-
+        <div class="inspector" id="inspector"></div><nav class="puzzle-navigation" aria-label="Challenge navigation"><button type="button" data-puzzle="${following.id}">NEXT CHALLENGE →</button><a href="#puzzles">ALL CHALLENGES</a></nav>
       </aside>
     </div><div class="challenge-bottom"><button data-puzzle="${following.id}">NEXT CHALLENGE →</button></div>
     </main>
@@ -1313,8 +1321,9 @@ function openPuzzle(id){
       <button id="completion-extra" hidden>TRY PERIMETER & AREA EXTENSIONS ↗</button>
       <button id="completion-other">TRY THE NEXT PILE</button></div>
       <button class="completion-close" id="completion-close">RETURN TO THE PILE</button></div>
-    </dialog>`+footer();
+    </dialog>`+studentToolsMarkup()+footer();
   bind();
+  installStudentTools(root);
   setWorkingFocused(workingFocused);
   document.getElementById("workspace-size-toggle")?.addEventListener("click",()=>setWorkingFocused(!workingFocused));
   document.getElementById("diagram-zoom-in").addEventListener("click",()=>setDiagramZoom(zoomStep(zoomState,1)));
