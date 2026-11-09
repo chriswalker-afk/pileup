@@ -6,14 +6,14 @@ The original nine puzzles have been re-architected to make their **physical stru
 
 | Challenge | Visible shapes | Structural idea | Final exact length |
 |---|---|---|---|
-| The Nine Muses | 9 right triangles | One upward leaning cascade, nine indispensable steps and a real 2 cm inset | **√1021 cm** |
+| The Nine Muses | 9 right triangles | One upward leaning cascade, nine indispensable steps and a real 2 cm inset | **√521 cm** |
 | The Marble Terrace | 8 right triangles + 1 rectangle | A wide ground-level rectangle supporting two staggered towers | **2√38 cm** |
 | The Acropolis | 10 right triangles + 2 rectangles | Two rectangles joined in sequence, with diagonals unlocking a stepped zigzag | **15 cm** |
 | The Great Interlock | 13 right triangles | Two indispensable floor supports, angled wedges, two inset offsets and a 24 cm canopy | **24 cm** |
 
 ### Nine Muses
 
-The nine triangles now climb in a dense, leaning *continuous* stack. Starting from one 5–12–13 floor foundation, each new edge supports the next. A true 2 cm overhang on a 15 cm sloping side unlocks a 13 cm subsegment; the final calculation gives **√1021 cm**. The old three-foundation terrace and its equal-tick inference have been removed.
+The nine triangles now climb in a dense, leaning *continuous* stack. Starting from one 5–12–13 floor foundation, each new edge supports the next. A true 2 cm overhang on a 15 cm sloping side unlocks a 13 cm subsegment; the final calculation gives **√521 cm**. The final steps now use 16² + 15² = 481, then 481 − 9² = 400, before 20² + 11² = 521. This removes the former inverse 16–30–34 calculation. The old three-foundation terrace and its equal-tick inference remain removed.
 
 ### Marble Terrace
 A grounded rectangle is the foundation. Its 13 cm diagonal and the derived 5 cm height determine a **12 cm rooftop**. The rooftop is split into 4 cm and 8 cm portions, each supporting different staggered roof triangles; the target is **2√38 cm**.
