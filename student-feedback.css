@@ -118,3 +118,26 @@ body[data-view="puzzle"] .status-strip{font-size:11px!important}
 @media(prefers-reduced-motion:reduce){
   .student-tool-dialog *{transition:none!important}
 }
+
+/* Challenge design: one compact reason to try a different solving route. */
+.completion-dialog .completion-route:not([hidden]){
+  margin:5px auto 9px;
+  max-width:420px;
+  color:#425a46;
+  background:#e7ecd9;
+  border:1px solid #b7c6aa;
+  padding:7px 10px;
+  font:600 13px/1.5 "DM Sans",system-ui,sans-serif;
+  letter-spacing:0;
+}
+.completion-dialog .completion-route[data-outcome="completed"]{
+  color:#5e503c;background:#f2e7d4;border-color:#d1b995;
+}
+body[data-view="puzzle"] .challenge-heading .puzzle-one-line{
+  font-weight:600;max-width:730px;
+}
+@media(max-width:520px){
+  body[data-view="puzzle"] .challenge-heading .puzzle-one-line{
+    font-size:12px;line-height:1.4;
+  }
+}
