@@ -1,6 +1,6 @@
 # Puzzle Architecture — Ten Distinct Mathematical Constructions
 
-Updated 5 November 2026. See [DEPENDENCY_REDESIGN_2026.md](DEPENDENCY_REDESIGN_2026.md) for the dependency-first corrections to challenges 4, 6, 7 and 9.
+Updated 9 November 2026. See [Challenge Design Standard](CHALLENGE_DESIGN_STANDARD.md) for the current classroom-informed pedagogical rules. See [DEPENDENCY_REDESIGN_2026.md](DEPENDENCY_REDESIGN_2026.md) for the dependency-first corrections to challenges 4, 6, 7 and 9.
 
 Each puzzle uses true, non-overlapping right triangles (and, where specified, actual rectangles). A student must derive the next required side using a shared geometric edge, a visibly marked whole/part relationship, or the diagonal of a rectangle. Coincidentally equal but geometrically separate sides are **not** assumed to be interchangeable.
 
@@ -11,11 +11,17 @@ Each puzzle uses true, non-overlapping right triangles (and, where specified, ac
 | 03 | Twin Paths | 3 triangles | Two short roofs share a longer diagonal; tick marks | **15 cm** |
 | 04 | Split & Project | 4 triangles | Compact folded staircase with a 2 cm exposed overhang | **√157 cm** |
 | 05 | The Geometer's Labyrinth | 5 triangles | Two routes rejoin around a genuine triangular opening | **15 cm** |
-| 06 | The Great Pile Up | 6 triangles | Broad, asymmetric zigzag with alternating right-angle deductions | **24 cm** |
-| 07 | The Nine Muses | 9 triangles | Tall left-leaning cascade with one exact 2 cm inset | **√1021 cm** |
+| 06 | The Great Pile Up | 6 triangles | Six-face zigzag with an optional shorter route; four checks can reach x | **24 cm** |
+| 07 | The Nine Muses | 9 triangles | Tall left-leaning cascade with one exact 2 cm inset | **√521 cm** |
 | 08 | The Marble Terrace | 8 triangles + 1 rectangle | A single rectangle is a real ground-level platform | **2√38 cm** |
 | 09 | The Acropolis | 10 triangles + 2 rectangles | Two **successive** rectangular steps, then a leaning canopy | **15 cm** |
 | 10 | The Great Interlock | 13 triangles | Two independent rooted routes through an interlocking crowd | **24 cm** |
+
+## Classroom-led design revision — 9 November
+
+The previous strict rule that *every triangle must be indispensable* was counterproductive for route-choice puzzles. **Great Pile Up** now labels an additional genuine 8 cm side on triangle II, so triangle III is a valid entry point and the student can reach x in four checked lengths. The optional lower route is still mathematically sound. **Nine Muses** retains its nine-face geometry but replaces repeated reverse triples with √481, 20 and finally √521. These two changed puzzles use new progress namespaces.
+
+See [Challenge Design Standard](CHALLENGE_DESIGN_STANDARD.md). Correct geometry, shared-length markings, full visibility and complete worked solutions remain required. A unique starting calculation and a compulsory contribution from every face no longer are.
 
 ## Key corrections to the former two-peak puzzles
 
@@ -38,7 +44,7 @@ The four re-authored puzzles use `pileup-architecture-v2-<id>` as their browser-
 
 - Every face has actual right-angle geometry and no polygon interior overlaps.
 - All ten structures remain connected, with real floor support and correctly positioned given/overhang lengths.
-- A new dependency test blocks each individual triangle in #4, #6, #7 and #9; **x must then be unreachable**.
+- Dependency tests still require every triangle for #4, #7 and #9. For #6, a shortest-route test proves a four-check shortcut while blocking the two lower optional pieces.
 - For #9, blocking either rectangle-diagonal calculation must also prevent x.
 - The Chrome audit renders all ten puzzles at five viewport widths and checks clipping, measurement-chip overlaps, dimension brackets, saved work, and the existing interaction controls.
 
